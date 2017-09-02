@@ -1,1 +1,3 @@
+[remote "datawatcher-provider"]
 node_modules
+npm-debug.log
