@@ -4,7 +4,7 @@ import io from "socket.io-client";
 
 import File from "../components/file.component";
 
-class Home extends React.Component {
+class HomePage extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -33,7 +33,6 @@ class Home extends React.Component {
     }
 
     render() {
-        console.log("renders");
         return (
             <div>
                 <div ref="render">Hello World!</div>
@@ -59,4 +58,4 @@ class Home extends React.Component {
     }
 }
 
-module.exports = Home;
+module.exports = HomePage;

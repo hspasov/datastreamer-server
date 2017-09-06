@@ -7,6 +7,10 @@
 var app = require("../app");
 var debug = require("debug")("datastreamer-server:server");
 var http = require("http");
+var session = require("express-session");
+var mongoose = require("mongoose");
+var mongodbStore = require("connect-mongo")(session);
+var config = require("../config/config");
 
 /**
  * Get port from environment and store in Express.
@@ -20,6 +24,41 @@ app.set("port", port);
  */
 
 var server = http.createServer(app);
+
+/*
+ * Connect to database
+ */
+
+
+mongoose.connect(config.dbURL, {
+    useMongoClient: true
+});
+var db = mongoose.connection;
+
+db.on("error", function (error) {
+    console.log("There was a db connection error.");
+    return console.error(error.message);
+});
+
+db.once("conected", function () {
+    console.log("DB connected to " + config.dbURL);
+});
+
+db.once("disconnected", function () {
+    console.log("DB disconnecred from " + config.dbURL);
+});
+
+app.use(session({
+    name: 'xpressBlu.sess',
+    store: new mongodbStore({
+        mongooseConnection: mongoose.connection,
+        touchAfter: 24 * 3600
+    }),
+    secret: 'qwertyuiop123456789',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { maxAge: 1000 * 60 * 15 }
+}));
 
 /**
  * Listen on provided port, on all network interfaces.
