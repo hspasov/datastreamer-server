@@ -43,7 +43,11 @@ router.route("/register").post(function (req, res, next) {
                 console.error(err);
                 return next(err);
             }
-            return res.status(201).send({ message: "success" });
+            return res.status(201).json({
+                message: "success",
+                name: provider.name,
+                providerId: provider._id
+            });
         });
     })(req, res, next);
 });
