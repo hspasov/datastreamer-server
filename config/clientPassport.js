@@ -1,23 +1,25 @@
 var passport = require("passport");
 var config = require("./config");
-var User = require("../models/user");
-var errorHandler = require("../modules/errorHandler");
+var Client = require("../models/client");
+var errorActions = require("../modules/errorActions");
+
+var errorHandler = errorActions.errorHandler;
 
 var host = config.host;
 var LocalStrategy = require("passport-local").Strategy;
 
-passport.serializeUser(function (user, done) {
-    done(null, user.id);
+passport.serializeUser(function (client, done) {
+    done(null, client.id);
 });
 
 passport.deserializeUser(function (id, done) {
-    User.findById(id, function (error, user) {
+    Client.findById(id, function (error, client) {
         if (error) {
             console.error("There was an error accessing the records of" +
-                " user with id: " + id);
+                " client with id: " + id);
             return console.log(error.message);
         }
-        return done(null, user);
+        return done(null, client);
     })
 });
 
@@ -30,30 +32,29 @@ passport.use(
     },
     function (req, email, password, done) {
         process.nextTick(function () {
-            User.findOne({ email: email }, function (error, user) {
+            Client.findOne({ email: email }, function (error, client) {
                 if (error) {
                     return errorHandler(error);
                 }
-                if (user) {
+                if (client) {
                     return done(null, false, { errorMsg: "email already exists" });
                 }
                 else {
-                    var newUser = new User();
-                    newUser.username = req.body.username;
-                    newUser.email = email;
-                    newUser.password = newUser.generateHash(password);
-                    newUser.save(function (error) {
+                    var newClient = new Client();
+                    newClient.email = email;
+                    newClient.password = newClient.generateHash(password);
+                    newClient.save(function (error) {
                         if (error) {
                             console.log(error);
-                            if (error.message == "User validation failed") {
+                            if (error.message == "Client validation failed") {
                                 console.log(error.message);
                                 return done(null, false, { errorMsg: "Please fill all fields" });
                             }
                             return errorHandler(error);
                         }
-                        console.log("New user successfully created...");
+                        console.log("New client successfully created...");
                         console.log("email", email);
-                        return done(null, newUser);
+                        return done(null, newClient);
                     });
                 }
             });
@@ -68,20 +69,20 @@ passport.use(
         passReqToCallback: true
     },
         function (req, email, password, done) {
-        User.findOne({ email: email }, function (error, user) {
+        Client.findOne({ email: email }, function (error, client) {
             if (error) {
                 return errorHandler(error);
             }
-            if (!user) {
+            if (!client) {
                 return done(null, false, {
-                    errorMsg: "User does not exist, please" +
+                    errorMsg: "Client does not exist, please" +
                     " <a class=\"errorMsg\" href=\"/signup\">signup</a>"
                 });
             }
-            if (!user.validPassword(password)) {
+            if (!client.validPassword(password)) {
                 return done(null, false, { errorMsg: "Invalid password try again" });
             }
-            return done(null, user);
+            return done(null, client);
         });
 
     }));
