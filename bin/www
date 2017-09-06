@@ -29,7 +29,7 @@ var server = http.createServer(app);
  * Connect to database
  */
 
-
+mongoose.Promise = global.Promise;
 mongoose.connect(config.dbURL, {
     useMongoClient: true
 });
