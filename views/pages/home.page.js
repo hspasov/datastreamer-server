@@ -1,10 +1,11 @@
 import React from "react";
 import ReactDOM from "react-dom";
+import { connect } from "react-redux";
 import io from "socket.io-client";
 
 import File from "../components/file.component";
 
-class HomePage extends React.Component {
+class Home extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -33,6 +34,11 @@ class HomePage extends React.Component {
     }
 
     render() {
+        if (!this.props.client.clientId) {
+            return (
+                <p>Please login or register</p>
+            );
+        }
         return (
             <div>
                 <div ref="render">Hello World!</div>
@@ -58,4 +64,10 @@ class HomePage extends React.Component {
     }
 }
 
-module.exports = HomePage;
+const HomePage = connect(store => {
+    return {
+        client: store.client
+    };
+})(Home);
+
+export default HomePage;

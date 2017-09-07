@@ -1,4 +1,4 @@
-var passport = require("passport");
+var clientPassport = require("passport");
 var config = require("./config");
 var Client = require("../models/client");
 var errorActions = require("../modules/errorActions");
@@ -8,11 +8,11 @@ var errorHandler = errorActions.errorHandler;
 var host = config.host;
 var LocalStrategy = require("passport-local").Strategy;
 
-passport.serializeUser(function (client, done) {
+clientPassport.serializeUser(function (client, done) {
     done(null, client.id);
 });
 
-passport.deserializeUser(function (id, done) {
+clientPassport.deserializeUser(function (id, done) {
     Client.findById(id, function (error, client) {
         if (error) {
             console.error("There was an error accessing the records of" +
@@ -23,14 +23,14 @@ passport.deserializeUser(function (id, done) {
     })
 });
 
-passport.use(
-    "local-signup",
+clientPassport.use(
+    "client-register",
     new LocalStrategy({
         usernameField: "email",
         passwordField: "password",
         passReqToCallback: true
     },
-    function (req, email, password, done) {
+        function (req, email, password, done) {
         process.nextTick(function () {
             Client.findOne({ email: email }, function (error, client) {
                 if (error) {
@@ -61,8 +61,8 @@ passport.use(
         });
     }));
 
-passport.use(
-    "local-login",
+clientPassport.use(
+    "client-login",
     new LocalStrategy({
         usernameField: "email",
         passwordField: "password",
@@ -87,4 +87,4 @@ passport.use(
 
     }));
 
-module.exports = passport;
+module.exports = clientPassport;

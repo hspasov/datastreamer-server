@@ -24,7 +24,7 @@ passport.deserializeUser(function (id, done) {
 });
 
 passport.use(
-    "local-login",
+    "provider-login",
     new LocalStrategy({
         usernameField: "name",
         passwordField: "password",
@@ -50,7 +50,7 @@ passport.use(
     }));
 
 passport.use(
-    "local-signup",
+    "provider-register",
     new LocalStrategy({
         usernameField: "name",
         passwordField: "password",

@@ -1,7 +1,9 @@
 import React from "react";
+import { connect } from "react-redux";
+import { loginClient } from "../../store/actions/client";
 import formurlencoded from "form-urlencoded";
 
-class RegisterPage extends React.Component {
+class Register extends React.Component {
     constructor(props) {
         super(props);
 
@@ -53,10 +55,13 @@ class RegisterPage extends React.Component {
             body: formurlencoded(formData)
         }).then(response => {
             if (response.status == 409) {
-                console.log("Authentication failed");
+                throw "Authentication failed";
             } else {
-                this.props.history.replace("/home");
+                return response.json();
             }
+        }).then(json => {
+            this.props.dispatch(loginClient(json));
+            this.props.history.replace("/home");
         }).catch(error => {
             console.log(error);
         });
@@ -73,5 +78,11 @@ class RegisterPage extends React.Component {
         );
     }
 }
+
+const RegisterPage = connect(store => {
+    return {
+        client: store.client
+    };
+})(Register);
 
 export default RegisterPage;

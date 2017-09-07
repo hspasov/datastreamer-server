@@ -25,7 +25,7 @@ function isLoggedIn(req, res, next) {
 }
 
 router.post("/login", function (req, res, next) {
-    passport.authenticate("local-login", function (err, provider, info) {
+    passport.authenticate("provider-login", function (err, provider, info) {
         if (err) {
             return next(err); // will generate a 500 error
         }
@@ -46,7 +46,7 @@ router.post("/login", function (req, res, next) {
 });
 
 router.route("/register").post(function (req, res, next) {
-    passport.authenticate("local-signup", function (err, provider, info) {
+    passport.authenticate("provider-register", function (err, provider, info) {
         if (err) {
             return next(err); // will generate a 500 error
         }

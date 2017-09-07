@@ -1,5 +1,5 @@
 var express = require("express");
-var passport = require("../config/clientPassport");
+var clientPassport = require("../config/clientPassport");
 var router = express.Router();
 var path = require("path");
 var errorActions = require("../modules/errorActions");
@@ -14,8 +14,8 @@ var viewAllClients = clientActions.viewAllClients;
 var updateClient = clientActions.updateClient;
 var deleteClient = clientActions.deleteClient;
 
-router.use(passport.initialize());
-router.use(passport.session());
+router.use(clientPassport.initialize());
+router.use(clientPassport.session());
 
 function isLoggedIn(req, res, next) {
     if (req.isAuthenticated()) {
@@ -41,7 +41,7 @@ router.get("/home", function (req, res) {
 });
 
 router.post("/login", function (req, res, next) {
-    passport.authenticate("local-login", function (err, client, info) {
+    clientPassport.authenticate("client-login", function (err, client, info) {
         if (err) {
             return next(err); // will generate a 500 error
         }
@@ -53,14 +53,17 @@ router.post("/login", function (req, res, next) {
                 return next(err);
             }
             console.log(req.session);
-            return res.status(200).send({message: "success"});
+            return res.status(200).send({
+                email: client.email,
+                clientId: client._id
+            });
         });
     })(req, res, next);
 });
 
 
 router.route("/register").post(function (req, res, next) {
-    passport.authenticate("local-signup", function (err, client, info) {
+    clientPassport.authenticate("client-register", function (err, client, info) {
         if (err) {
             return next(err); // will generate a 500 error
         }
@@ -72,7 +75,10 @@ router.route("/register").post(function (req, res, next) {
                 console.error(err);
                 return next(err);
             }
-            return res.status(201).send({message: "success"});
+            return res.status(201).send({
+                email: client.email,
+                clientId: client._id
+            });
         });
     })(req, res, next);
 });
