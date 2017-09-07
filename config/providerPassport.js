@@ -23,11 +23,31 @@ passport.deserializeUser(function (id, done) {
     })
 });
 
-/*
- * No need for login. Provider account is destroyed
- * at the end of the session and is supposed to be
- * logged in only once - when created.
- */
+passport.use(
+    "local-login",
+    new LocalStrategy({
+        usernameField: "name",
+        passwordField: "password",
+        passReqToCallback: true
+    },
+    function (req, name, password, done) {
+        Provider.findOne({ name: name }, function (error, provider) {
+            if (error) {
+                return errorHandler(error);
+            }
+            if (!provider) {
+                return done(null, false, {
+                    errorMsg: "Provider does not exist, please" +
+                    " <a class=\"errorMsg\" href=\"/signup\">signup</a>"
+                });
+            }
+            if (!provider.validPassword(password)) {
+                return done(null, false, { errorMsg: "Invalid password try again" });
+            }
+            return done(null, provider);
+        });
+
+    }));
 
 passport.use(
     "local-signup",

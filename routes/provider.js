@@ -21,14 +21,29 @@ function isLoggedIn(req, res, next) {
     if (req.isAuthenticated()) {
         return next();
     }
-    // There is no login. Provider account is destroyed
-    // at the end of the session.
-    return res.redirect("/register");
+    return res.redirect("/login");
 }
 
-/*
- * No need for GET requests. Provider is an electron app.
- */
+router.post("/login", function (req, res, next) {
+    passport.authenticate("local-login", function (err, provider, info) {
+        if (err) {
+            return next(err); // will generate a 500 error
+        }
+        if (!provider) {
+            return res.status(409).send({ message: "fail" });
+        }
+        req.login(provider, function (err) {
+            if (err) {
+                return next(err);
+            }
+            console.log(req.session);
+            return res.status(201).json({
+                name: provider.name,
+                providerId: provider._id
+            });
+        });
+    })(req, res, next);
+});
 
 router.route("/register").post(function (req, res, next) {
     passport.authenticate("local-signup", function (err, provider, info) {
@@ -44,7 +59,6 @@ router.route("/register").post(function (req, res, next) {
                 return next(err);
             }
             return res.status(201).json({
-                message: "success",
                 name: provider.name,
                 providerId: provider._id
             });
@@ -53,6 +67,7 @@ router.route("/register").post(function (req, res, next) {
 });
 
 router.post("/logout", function (req, res) {
+    console.log("session will be deleted!!");
     req.logout();
     req.session.destroy();
     return res.status(200);

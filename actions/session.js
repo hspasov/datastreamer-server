@@ -1,3 +1,4 @@
+var mongoose = require("mongoose");
 var SessionModel = require("../models/session");
 var errorActions = require("../modules/errorActions");
 
@@ -31,7 +32,7 @@ function createNewSession(request, response) {
 }
 
 function findSession(request, response) {
-    return SessionModel.findOne({ userId: request.params.userId }, "userId",
+    return SessionModel.findOne({ _id: mongoose.Types.ObjectId(request.body.id) }, "userId",
         function (error, session) {
             if (error) {
                 return errorHandler(error);
@@ -60,7 +61,7 @@ function viewAllSessions(request, response) {
 }
 
 function updateSession(request, response) {
-    return SessionModel.findOne({ userId: request.params.userId },
+    return SessionModel.findOne({ _id: mongoose.Types.ObjectId(request.body.id) },
         function (error, session) {
             if (error) {
                 return errorHandler(error);
@@ -80,7 +81,7 @@ function updateSession(request, response) {
 }
 
 function deleteSession(request, response) {
-    return SessionModel.findOneAndRemove({ userId: request.params.userId },
+    return SessionModel.findOneAndRemove({ _id: mongoose.Types.ObjectId(request.body.id) },
         function (error, session) {
             if (error) {
                 return errorHandler(error);
@@ -96,5 +97,5 @@ module.exports = {
     findSession: findSession,
     viewAllSessions: viewAllSessions,
     updateSession: updateSession,
-    deleteSesion: deleteSession
+    deleteSession: deleteSession
 };
