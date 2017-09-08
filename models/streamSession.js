@@ -7,7 +7,11 @@ var StreamSessionSchema = mongoose.Schema({
         type: String,
         required: true
     },
-    userId: {
+    socketId: {
+        type: String,
+        required: true
+    },
+    providerId: {
         type: String,
         required: true
     },

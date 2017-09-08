@@ -5,7 +5,6 @@ export default function reducer(
     }, action) {
     switch (action.type) {
         case "LOGIN_CLIENT": {
-            console.log(action.payload);
             return {
                 ...state,
                 email: action.payload.email,

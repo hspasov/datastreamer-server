@@ -10,16 +10,27 @@ class Home extends React.Component {
         super(props);
         this.state = {
             files: [],
-            socket: io("http://localhost:3000")
+            socket: io("http://localhost:3000", {
+                query: `type=client&id=${this.props.client.clientId}`
+            })
         };
+
+        this.state.socket.on("connectToProviderSuccess", () => {
+            this.state.socket.emit("getAllData", this.props.provider.providerId);
+        });
+
+        this.state.socket.on("sendAllData", data => {
+            console.log(data);
+        });
 
         this.openDirectory = this.openDirectory.bind(this);
     }
 
     componentDidMount() {
-        this.state.socket.on("render", (msg, metadata) => {
+        this.state.socket.emit("connectToProvider", this.props.provider.providerId);
+
+        this.state.socket.on("receiveData", metadata => {
             console.log(metadata);
-            this.refs.render.innerHTML = msg;
             this.setState({
                 files: this.state.files.concat([metadata])
             });
@@ -66,7 +77,8 @@ class Home extends React.Component {
 
 const HomePage = connect(store => {
     return {
-        client: store.client
+        client: store.client,
+        provider: store.provider
     };
 })(Home);
 

@@ -61,7 +61,7 @@ class Register extends React.Component {
             }
         }).then(json => {
             this.props.dispatch(loginClient(json));
-            this.props.history.replace("/home");
+            this.props.history.replace("/connect");
         }).catch(error => {
             console.log(error);
         });

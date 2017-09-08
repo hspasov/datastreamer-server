@@ -6,7 +6,6 @@ var bodyParser = require("body-parser");
 
 var clientRoutes = require("./routes/client");
 var providerRoutes = require("./routes/provider");
-var streamSessionRoutes = require("./routes/streamSession");
 
 var app = express();
 
@@ -23,7 +22,6 @@ app.use(express.static(path.join(__dirname, "public")));
 
 app.use("/", clientRoutes);
 app.use("/provider", providerRoutes);
-app.use("/session", streamSessionRoutes);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

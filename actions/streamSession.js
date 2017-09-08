@@ -5,45 +5,42 @@ var errorActions = require("../modules/errorActions");
 var errorHandler = errorActions.errorHandler;
 var validationError = errorActions.validationError;
 
-function createNewStreamSession(request, response) {
+function createNewStreamSession(socketId, type, providerId, done) {
     return StreamSessionModel.create({
-        type: request.body.type,
-        userId: request.body.userId
+        socketId: socketId,
+        type: type,
+        providerId: providerId
     }, function (error, streamSession) {
         if (error) {
             console.error("There was an error creating the stream session");
             console.error(error.code);
             console.error(error.name);
             if (error.name == "validationerror") {
-                return validationError(error, response);
+                return done(validationError(error, response), null);
             }
             else {
-                return errorHandler(error);
+                return done(errorHandler(error), null);
             }
         }
         console.log("New streamSession successfully created...");
-        console.log(streamSession.userId);
-        return response.json({
+        console.log(streamSession.providerId);
+        return done(null, {
             msg: "Stream session created!",
-            id: streamSession._id,
-            userId: streamSession.userId
+            socketId: streamSession.socketId,
+            providerId: streamSession.providerId,
+            type: streamSession.type
         });
     });
 }
 
-function findStreamSession(request, response) {
-    return StreamSessionModel.findOne({ _id: mongoose.Types.ObjectId(request.body.id) }, "userId",
-        function (error, streamSession) {
+function findStreamSessions(type, providerId, done) {
+    return StreamSessionModel.find({ type: type, providerId: providerId },
+        function (error, streamSessions) {
             if (error) {
-                return errorHandler(error);
+                return done(errorHandler(error), null);
             }
-            if (streamSession == null) {
-                return response.json({
-                    msg: "Stream session does not exist in the dBase"
-                });
-            }
-            console.log(streamSession.userId);
-            return response.json(streamSession);
+            console.log(streamSessions);
+            return done(null, streamSessions);
         }
     );
 }
@@ -80,21 +77,21 @@ function updateStreamSession(request, response) {
     );
 }
 
-function deleteStreamSession(request, response) {
-    return StreamSessionModel.findOneAndRemove({ _id: mongoose.Types.ObjectId(request.body.id) },
+function deleteStreamSession(socketId, done) {
+    return StreamSessionModel.findOneAndRemove({ socketId: socketId },
         function (error, streamSession) {
             if (error) {
-                return errorHandler(error);
+                return done(errorHandler(error), null);
             }
             console.log("Stream session deleted ", streamSession);
-            return response.json(streamSession);
+            return done(null, streamSession);
         }
     );
 }
 
 module.exports = {
     createNewStreamSession: createNewStreamSession,
-    findStreamSession: findStreamSession,
+    findStreamSessions: findStreamSessions,
     viewAllStreamSessions: viewAllStreamSessions,
     updateStreamSession: updateStreamSession,
     deleteStreamSession: deleteStreamSession

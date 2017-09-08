@@ -32,6 +32,12 @@ class AppContainer extends React.Component {
                             onClick={this.goTo.bind(this, "register")}>
                             Register
                         </Button>
+                        <Button
+                            bsStyle="primary"
+                            className="btn-margin"
+                            onClick={this.goTo.bind(this, "connect")}>
+                            Connect
+                        </Button>
                     </Navbar.Header>
                 </Navbar>
             </div>
