@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom";
 import { connect } from "react-redux";
 import io from "socket.io-client";
+import path from "path";
 
 import File from "../components/file.component";
 
@@ -11,37 +12,39 @@ class Home extends React.Component {
         this.state = {
             files: [],
             socket: io("http://localhost:3000", {
-                query: `type=client&id=${this.props.client.clientId}`
+                query: `type=client&id=${this.props.provider.providerId}`
             })
         };
 
         this.state.socket.on("connectToProviderSuccess", () => {
+            console.log("Successfully connected");
             this.state.socket.emit("getAllData", this.props.provider.providerId);
         });
 
-        this.state.socket.on("sendAllData", data => {
-            console.log(data);
+        this.state.socket.on("connectToProviderFail", () => {
+            console.log("Connect to provider failed");
         });
 
-        this.openDirectory = this.openDirectory.bind(this);
-    }
-
-    componentDidMount() {
-        this.state.socket.emit("connectToProvider", this.props.provider.providerId);
+        this.state.socket.on("providerFound", () => {
+            this.state.socket.emit("connectToProvider", this.props.provider.providerId);
+        });
 
         this.state.socket.on("receiveData", metadata => {
-            console.log(metadata);
             this.setState({
                 files: this.state.files.concat([metadata])
             });
         });
     }
 
+    componentDidMount() {
+        this.state.socket.emit("connectToProvider", this.props.provider.providerId);
+    }
+
     openDirectory(name) {
         this.setState({
             files: []
         });
-        this.state.socket.emit("opendirClient", name);
+        this.state.socket.emit("openDirectory", this.props.provider.providerId, name);
     }
 
     render() {
@@ -64,7 +67,7 @@ class Home extends React.Component {
                             />
                             <p>{
                                 file.type == "directory" &&
-                                <button onClick={this.openDirectory}>Open directory</button>
+                                <button onClick={this.openDirectory.bind(this, file.name)}>Open directory</button>
                             }</p>
                             <hr />
                         </div>

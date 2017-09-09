@@ -39,7 +39,6 @@ function findStreamSessions(type, providerId, done) {
             if (error) {
                 return done(errorHandler(error), null);
             }
-            console.log(streamSessions);
             return done(null, streamSessions);
         }
     );
@@ -51,7 +50,6 @@ function viewAllStreamSessions(request, response) {
             if (error) {
                 return errorHandler(error);
             }
-            console.log(streamSessions);
             return response.json(streamSessions);
         }
     );

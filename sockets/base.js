@@ -24,6 +24,16 @@ module.exports = function (io) {
                 } else {
                     console.log(`${socket.id} disconnected`);
                     console.log(Object.keys(io.sockets.sockets).length);
+                    if (sessionInfo.type == "provider") {
+                        findStreamSessions("client", sessionInfo.providerId, function (error, streamSessions) {
+                            if (error) {
+                                console.log(error);
+                            }
+                            streamSessions.forEach(function (client) {
+                                io.to(client.socketId).emit("connectToProviderFail");
+                            });
+                        });
+                    }
                 }
             });
         });
@@ -35,13 +45,25 @@ module.exports = function (io) {
                     console.log("ERROR: multiple providers in database with the same providerId");
                     console.log(streamSessions);
                 } else if (streamSessions.length == 0) {
-                    console.log("todo");
+                    io.to(socket.id).emit("connectToProviderFail");
                 } else if (streamSessions.length == 1) {
                     socket.join(streamSessions[0].socketId);
                     io.to(socket.id).emit("connectToProviderSuccess");
                 }
             });
         });
+
+        socket.on("connectToClients", function (providerId) {
+            findStreamSessions("client", providerId, function (error, streamSessions) {
+                if (error) {
+                    console.log(error);
+                }
+                streamSessions.forEach(function (client) {
+                    io.to(client.socketId).emit("providerFound");
+                });
+            })
+        });
+
         socket.on("getAllData", function (providerId) {
             findStreamSessions("provider", providerId, function (error, streamSessions) {
                 if (error) {
@@ -58,14 +80,26 @@ module.exports = function (io) {
         });
 
         socket.on("sendData", function (receiver, metadata) {
-            io.to(receiver).emit("receiveData", metadata); // todo: change to emit only to this session
+            if (!receiver) {
+                io.to(socket.id).emit("receiveData", metadata);
+            } else {
+                io.to(receiver).emit("receiveData", metadata);
+            }
         });
-        socket.on("serverHandshake", function (msg) {
-            io.to(socket.id).emit("serverHandshake", `Hello, ${socket.id}, from localhost!`);
-        });
-        socket.on("opendirClient", function (selectedDir) {
-            console.log(`triggered by ${socket.id}`);
-            io.emit("opendirProvider", selectedDir); // todo: change to emit only to this session
+
+        socket.on("openDirectory", function (providerId, selectedDirectory) {
+            findStreamSessions("provider", providerId, function (error, streamSessions) {
+                if (error) {
+                    console.log(error);
+                } else if (streamSessions.length > 1) {
+                    console.log("ERROR: multiple providers in database with the same providerId");
+                    console.log(streamSessions);
+                } else if (streamSessions.length == 0) {
+                    console.log("todo");
+                } else if (streamSessions.length == 1) {
+                    io.to(streamSessions[0].socketId).emit("openDirectory", socket.id, selectedDirectory);
+                }
+            });
         });
     });
 };
