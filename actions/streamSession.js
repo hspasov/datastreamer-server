@@ -1,96 +1,108 @@
 var mongoose = require("mongoose");
-var StreamSessionModel = require("../models/streamSession");
+var ProviderSessionModel = require("../models/providerSession");
+var ClientSessionModel = require("../models/clientSession");
+var providerSessionActions = require("./providerSession");
+var clientSessionActions = require("./clientSession");
 var errorActions = require("../modules/errorActions");
 
 var errorHandler = errorActions.errorHandler;
 var validationError = errorActions.validationError;
 
+var createNewProviderSession = providerSessionActions.createNewProviderSession;
+var deleteProviderSession = providerSessionActions.deleteProviderSession;
+var removeClientFromProvider = providerSessionActions.removeClientFromProvider;
+var findProviderSessionBySocketId = providerSessionActions.findProviderSessionBySocketId;
+var addClientToProvider = providerSessionActions.addClientToProvider;
+
+var createNewClientSession = clientSessionActions.createNewClientSession;
+var findClientSession = clientSessionActions.findClientSession;
+var findClientSessionsByProviderId = clientSessionActions.findClientSessionsByProviderId;
+var deleteClientSession = clientSessionActions.deleteClientSession;
+
 function createNewStreamSession(socketId, type, providerId, done) {
-    return StreamSessionModel.create({
-        socketId: socketId,
-        type: type,
-        providerId: providerId
-    }, function (error, streamSession) {
-        if (error) {
-            console.error("There was an error creating the stream session");
-            console.error(error.code);
-            console.error(error.name);
-            if (error.name == "validationerror") {
-                return done(validationError(error, response), null);
+    if (type == "provider") {
+        createNewProviderSession(socketId, providerId, new Array(), function (error, sessionInfo) {
+            if (error) {
+                return done(error, null);
+            } else {
+                findClientSessionsByProviderId(providerId, function (error, clientSessions) {
+                    if (error) {
+                        return done(error, null);
+                    } else {
+                        clientSessions.forEach(function (clientSession) {
+                            addClientToProvider(providerId, clientSession.socketId, function (error, provider) {
+                                if (error) {
+                                    return done(error, null);
+                                }
+                            })
+                        });
+                    }
+                });
+                return done(null, sessionInfo);
             }
-            else {
-                return done(errorHandler(error), null);
-            }
-        }
-        console.log("New streamSession successfully created...");
-        console.log(streamSession.providerId);
-        return done(null, {
-            msg: "Stream session created!",
-            socketId: streamSession.socketId,
-            providerId: streamSession.providerId,
-            type: streamSession.type
         });
-    });
-}
 
-function findStreamSessions(type, providerId, done) {
-    return StreamSessionModel.find({ type: type, providerId: providerId },
-        function (error, streamSessions) {
+    } else if (type == "client") {
+        createNewClientSession(socketId, [providerId], function (error, sessionInfo) {
             if (error) {
-                return done(errorHandler(error), null);
+                return done(error, null);
+            } else {
+                return done(null, sessionInfo);
             }
-            return done(null, streamSessions);
-        }
-    );
-}
+        });
 
-function viewAllStreamSessions(request, response) {
-    return StreamSessionModel.find({},
-        function (error, streamSessions) {
-            if (error) {
-                return errorHandler(error);
-            }
-            return response.json(streamSessions);
-        }
-    );
-}
-
-function updateStreamSession(request, response) {
-    return StreamSessionModel.findOne({ _id: mongoose.Types.ObjectId(request.body.id) },
-        function (error, streamSession) {
-            if (error) {
-                return errorHandler(error);
-            }
-            console.log(stremSession);
-            streamSession.userId = request.body.userId;
-            streamSession.type = request.body.type;
-            streamSession.save(function (error, streamSession) {
-                if (error) {
-                    return errorHandler(error);
-                }
-                console.log("Stream session updated: ", streamSession);
-                return response.json(streamSession);
-            });
-        }
-    );
+    } else {
+        return done(`Error: Invalid argument "type": must be "provider" or "client", but was ${type}.`, null);
+    }
 }
 
 function deleteStreamSession(socketId, done) {
-    return StreamSessionModel.findOneAndRemove({ socketId: socketId },
-        function (error, streamSession) {
-            if (error) {
-                return done(errorHandler(error), null);
-            }
-            console.log("Stream session deleted ", streamSession);
-            return done(null, streamSession);
+    findClientSession(socketId, function (error, clientSession) {
+        if (error) {
+            return done(error, null);
+
+        } else if (!clientSession) {
+            findProviderSessionBySocketId(socketId, function (error, providerSession) {
+                if (error) {
+                    return done(error, null);
+
+                } else if (!providerSession) {
+                    return done("Error: Item not found in database!", null);
+
+                } else {
+                    deleteProviderSession(socketId, function (error, providerSession) {
+                        if (error) {
+                            return done(error, null);
+                        }
+                        return done(null, {
+                            type: "provider",
+                            socketId: providerSession.socketId,
+                            providerId: providerSession.providerId,
+                            clientSocketIds: providerSession.clientSocketIds
+                        });
+                    });
+                }
+            });
+        } else {
+
+            deleteClientSession(socketId, function (error, clientSession) {
+                if (error) {
+                    return done(error, null);
+                }
+                clientSession.providerIds.forEach(function(providerId) {
+                    removeClientFromProvider(providerId, socketId, function (error, changedProvider) {
+                        if (error) {
+                            return done(error, null);
+                        }
+                    });
+                });
+                return done(null, clientSession);
+            });
         }
-    );
+    });
 }
 
 module.exports = {
     createNewStreamSession: createNewStreamSession,
-    findStreamSessions: findStreamSessions,
-    viewAllStreamSessions: viewAllStreamSessions,
-    updateStreamSession: updateStreamSession,
     deleteStreamSession: deleteStreamSession
 };

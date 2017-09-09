@@ -1,12 +1,7 @@
 var mongoose = require('mongoose');
 var bcrypt = require('bcrypt-nodejs');
 
-var StreamSessionSchema = mongoose.Schema({
-    /* type: either "provider" or "client" */
-    type: {
-        type: String,
-        required: true
-    },
+var ProviderSessionSchema = mongoose.Schema({
     socketId: {
         type: String,
         required: true
@@ -15,12 +10,15 @@ var StreamSessionSchema = mongoose.Schema({
         type: String,
         required: true
     },
+    clientSocketIds: {
+        type: [String]
+    },
     created_on: {
         type: Date,
         default: Date.now
     }
 });
 
-var StreamSessionModel = mongoose.model('StreamSession', StreamSessionSchema);
+var ProviderSessionModel = mongoose.model('ProviderSession', ProviderSessionSchema);
 
-module.exports = StreamSessionModel;
+module.exports = ProviderSessionModel;

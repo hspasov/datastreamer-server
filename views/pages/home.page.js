@@ -57,21 +57,23 @@ class Home extends React.Component {
             <div>
                 <div ref="render">Hello World!</div>
                 {this.state.files.map((file, i) => {
-                    return (
-                        <div key={file.path}>
-                            <File
-                            name={file.name}
-                            type={file.type}
-                            size={file.size}
-                            access={file.access}
-                            />
-                            <p>{
-                                file.type == "directory" &&
-                                <button onClick={this.openDirectory.bind(this, file.name)}>Open directory</button>
-                            }</p>
-                            <hr />
-                        </div>
-                    )
+                    if (i > 0) {
+                        return (
+                            <div key={file.path}>
+                                <File
+                                    name={file.name}
+                                    type={file.type}
+                                    size={file.size}
+                                    access={file.access}
+                                />
+                                <p>{
+                                    file.type == "directory" &&
+                                    <button onClick={this.openDirectory.bind(this, file.name)}>Open directory</button>
+                                }</p>
+                                <hr />
+                            </div>
+                        )
+                    }
                 })}
             </div>
         );

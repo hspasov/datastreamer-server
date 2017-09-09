@@ -1,22 +1,34 @@
+var providerSessionActions = require("../actions/providerSession");
+var clientSessionActions = require("../actions/clientSession");
 var streamSessionActions = require("../actions/streamSession");
 
+var findProviderSessionByProviderId = providerSessionActions.findProviderSessionByProviderId;
+var findProviderSessionBySocketId = providerSessionActions.findProviderSessionBySocketId;
+var addClientToProvider = providerSessionActions.addClientToProvider;
+
+var findClientSession = clientSessionActions.findClientSession;
+var findClientSessionsByProviderId = clientSessionActions.findClientSessionsByProviderId;
+
 var createNewStreamSession = streamSessionActions.createNewStreamSession;
-var findStreamSessions = streamSessionActions.findStreamSessions;
-var viewAllStreamSessions = streamSessionActions.viewAllStreamSessions;
-var updateStreamSession = streamSessionActions.updateStreamSession;
 var deleteStreamSession = streamSessionActions.deleteStreamSession;
 
 module.exports = function (io) {
     io.on("connection", function (socket) {
-        createNewStreamSession(socket.id, socket.handshake.query["type"], socket.handshake.query["id"], function (error, sessionInfo) {
-            if (error) {
-                console.log(error);
-            } else {
-                console.log(`${socket.id} connected`);
-                console.log(sessionInfo);
-                console.log(Object.keys(io.sockets.sockets).length);
+        createNewStreamSession(
+            socket.id,
+            socket.handshake.query["type"],
+            socket.handshake.query["id"],
+            function (error, sessionInfo) {
+                if (error) {
+                    console.log(error);
+                } else {
+                    console.log(`${socket.id} connected`);
+                    console.log(sessionInfo);
+                    console.log(Object.keys(io.sockets.sockets).length);
+                }
             }
-        });
+        );
+
         socket.on("disconnect", function () {
             deleteStreamSession(socket.id, function (error, sessionInfo) {
                 if (error) {
@@ -25,62 +37,62 @@ module.exports = function (io) {
                     console.log(`${socket.id} disconnected`);
                     console.log(Object.keys(io.sockets.sockets).length);
                     if (sessionInfo.type == "provider") {
-                        findStreamSessions("client", sessionInfo.providerId, function (error, streamSessions) {
-                            if (error) {
-                                console.log(error);
-                            }
-                            streamSessions.forEach(function (client) {
-                                io.to(client.socketId).emit("connectToProviderFail");
-                            });
+                        sessionInfo.clientSocketIds.forEach(function (client) {
+                            io.to(client).emit("connectToProviderFail");
                         });
                     }
                 }
             });
         });
+
         socket.on("connectToProvider", function (providerId) {
-            findStreamSessions("provider", providerId, function (error, streamSessions) {
+            findProviderSessionByProviderId(providerId, function (error, providerSession) {
                 if (error) {
                     console.log(error);
-                } else if (streamSessions.length > 1) {
-                    console.log("ERROR: multiple providers in database with the same providerId");
-                    console.log(streamSessions);
-                } else if (streamSessions.length == 0) {
+                } else if (!providerSession) {
                     io.to(socket.id).emit("connectToProviderFail");
-                } else if (streamSessions.length == 1) {
-                    socket.join(streamSessions[0].socketId);
-                    io.to(socket.id).emit("connectToProviderSuccess");
+                } else {
+                    addClientToProvider(providerId, socket.id, function (error, providerSession) {
+                        if (error) {
+                            console.log(error);
+                        } else if (!providerSession) {
+                            io.to(socket.id).emit("connectToProviderFail");
+                        } else {
+                            console.log("Joining", providerSession.socketId);
+                            socket.join(providerSession.socketId);
+                            io.to(socket.id).emit("connectToProviderSuccess");
+                        }
+                    });
                 }
             });
         });
 
         socket.on("connectToClients", function (providerId) {
-            findStreamSessions("client", providerId, function (error, streamSessions) {
+            findClientSessionsByProviderId(providerId, function (error, clientSessions) {
                 if (error) {
                     console.log(error);
                 }
-                streamSessions.forEach(function (client) {
+                clientSessions.forEach(function (client) {
                     io.to(client.socketId).emit("providerFound");
                 });
             })
         });
 
         socket.on("getAllData", function (providerId) {
-            findStreamSessions("provider", providerId, function (error, streamSessions) {
+            findProviderSessionByProviderId(providerId, function (error, providerSession) {
                 if (error) {
                     console.log(error);
-                } else if (streamSessions.length > 1) {
-                    console.log("ERROR: multiple providers in database with the same providerId");
-                    console.log(streamSessions);
-                } else if (streamSessions.length == 0) {
+                } else if (!providerSession) {
                     console.log("todo");
-                } else if (streamSessions.length == 1) {
-                    io.to(streamSessions[0].socketId).emit("getAllData", socket.id);
+                } else {
+                    io.to(providerSession.socketId).emit("getAllData", socket.id);
                 }
             });
         });
 
         socket.on("sendData", function (receiver, metadata) {
             if (!receiver) {
+                console.log(socket.id);
                 io.to(socket.id).emit("receiveData", metadata);
             } else {
                 io.to(receiver).emit("receiveData", metadata);
@@ -88,16 +100,13 @@ module.exports = function (io) {
         });
 
         socket.on("openDirectory", function (providerId, selectedDirectory) {
-            findStreamSessions("provider", providerId, function (error, streamSessions) {
+            findProviderSessionByProviderId(providerId, function (error, providerSession) {
                 if (error) {
                     console.log(error);
-                } else if (streamSessions.length > 1) {
-                    console.log("ERROR: multiple providers in database with the same providerId");
-                    console.log(streamSessions);
-                } else if (streamSessions.length == 0) {
+                } else if (!providerSession) {
                     console.log("todo");
-                } else if (streamSessions.length == 1) {
-                    io.to(streamSessions[0].socketId).emit("openDirectory", socket.id, selectedDirectory);
+                } else {
+                    io.to(providerSession.socketId).emit("openDirectory", socket.id, selectedDirectory);
                 }
             });
         });
