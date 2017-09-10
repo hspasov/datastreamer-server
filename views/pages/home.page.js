@@ -18,6 +18,9 @@ class Home extends React.Component {
 
         this.state.socket.on("connectToProviderSuccess", () => {
             console.log("Successfully connected");
+            this.setState({
+                files: []
+            });
             this.state.socket.emit("getAllData", this.props.provider.providerId);
         });
 
@@ -29,18 +32,56 @@ class Home extends React.Component {
             this.state.socket.emit("connectToProvider", this.props.provider.providerId);
         });
 
-        this.state.socket.on("receiveData", metadata => {
-            this.setState({
-                files: this.state.files.concat([metadata])
-            });
+        this.state.socket.on("receiveData", data => {
+            if (!data) {
+                console.log("Provider's configuration does not allow to send data to this client. ");
+            } else {
+                this.processData(data);
+            }
         });
+
+        this.processData = this.processData.bind(this);
     }
 
     componentDidMount() {
         this.state.socket.emit("connectToProvider", this.props.provider.providerId);
     }
 
+    processData(data) {
+        switch (data.action) {
+            case "init":
+            case "add":
+            case "addDir":
+                this.setState({
+                    files: this.state.files.concat([data.value])
+                });
+                break;
+            case "change":
+                this.setState({
+                    files: this.state.files.filter(file => {
+                        return file.path !== data.value.path;
+                    })
+                });
+                this.setState({
+                    files: this.state.files.concat([data.value])
+                });
+                break;
+            case "unlink":
+            case "unlinkDir":
+                this.setState({
+                    files: this.state.files.filter(file => {
+                        return file !== data.value;
+                    })
+                });
+                break;
+        }
+    }
+
     openDirectory(name) {
+        if (name === this.state.files[0].path) {
+            console.log("You are already in root directory!");
+            return;
+        }
         this.setState({
             files: []
         });
@@ -56,6 +97,12 @@ class Home extends React.Component {
         return (
             <div>
                 <div ref="render">Hello World!</div>
+                { this.state.files.length > 0 &&
+                <button
+                    onClick={this.openDirectory.bind(this, path.dirname(this.state.files[0].path))}>
+                    Go back
+                </button>
+                }
                 {this.state.files.map((file, i) => {
                     if (i > 0) {
                         return (
@@ -68,7 +115,7 @@ class Home extends React.Component {
                                 />
                                 <p>{
                                     file.type == "directory" &&
-                                    <button onClick={this.openDirectory.bind(this, file.name)}>Open directory</button>
+                                    <button onClick={this.openDirectory.bind(this, file.path)}>Open directory</button>
                                 }</p>
                                 <hr />
                             </div>
