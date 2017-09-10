@@ -1,15 +1,14 @@
-var express = require("express");
-var path = require("path");
-var logger = require("morgan");
-var cookieParser = require("cookie-parser");
-var bodyParser = require("body-parser");
+const express = require("express");
+const path = require("path");
+const logger = require("morgan");
+const cookieParser = require("cookie-parser");
+const bodyParser = require("body-parser");
 
-var clientRoutes = require("./routes/client");
-var providerRoutes = require("./routes/provider");
+const clientRoutes = require("./routes/client");
+const providerRoutes = require("./routes/provider");
 
-var app = express();
+const app = express();
 
-// view engine setup
 app.set("views", path.join(__dirname, "views"));
 
 // uncomment after placing your favicon in /public
@@ -25,7 +24,7 @@ app.use("/provider", providerRoutes);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
-    var err = new Error("Not Found");
+    let err = new Error("Not Found");
     err.status = 404;
     next(err);
 });
@@ -36,7 +35,6 @@ app.use(function(err, req, res) {
     res.locals.message = err.message;
     res.locals.error = req.app.get("env") === "development" ? err : {};
 
-    // render the error page
     res.status(err.status || 500);
     res.render("error");
 });

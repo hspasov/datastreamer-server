@@ -1,7 +1,7 @@
-var mongoose = require('mongoose');
-var bcrypt = require('bcrypt-nodejs');
+const mongoose = require("mongoose");
+const bcrypt = require("bcrypt-nodejs");
 
-var ProviderSessionSchema = mongoose.Schema({
+const ProviderSessionSchema = mongoose.Schema({
     socketId: {
         type: String,
         required: true
@@ -19,6 +19,6 @@ var ProviderSessionSchema = mongoose.Schema({
     }
 });
 
-var ProviderSessionModel = mongoose.model('ProviderSession', ProviderSessionSchema);
+const ProviderSessionModel = mongoose.model("ProviderSession", ProviderSessionSchema);
 
 module.exports = ProviderSessionModel;

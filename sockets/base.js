@@ -1,24 +1,24 @@
-var providerSessionActions = require("../actions/providerSession");
-var clientSessionActions = require("../actions/clientSession");
-var streamSessionActions = require("../actions/streamSession");
+const providerSessionActions = require("../actions/providerSession");
+const clientSessionActions = require("../actions/clientSession");
+const streamSessionActions = require("../actions/streamSession");
 
-var findProviderSessionByProviderId = providerSessionActions.findProviderSessionByProviderId;
-var findProviderSessionBySocketId = providerSessionActions.findProviderSessionBySocketId;
-var addClientToProvider = providerSessionActions.addClientToProvider;
+const findProviderSessionByProviderId = providerSessionActions.findProviderSessionByProviderId;
+const findProviderSessionBySocketId = providerSessionActions.findProviderSessionBySocketId;
+const addClientToProvider = providerSessionActions.addClientToProvider;
 
-var findClientSession = clientSessionActions.findClientSession;
-var findClientSessionsByProviderId = clientSessionActions.findClientSessionsByProviderId;
+const findClientSession = clientSessionActions.findClientSession;
+const findClientSessionsByProviderId = clientSessionActions.findClientSessionsByProviderId;
 
-var createNewStreamSession = streamSessionActions.createNewStreamSession;
-var deleteStreamSession = streamSessionActions.deleteStreamSession;
+const createNewStreamSession = streamSessionActions.createNewStreamSession;
+const deleteStreamSession = streamSessionActions.deleteStreamSession;
 
-module.exports = function (io) {
-    io.on("connection", function (socket) {
+const base = io => {
+    io.on("connection", socket => {
         createNewStreamSession(
             socket.id,
             socket.handshake.query["type"],
             socket.handshake.query["id"],
-            function (error, sessionInfo) {
+            (error, sessionInfo) => {
                 if (error) {
                     console.log(error);
                 } else {
@@ -29,15 +29,15 @@ module.exports = function (io) {
             }
         );
 
-        socket.on("disconnect", function () {
-            deleteStreamSession(socket.id, function (error, sessionInfo) {
+        socket.on("disconnect", () => {
+            deleteStreamSession(socket.id, (error, sessionInfo) => {
                 if (error) {
                     console.log(error);
                 } else {
                     console.log(`${socket.id} disconnected`);
                     console.log(Object.keys(io.sockets.sockets).length);
                     if (sessionInfo.type == "provider") {
-                        sessionInfo.clientSocketIds.forEach(function (client) {
+                        sessionInfo.clientSocketIds.forEach(client => {
                             io.to(client).emit("connectToProviderFail");
                         });
                     }
@@ -45,20 +45,19 @@ module.exports = function (io) {
             });
         });
 
-        socket.on("connectToProvider", function (providerId) {
-            findProviderSessionByProviderId(providerId, function (error, providerSession) {
+        socket.on("connectToProvider", providerId => {
+            findProviderSessionByProviderId(providerId, (error, providerSession) => {
                 if (error) {
                     console.log(error);
                 } else if (!providerSession) {
                     io.to(socket.id).emit("connectToProviderFail");
                 } else {
-                    addClientToProvider(providerId, socket.id, function (error, providerSession) {
+                    addClientToProvider(providerId, socket.id, (error, providerSession) => {
                         if (error) {
                             console.log(error);
                         } else if (!providerSession) {
                             io.to(socket.id).emit("connectToProviderFail");
                         } else {
-                            console.log("Joining", providerSession.socketId);
                             socket.join(providerSession.socketId);
                             io.to(socket.id).emit("connectToProviderSuccess");
                         }
@@ -67,19 +66,19 @@ module.exports = function (io) {
             });
         });
 
-        socket.on("connectToClients", function (providerId) {
-            findClientSessionsByProviderId(providerId, function (error, clientSessions) {
+        socket.on("connectToClients", providerId => {
+            findClientSessionsByProviderId(providerId, (error, clientSessions) => {
                 if (error) {
                     console.log(error);
                 }
-                clientSessions.forEach(function (client) {
+                clientSessions.forEach(client => {
                     io.to(client.socketId).emit("providerFound");
                 });
             })
         });
 
-        socket.on("getAllData", function (providerId) {
-            findProviderSessionByProviderId(providerId, function (error, providerSession) {
+        socket.on("getAllData", providerId => {
+            findProviderSessionByProviderId(providerId, (error, providerSession) => {
                 if (error) {
                     console.log(error);
                 } else if (!providerSession) {
@@ -90,17 +89,16 @@ module.exports = function (io) {
             });
         });
 
-        socket.on("sendData", function (receiver, metadata) {
+        socket.on("sendData", (receiver, metadata) => {
             if (!receiver) {
-                console.log(socket.id);
                 io.to(socket.id).emit("receiveData", metadata);
             } else {
                 io.to(receiver).emit("receiveData", metadata);
             }
         });
 
-        socket.on("openDirectory", function (providerId, selectedDirectory) {
-            findProviderSessionByProviderId(providerId, function (error, providerSession) {
+        socket.on("openDirectory", (providerId, selectedDirectory) => {
+            findProviderSessionByProviderId(providerId, (error, providerSession) => {
                 if (error) {
                     console.log(error);
                 } else if (!providerSession) {
@@ -112,3 +110,5 @@ module.exports = function (io) {
         });
     });
 };
+
+module.exports = base;

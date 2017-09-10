@@ -1,8 +1,4 @@
-export default function reducer(
-    state = {
-        email: null,
-        clientId: null
-    }, action) {
+const reducer = (state={email: null, clientId: null}, action) => {
     switch (action.type) {
         case "LOGIN_CLIENT": {
             return {
@@ -21,3 +17,5 @@ export default function reducer(
     }
     return state;
 }
+
+export default reducer;

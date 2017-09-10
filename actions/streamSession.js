@@ -1,36 +1,36 @@
-var mongoose = require("mongoose");
-var ProviderSessionModel = require("../models/providerSession");
-var ClientSessionModel = require("../models/clientSession");
-var providerSessionActions = require("./providerSession");
-var clientSessionActions = require("./clientSession");
-var errorActions = require("../modules/errorActions");
+const mongoose = require("mongoose");
+const ProviderSessionModel = require("../models/providerSession");
+const ClientSessionModel = require("../models/clientSession");
+const providerSessionActions = require("./providerSession");
+const clientSessionActions = require("./clientSession");
+const errorActions = require("../modules/errorActions");
 
-var errorHandler = errorActions.errorHandler;
-var validationError = errorActions.validationError;
+const errorHandler = errorActions.errorHandler;
+const validationError = errorActions.validationError;
 
-var createNewProviderSession = providerSessionActions.createNewProviderSession;
-var deleteProviderSession = providerSessionActions.deleteProviderSession;
-var removeClientFromProvider = providerSessionActions.removeClientFromProvider;
-var findProviderSessionBySocketId = providerSessionActions.findProviderSessionBySocketId;
-var addClientToProvider = providerSessionActions.addClientToProvider;
+const createNewProviderSession = providerSessionActions.createNewProviderSession;
+const deleteProviderSession = providerSessionActions.deleteProviderSession;
+const removeClientFromProvider = providerSessionActions.removeClientFromProvider;
+const findProviderSessionBySocketId = providerSessionActions.findProviderSessionBySocketId;
+const addClientToProvider = providerSessionActions.addClientToProvider;
 
-var createNewClientSession = clientSessionActions.createNewClientSession;
-var findClientSession = clientSessionActions.findClientSession;
-var findClientSessionsByProviderId = clientSessionActions.findClientSessionsByProviderId;
-var deleteClientSession = clientSessionActions.deleteClientSession;
+const createNewClientSession = clientSessionActions.createNewClientSession;
+const findClientSession = clientSessionActions.findClientSession;
+const findClientSessionsByProviderId = clientSessionActions.findClientSessionsByProviderId;
+const deleteClientSession = clientSessionActions.deleteClientSession;
 
 function createNewStreamSession(socketId, type, providerId, done) {
     if (type == "provider") {
-        createNewProviderSession(socketId, providerId, new Array(), function (error, sessionInfo) {
+        createNewProviderSession(socketId, providerId, new Array(), (error, sessionInfo) => {
             if (error) {
                 return done(error, null);
             } else {
-                findClientSessionsByProviderId(providerId, function (error, clientSessions) {
+                findClientSessionsByProviderId(providerId, (error, clientSessions) => {
                     if (error) {
                         return done(error, null);
                     } else {
-                        clientSessions.forEach(function (clientSession) {
-                            addClientToProvider(providerId, clientSession.socketId, function (error, provider) {
+                        clientSessions.forEach(clientSession => {
+                            addClientToProvider(providerId, clientSession.socketId, (error, provider) => {
                                 if (error) {
                                     return done(error, null);
                                 }
@@ -43,12 +43,9 @@ function createNewStreamSession(socketId, type, providerId, done) {
         });
 
     } else if (type == "client") {
-        createNewClientSession(socketId, [providerId], function (error, sessionInfo) {
-            if (error) {
-                return done(error, null);
-            } else {
-                return done(null, sessionInfo);
-            }
+        createNewClientSession(socketId, [providerId], (error, sessionInfo) => {
+            return error ?
+                done(error, null) : done(null, sessionInfo);
         });
 
     } else {
@@ -57,12 +54,12 @@ function createNewStreamSession(socketId, type, providerId, done) {
 }
 
 function deleteStreamSession(socketId, done) {
-    findClientSession(socketId, function (error, clientSession) {
+    findClientSession(socketId, (error, clientSession) => {
         if (error) {
             return done(error, null);
 
         } else if (!clientSession) {
-            findProviderSessionBySocketId(socketId, function (error, providerSession) {
+            findProviderSessionBySocketId(socketId, (error, providerSession) => {
                 if (error) {
                     return done(error, null);
 
@@ -70,27 +67,25 @@ function deleteStreamSession(socketId, done) {
                     return done("Error: Item not found in database!", null);
 
                 } else {
-                    deleteProviderSession(socketId, function (error, providerSession) {
-                        if (error) {
-                            return done(error, null);
-                        }
-                        return done(null, {
-                            type: "provider",
-                            socketId: providerSession.socketId,
-                            providerId: providerSession.providerId,
-                            clientSocketIds: providerSession.clientSocketIds
-                        });
+                    deleteProviderSession(socketId, (error, providerSession) => {
+                        return error ?
+                            done(error, null) :
+                            done(null, {
+                                type: "provider",
+                                socketId: providerSession.socketId,
+                                providerId: providerSession.providerId,
+                                clientSocketIds: providerSession.clientSocketIds
+                            });
                     });
                 }
             });
         } else {
-
-            deleteClientSession(socketId, function (error, clientSession) {
+            deleteClientSession(socketId, (error, clientSession) => {
                 if (error) {
                     return done(error, null);
                 }
-                clientSession.providerIds.forEach(function(providerId) {
-                    removeClientFromProvider(providerId, socketId, function (error, changedProvider) {
+                clientSession.providerIds.forEach(providerId => {
+                    removeClientFromProvider(providerId, socketId, (error, changedProvider) => {
                         if (error) {
                             return done(error, null);
                         }

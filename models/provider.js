@@ -1,7 +1,7 @@
-var mongoose = require('mongoose');
-var bcrypt = require('bcrypt-nodejs');
+const mongoose = require("mongoose");
+const bcrypt = require("bcrypt-nodejs");
 
-var ProviderSchema = mongoose.Schema({
+const ProviderSchema = mongoose.Schema({
     name: {
         type: String,
         required: true,
@@ -16,14 +16,14 @@ var ProviderSchema = mongoose.Schema({
     }
 });
 
-ProviderSchema.methods.generateHash = function (password) {
+ProviderSchema.methods.generateHash = password => {
     return bcrypt.hashSync(password, bcrypt.genSaltSync(8), null);
 };
 
-ProviderSchema.methods.validPassword = function (password) {
+ProviderSchema.methods.validPassword = function(password) {
     return bcrypt.compareSync(password, this.password);
 };
 
-var ProviderModel = mongoose.model('Provider', ProviderSchema);
+const ProviderModel = mongoose.model("Provider", ProviderSchema);
 
 module.exports = ProviderModel;

@@ -1,14 +1,14 @@
-var ClientModel = require("../models/client");
-var errorActions = require("../modules/errorActions");
+const ClientModel = require("../models/client");
+const errorActions = require("../modules/errorActions");
 
-var errorHandler = errorActions.errorHandler;
-var validationError = errorActions.validationError;
+const errorHandler = errorActions.errorHandler;
+const validationError = errorActions.validationError;
 
 function createNewClient(request, response) {
     return ClientModel.create({
         email: request.body.email,
         password: request.body.password
-    }, function (error, client) {
+    }, (error, client) => {
         if (error) {
             console.error("There was an error creating the client");
             console.error(error.code);
@@ -32,7 +32,7 @@ function createNewClient(request, response) {
 
 function findClient(request, response) {
     return ClientModel.findOne({ email: request.params.email }, "email",
-        function (error, client) {
+        (error, client) => {
             if (error) {
                 return errorHandler(error);
             }
@@ -50,7 +50,7 @@ function findClient(request, response) {
 
 function viewAllClients(request, response) {
     return ClientModel.find({},
-        function (error, clients) {
+        (error, clients) => {
             if (error) {
                 return errorHandler(error);
             }
@@ -62,14 +62,14 @@ function viewAllClients(request, response) {
 
 function updateClient(request, response) {
     return ClientModel.findOne({ email: request.params.email },
-        function (error, client) {
+        (error, client) => {
             if (error) {
                 return errorHandler(error);
             }
             console.log(client);
             client.email = request.body.email;
             client.password = request.body.password;
-            client.save(function (error, client) {
+            client.save((error, client) => {
                 if (error) {
                     return errorHandler(error);
                 }
@@ -82,7 +82,7 @@ function updateClient(request, response) {
 
 function deleteClient(request, response) {
     return ClientModel.findOneAndRemove({ email: request.params.email },
-        function (error, client) {
+        (error, client) => {
             if (error) {
                 return errorHandler(error);
             }

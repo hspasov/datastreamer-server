@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types";
 
 class File extends React.Component {
     render() {
@@ -15,4 +16,15 @@ class File extends React.Component {
     }
 }
 
-module.exports = File;
+File.propTypes = {
+    name: PropTypes.string.isRequired,
+    type: PropTypes.string.isRequired,
+    size: PropTypes.number.isRequired,
+    access: PropTypes.shape({
+        read: PropTypes.bool.isRequired,
+        write: PropTypes.bool.isRequired,
+        execute: PropTypes.bool.isRequired
+    })
+};
+
+export default File;

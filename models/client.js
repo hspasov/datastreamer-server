@@ -1,7 +1,7 @@
-var mongoose = require('mongoose');
-var bcrypt = require('bcrypt-nodejs');
+const mongoose = require("mongoose");
+const bcrypt = require("bcrypt-nodejs");
 
-var ClientSchema = mongoose.Schema({
+const ClientSchema = mongoose.Schema({
     email: {
         type: String,
         required: true,
@@ -16,14 +16,14 @@ var ClientSchema = mongoose.Schema({
     }
 });
 
-ClientSchema.methods.generateHash = function (password) {
+ClientSchema.methods.generateHash = password => {
     return bcrypt.hashSync(password, bcrypt.genSaltSync(8), null);
 };
 
-ClientSchema.methods.validPassword = function (password) {
+ClientSchema.methods.validPassword = function(password) {
     return bcrypt.compareSync(password, this.password);
 };
 
-var ClientModel = mongoose.model('Client', ClientSchema);
+const ClientModel = mongoose.model("Client", ClientSchema);
 
 module.exports = ClientModel;
