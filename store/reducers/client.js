@@ -1,19 +1,17 @@
 const reducer = (state={email: null, clientId: null}, action) => {
     switch (action.type) {
-        case "LOGIN_CLIENT": {
+        case "LOGIN_CLIENT":
             return {
                 ...state,
                 email: action.payload.email,
                 clientId: action.payload.clientId
             };
-        }
-        case "LOGOUT_CLIENT": {
+        case "LOGOUT_CLIENT":
             return {
                 ...state,
                 email: null,
                 clientId: null
             };
-        }
     }
     return state;
 }

@@ -10,6 +10,7 @@ class Home extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
+            currentDirectory: null,
             files: [],
             socket: io("http://localhost:3000", {
                 query: `type=client&id=${this.props.provider.providerId}`
@@ -21,7 +22,7 @@ class Home extends React.Component {
             this.setState({
                 files: []
             });
-            this.state.socket.emit("getAllData", this.props.provider.providerId);
+            this.state.socket.emit("subscribeToProvider", this.props.provider.providerId);
         });
 
         this.state.socket.on("connectToProviderFail", () => {
@@ -32,10 +33,17 @@ class Home extends React.Component {
             this.state.socket.emit("connectToProvider", this.props.provider.providerId);
         });
 
+        this.state.socket.on("receiveDirectoryData", data => {
+            this.setState({ currentDirectory: data });
+            console.log("received dir:", data);
+        });
+
         this.state.socket.on("receiveData", data => {
             if (!data) {
                 console.log("Provider's configuration does not allow to send data to this client. ");
             } else {
+                console.log("processing data");
+                console.log(data);
                 this.processData(data);
             }
         });
@@ -78,13 +86,14 @@ class Home extends React.Component {
     }
 
     openDirectory(name) {
-        if (name === this.state.files[0].path) {
+        if (name === this.state.currentDirectory.path) {
             console.log("You are already in root directory!");
             return;
         }
         this.setState({
             files: []
         });
+        console.log("Opening directory", name);
         this.state.socket.emit("openDirectory", this.props.provider.providerId, name);
     }
 
@@ -97,14 +106,14 @@ class Home extends React.Component {
         return (
             <div>
                 <div ref="render">Hello World!</div>
-                { this.state.files.length > 0 &&
+                {this.state.currentDirectory &&
                 <button
-                    onClick={this.openDirectory.bind(this, path.dirname(this.state.files[0].path))}>
+                    onClick={this.openDirectory.bind(this, path.dirname(this.state.currentDirectory.path))}>
                     Go back
                 </button>
                 }
                 {this.state.files.map((file, i) => {
-                    if (i > 0) {
+                    {/* if (i > 0) { */}
                         return (
                             <div key={file.path}>
                                 <File
@@ -120,7 +129,7 @@ class Home extends React.Component {
                                 <hr />
                             </div>
                         )
-                    }
+                    {/* } */}
                 })}
             </div>
         );

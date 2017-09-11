@@ -40,6 +40,18 @@ const base = io => {
                         sessionInfo.clientSocketIds.forEach(client => {
                             io.to(client).emit("connectToProviderFail");
                         });
+                    } else if (sessionInfo.type == "client") {
+                        sessionInfo.providerIds.forEach(providerId => {
+                            findProviderSessionByProviderId(providerId, (error, providerSession) => {
+                                if (error) {
+                                    console.log(error);
+                                } else if (providerSession) {
+                                    io.to(providerSession.socketId).emit("removeClient", socket.id);
+                                }
+                            });
+                        });
+                    } else {
+                        console.log("ERROR: Invalid session type", sessionInfo.type);
                     }
                 }
             });
@@ -59,6 +71,7 @@ const base = io => {
                             io.to(socket.id).emit("connectToProviderFail");
                         } else {
                             socket.join(providerSession.socketId);
+                            // io.to(providerSession.socketId).emit("addClient", socket.id);
                             io.to(socket.id).emit("connectToProviderSuccess");
                         }
                     });
@@ -77,16 +90,20 @@ const base = io => {
             })
         });
 
-        socket.on("getAllData", providerId => {
+        socket.on("subscribeToProvider", providerId => {
             findProviderSessionByProviderId(providerId, (error, providerSession) => {
                 if (error) {
                     console.log(error);
                 } else if (!providerSession) {
                     console.log("todo");
                 } else {
-                    io.to(providerSession.socketId).emit("getAllData", socket.id);
+                    io.to(providerSession.socketId).emit("subscribedClient", socket.id);
                 }
             });
+        });
+
+        socket.on("sendDirectoryData", (receiver, metadata) => {
+            io.to(receiver).emit("receiveDirectoryData", metadata);
         });
 
         socket.on("sendData", (receiver, metadata) => {
