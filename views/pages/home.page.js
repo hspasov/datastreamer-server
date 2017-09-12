@@ -74,7 +74,7 @@ class Home extends React.Component {
             case "unlinkDir":
                 this.setState({
                     files: this.state.files.filter(file => {
-                        return file !== data.value;
+                        return file.path !== data.value.path;
                     })
                 });
                 break;

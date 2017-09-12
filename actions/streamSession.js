@@ -91,7 +91,11 @@ function deleteStreamSession(socketId, done) {
                         }
                     });
                 });
-                return done(null, clientSession);
+                return done(null, {
+                    type: "client",
+                    socketId: clientSession.socketId,
+                    providerIds: clientSession.providerIds
+                });
             });
         }
     });
