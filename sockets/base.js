@@ -46,7 +46,7 @@ const base = io => {
                                 if (error) {
                                     console.log(error);
                                 } else if (providerSession) {
-                                    io.to(providerSession.socketId).emit("removeClient", socket.id);
+                                    io.to(providerSession.socketId).emit("unsubscribedClient", socket.id);
                                 }
                             });
                         });
@@ -70,8 +70,6 @@ const base = io => {
                         } else if (!providerSession) {
                             io.to(socket.id).emit("connectToProviderFail");
                         } else {
-                            socket.join(providerSession.socketId);
-                            // io.to(providerSession.socketId).emit("addClient", socket.id);
                             io.to(socket.id).emit("connectToProviderSuccess");
                         }
                     });

@@ -9,40 +9,37 @@ import File from "../components/file.component";
 class Home extends React.Component {
     constructor(props) {
         super(props);
+        this.socket = io("http://localhost:3000", {
+            query: `type=client&id=${this.props.provider.providerId}`
+        });
         this.state = {
             currentDirectory: null,
-            files: [],
-            socket: io("http://localhost:3000", {
-                query: `type=client&id=${this.props.provider.providerId}`
-            })
+            files: []
         };
 
-        this.state.socket.on("connectToProviderSuccess", () => {
+        this.socket.on("connectToProviderSuccess", () => {
             console.log("Successfully connected");
-            this.setState({
-                files: []
-            });
-            this.state.socket.emit("subscribeToProvider", this.props.provider.providerId);
+            this.setState({ files: [] });
+            this.socket.emit("subscribeToProvider", this.props.provider.providerId);
         });
 
-        this.state.socket.on("connectToProviderFail", () => {
+        this.socket.on("connectToProviderFail", () => {
             console.log("Connect to provider failed");
         });
 
-        this.state.socket.on("providerFound", () => {
-            this.state.socket.emit("connectToProvider", this.props.provider.providerId);
+        this.socket.on("providerFound", () => {
+            this.socket.emit("connectToProvider", this.props.provider.providerId);
         });
 
-        this.state.socket.on("receiveDirectoryData", data => {
-            this.setState({ currentDirectory: data });
+        this.socket.on("receiveDirectoryData", data => {
+            this.setState({ currentDirectory: data, files: [] });
             console.log("received dir:", data);
         });
 
-        this.state.socket.on("receiveData", data => {
+        this.socket.on("receiveData", data => {
             if (!data) {
                 console.log("Provider's configuration does not allow to send data to this client. ");
             } else {
-                console.log("processing data");
                 console.log(data);
                 this.processData(data);
             }
@@ -52,12 +49,11 @@ class Home extends React.Component {
     }
 
     componentDidMount() {
-        this.state.socket.emit("connectToProvider", this.props.provider.providerId);
+        this.socket.emit("connectToProvider", this.props.provider.providerId);
     }
 
     processData(data) {
         switch (data.action) {
-            case "init":
             case "add":
             case "addDir":
                 this.setState({
@@ -90,11 +86,9 @@ class Home extends React.Component {
             console.log("You are already in root directory!");
             return;
         }
-        this.setState({
-            files: []
-        });
+        this.setState({ files: [] });
         console.log("Opening directory", name);
-        this.state.socket.emit("openDirectory", this.props.provider.providerId, name);
+        this.socket.emit("openDirectory", this.props.provider.providerId, name);
     }
 
     render() {
