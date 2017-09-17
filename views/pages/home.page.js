@@ -5,6 +5,7 @@ import io from "socket.io-client";
 import path from "path";
 
 import File from "../components/file.component";
+import streamSaver from 'streamsaver';
 
 class Home extends React.Component {
     constructor(props) {
@@ -31,20 +32,74 @@ class Home extends React.Component {
             this.socket.emit("connectToProvider", this.props.provider.providerId);
         });
 
-        this.socket.on("receiveDirectoryData", data => {
-            this.setState({ currentDirectory: data, files: [] });
-            console.log("received dir:", data);
+        // this.socket.on("receiveDirectoryData", data => {
+        //     this.setState({ currentDirectory: data, files: [] });
+        //     console.log("received dir:", data);
+        // });
+
+        // this.socket.on("receiveData", data => {
+        //     if (!data) {
+        //         console.log("Provider's configuration does not allow to send data to this client. ");
+        //     } else {
+        //         console.log(data);
+        //         this.processData(data);
+        //     }
+        // });
+
+        // this.socket.on("streamFile", stream => {
+        //     console.log("streaming started");
+        //     console.log(stream);
+        // });
+
+        this.socket.on("setRemoteDescription", description => {
+            console.log("setting remote description", description);
+            this.peerConnection.setRemoteDescription(description);
         });
 
-        this.socket.on("receiveData", data => {
-            if (!data) {
-                console.log("Provider's configuration does not allow to send data to this client. ");
-            } else {
-                console.log(data);
-                this.processData(data);
+        this.socket.on("iceCallback2", candidate => {
+            console.log("inside iceCallback2", candidate);
+            this.peerConnection.addIceCandidate(candidate).then(
+                () => {
+                    console.log("added ice candidate");
+                },
+                error => {
+                    console.log("failed to add candidate", error);
+                }
+            );
+        });
+
+        this.servers = null;
+        this.peerConnectionConstraint = null;
+        this.dataConstraint = null;
+        this.peerConnection = new RTCPeerConnection(this.servers, this.peerConnectionConstraint);
+        console.log("created peer connection", this.peerConnection);
+        this.sendChannel = this.peerConnection.createDataChannel("sendDataChannel", this.dataConstraint);
+        console.log("created send channel", this.sendChannel);
+
+        this.peerConnection.onicecandidate = event => {
+            console.log("ice callback");
+            if (event.candidate) {
+                console.log("sending candidate", event.candidate);
+                this.socket.emit("iceCallback1", this.props.provider.providerId, event.candidate);
             }
-        });
+        };
 
+        this.sendChannel.onopen = () => {
+            console.log("Send channel is ", this.sendChannel.readyState);
+            this.sendChannel.send("It works");
+        }
+
+        this.peerConnection.createOffer().then(
+            description => {
+                console.log("setting local description", description);
+                this.peerConnection.setLocalDescription(description);
+                console.log("Offer from localConnection \n" + description.sdp);
+                this.socket.emit("createOffer", this.props.provider.providerId, description);
+            },
+            error => {
+                console.log("there was an error creating an offer");
+            }
+        );
         this.processData = this.processData.bind(this);
     }
 
@@ -88,7 +143,12 @@ class Home extends React.Component {
         }
         this.setState({ files: [] });
         console.log("Opening directory", name);
-        this.socket.emit("openDirectory", this.props.provider.providerId, name);
+        // this.socket.emit("openDirectory", this.props.provider.providerId, name);
+    }
+
+    downloadFile(name) {
+        console.log("downloading", name);
+        // this.socket.emit("downloadFile", this.props.provider.providerId, name);
     }
 
     render() {
@@ -117,8 +177,9 @@ class Home extends React.Component {
                                     access={file.access}
                                 />
                                 <p>{
-                                    file.type == "directory" &&
-                                    <button onClick={this.openDirectory.bind(this, file.path)}>Open directory</button>
+                                    (file.type == "directory") ?
+                                        <button onClick={this.openDirectory.bind(this, file.path)}>Open directory</button> :
+                                        <button onClick={this.downloadFile.bind(this, file.path)}>Download file</button>
                                 }</p>
                                 <hr />
                             </div>
