@@ -21,7 +21,6 @@ class Home extends React.Component {
         this.socket.on("connectToProviderSuccess", () => {
             console.log("Successfully connected");
             this.setState({ files: [] });
-            this.socket.emit("subscribeToProvider", this.props.provider.providerId);
         });
 
         this.socket.on("connectToProviderFail", () => {
@@ -29,7 +28,7 @@ class Home extends React.Component {
         });
 
         this.socket.on("providerFound", () => {
-            this.socket.emit("connectToProvider", this.props.provider.providerId);
+            this.connectToProvider();
         });
 
         // this.socket.on("receiveDirectoryData", data => {
@@ -51,13 +50,45 @@ class Home extends React.Component {
         //     console.log(stream);
         // });
 
-        this.socket.on("setRemoteDescription", description => {
+        this.servers = null;
+        this.peerConnectionConstraint = null;
+        this.dataConstraint = null;
+        this.peerConnection = new RTCPeerConnection(this.servers, this.peerConnectionConstraint);
+        console.log("created peer connection", this.peerConnection);
+        this.sendChannel = this.peerConnection.createDataChannel("sendDataChannel", this.dataConstraint);
+        console.log("created send channel", this.sendChannel);
+        this.receiveChannel = this.peerConnection.createDataChannel("receiveDataChannel", this.dataConstraint);
+        console.log("created recieve channel", this.receiveChannel);
+
+        this.sendChannel.onopen = () => {
+            console.log("Send channel is ", this.sendChannel.readyState);
+            this.sendChannel.send("It works, from client");
+        }
+
+        this.peerConnection.ondatachannel = event => {
+            console.log("Receive channel callback");
+            this.receiveChannel = event.channel;
+            this.receiveChannel.onmessage = event => {
+                console.log("Message: ", event.data);
+            }
+        }
+
+        this.processData = this.processData.bind(this);
+        this.connectToProvider = this.connectToProvider.bind(this);
+    }
+
+    componentDidMount() {
+        this.connectToProvider();
+    }
+
+    connectToProvider() {
+        this.socket.on("receiveProviderDescription", description => {
             console.log("setting remote description", description);
             this.peerConnection.setRemoteDescription(description);
         });
 
-        this.socket.on("iceCallback2", candidate => {
-            console.log("inside iceCallback2", candidate);
+        this.socket.on("receiveICECandidate", candidate => {
+            console.log("receiving ICE Candidate", candidate);
             this.peerConnection.addIceCandidate(candidate).then(
                 () => {
                     console.log("added ice candidate");
@@ -68,43 +99,25 @@ class Home extends React.Component {
             );
         });
 
-        this.servers = null;
-        this.peerConnectionConstraint = null;
-        this.dataConstraint = null;
-        this.peerConnection = new RTCPeerConnection(this.servers, this.peerConnectionConstraint);
-        console.log("created peer connection", this.peerConnection);
-        this.sendChannel = this.peerConnection.createDataChannel("sendDataChannel", this.dataConstraint);
-        console.log("created send channel", this.sendChannel);
-
         this.peerConnection.onicecandidate = event => {
             console.log("ice callback");
             if (event.candidate) {
                 console.log("sending candidate", event.candidate);
-                this.socket.emit("iceCallback1", this.props.provider.providerId, event.candidate);
+                this.socket.emit("sendICECandidate", "provider", this.props.provider.providerId, event.candidate);
             }
         };
-
-        this.sendChannel.onopen = () => {
-            console.log("Send channel is ", this.sendChannel.readyState);
-            this.sendChannel.send("It works");
-        }
 
         this.peerConnection.createOffer().then(
             description => {
                 console.log("setting local description", description);
                 this.peerConnection.setLocalDescription(description);
                 console.log("Offer from localConnection \n" + description.sdp);
-                this.socket.emit("createOffer", this.props.provider.providerId, description);
+                this.socket.emit("connectToProvider", this.props.provider.providerId, description);
             },
             error => {
                 console.log("there was an error creating an offer");
             }
         );
-        this.processData = this.processData.bind(this);
-    }
-
-    componentDidMount() {
-        this.socket.emit("connectToProvider", this.props.provider.providerId);
     }
 
     processData(data) {

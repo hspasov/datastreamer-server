@@ -19,85 +19,85 @@ const findClientSession = clientSessionActions.findClientSession;
 const findClientSessionsByProviderId = clientSessionActions.findClientSessionsByProviderId;
 const deleteClientSession = clientSessionActions.deleteClientSession;
 
-function createNewStreamSession(socketId, type, providerId, done) {
-    if (type == "provider") {
-        createNewProviderSession(socketId, providerId, new Array(), (error, sessionInfo) => {
-            if (error) {
-                return done(error, null);
-            } else {
-                findClientSessionsByProviderId(providerId, (error, clientSessions) => {
-                    if (error) {
-                        return done(error, null);
-                    } else {
-                        clientSessions.forEach(clientSession => {
-                            addClientToProvider(providerId, clientSession.socketId, (error, provider) => {
-                                if (error) {
-                                    return done(error, null);
-                                }
-                            })
+function createNewStreamSession(socketId, type, providerId) {
+    return new Promise((resolve, reject) => {
+        if (type == "provider") {
+            createNewProviderSession(socketId, providerId, new Array())
+            .then(sessionInfo => {
+                findClientSessionsByProviderId(providerId)
+                .then(clientSessions => {
+                    clientSessions.forEach(clientSession => {
+                        addClientToProvider(providerId, clientSession.socketId)
+                        .catch(error => {
+                            reject(error);
                         });
-                    }
+                    });
+                }).catch(error => {
+                    reject(error);
                 });
-                return done(null, sessionInfo);
-            }
-        });
-
-    } else if (type == "client") {
-        createNewClientSession(socketId, [providerId], (error, sessionInfo) => {
-            return error ?
-                done(error, null) : done(null, sessionInfo);
-        });
-
-    } else {
-        return done(`Error: Invalid argument "type": must be "provider" or "client", but was ${type}.`, null);
-    }
+                resolve(sessionInfo);
+            }).catch(error => {
+                reject(error);
+            });
+        } else if (type == "client") {
+            createNewClientSession(socketId, [providerId])
+            .then(sessionInfo => {
+                resolve(sessionInfo);
+            }).catch(error => {
+                reject(error);
+            });
+        } else {
+            reject(`Error: Invalid argument "type": must be "provider" or "client", but was ${type}.`);
+        }
+    });
 }
 
 function deleteStreamSession(socketId, done) {
-    findClientSession(socketId, (error, clientSession) => {
-        if (error) {
-            return done(error, null);
-
-        } else if (!clientSession) {
-            findProviderSessionBySocketId(socketId, (error, providerSession) => {
-                if (error) {
-                    return done(error, null);
-
-                } else if (!providerSession) {
-                    return done("Error: Item not found in database!", null);
-
-                } else {
-                    deleteProviderSession(socketId, (error, providerSession) => {
-                        return error ?
-                            done(error, null) :
-                            done(null, {
+    return new Promise((resolve, reject) => {
+        findClientSession(socketId)
+        .then(clientSession => {
+            if (!clientSession) {
+                findProviderSessionBySocketId(socketId)
+                .then(providerSession => {
+                    if (!providerSession) {
+                        reject("Error: Item not found in database!");
+                    } else {
+                        deleteProviderSession(socketId)
+                        .then(providerSession => {
+                            resolve({
                                 type: "provider",
                                 socketId: providerSession.socketId,
                                 providerId: providerSession.providerId,
                                 clientSocketIds: providerSession.clientSocketIds
                             });
-                    });
-                }
-            });
-        } else {
-            deleteClientSession(socketId, (error, clientSession) => {
-                if (error) {
-                    return done(error, null);
-                }
-                clientSession.providerIds.forEach(providerId => {
-                    removeClientFromProvider(providerId, socketId, (error, changedProvider) => {
-                        if (error) {
-                            return done(error, null);
-                        }
-                    });
+                        }).catch(error => {
+                            reject(error);
+                        });
+                    }
+                }).catch(error => {
+                    reject(error);
                 });
-                return done(null, {
-                    type: "client",
-                    socketId: clientSession.socketId,
-                    providerIds: clientSession.providerIds
+            } else {
+                deleteClientSession(socketId)
+                .then(clientSession => {
+                    clientSession.providerIds.forEach(providerId => {
+                        removeClientFromProvider(providerId, socketId)
+                        .catch(error => {
+                            reject(error);
+                        });
+                    });
+                    resolve({
+                        type: "client",
+                        socketId: clientSession.socketId,
+                        providerIds: clientSession.providerIds
+                    });
+                }).catch(error => {
+                    reject(error);
                 });
-            });
-        }
+            }
+        }).catch(error => {
+            reject(error);
+        });
     });
 }
 

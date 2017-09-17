@@ -5,55 +5,63 @@ const errorActions = require("../modules/errorActions");
 const errorHandler = errorActions.errorHandler;
 const validationError = errorActions.validationError;
 
-function createNewClientSession(socketId, providerIds, done) {
-    return ClientSessionModel.create({
-        socketId: socketId,
-        providerIds: providerIds
-    }, (error, clientSession) => {
-        if (error) {
+function createNewClientSession(socketId, providerIds) {
+    return new Promise((resolve, reject) => {
+        ClientSessionModel.create({
+            socketId: socketId,
+            providerIds: providerIds
+        }).then(clientSession => {
+            console.log("New client session successfully created...");
+            console.log(clientSession.socketId);
+            resolve({
+                socketId: clientSession.socketId,
+                providerIds: clientSession.providerIds
+            });
+        }).catch(error => {
             console.error("There was an error creating the client session");
             console.error(error.code);
             console.error(error.name);
             if (error.name == "validationerror") {
-                return done(validationError(error), null);
+                reject(validationError(error));
             }
             else {
-                return done(errorHandler(error), null);
+                reject(errorHandler(error));
             }
-        }
-        console.log("New client session successfully created...");
-        console.log(clientSession.socketId);
-        return done(null, {
-            socketId: clientSession.socketId,
-            providerIds: clientSession.providerIds
+        })
+    });
+}
+
+function findClientSessionsByProviderId(providerId) {
+    return new Promise((resolve, reject) => {
+        ClientSessionModel.find({ providerIds: providerId })
+        .then(clientSessions => {
+            resolve(clientSessions);
+        }).catch(error => {
+            reject(error);
         });
     });
 }
 
-function findClientSessionsByProviderId(providerId, done) {
-    return ClientSessionModel.find({ providerIds: providerId },
-        (error, clientSessions) => {
-            return error ?
-                done(errorHandler(error), null) : done(null, clientSessions);
-        }
-    );
-}
-
-function findClientSession(socketId, done) {
-    return ClientSessionModel.find({ socketId: socketId },
-        (error, clientSessions) => {
-            if (error) {
-                return done(errorHandler(error), null);
-            } else if (clientSessions.length > 1) {
-                return (done(errorHandler("Error: Multiple clients with same id found in database!"), null));
+function findClientSession(socketId) {
+    return new Promise((resolve, reject) => {
+        ClientSessionModel.find({ socketId: socketId })
+        .then(clientSessions => {
+            if (clientSessions.length > 1) {
+                reject(errorHandler("Error: Multiple clients with same id found in database!"));
             } else if (clientSessions.length == 0) {
-                return done(null, null);
+                resolve(null);
             } else if (clientSessions.length == 1) {
-                return done(null, clientSessions[0]);
+                resolve(clientSessions[0]);
+            } else {
+                reject({
+                    msg: "Error: Invalid state",
+                    clientSessions: clientSessions
+                });
             }
-            return done("Error: Invalid state", clientSession);
-        }
-    );
+        }).catch(error => {
+            reject(errorHandler(error));
+        });
+    });
 }
 
 /*function viewAllClientSessions(request, response) {
@@ -65,51 +73,59 @@ function findClientSession(socketId, done) {
     );
 }*/
 
-function updateClientSession(socketId, providerIds, done) {
-    return ClientSessionModel.findOne({ socketId: socketId },
-        (error, clientSession) => {
-            if (error) {
-                return done(errorHandler(error), null);
-            }
+function updateClientSession(socketId, providerIds) {
+    return new Promise((resolve, reject) => {
+        ClientSessionModel.findOne({ socketId: socketId })
+        .then(clientSession => {
             clientSession.socketId = socketId;
             clientSession.providerIds = providerIds;
-            clientSession.save((error, clientSession) => {
-                return error ?
-                    done(errorHandler(error), null) : done(null, clientSession);
+            clientSession.save()
+            .then(clientSession => {
+                resolve(clientSession);
+            }).catch(error => {
+                reject(errorHandler(error));
             });
-        }
-    );
+        }).catch(error => {
+            reject(errorHandler(error));
+        });
+    });
 }
 
-function removeProviderFromClient(providerId, clientSocketId, done) {
-    return ClientSessionModel.findOneAndUpdate(
-        { socketId: clientSocketId },
-        { $pull: { providerIds: providerId } },
-        (error, client) => {
-            return error ?
-                done(error, null) : done(null, client);
-        }
-    );
+function removeProviderFromClient(providerId, clientSocketId) {
+    return new Promise((resolve, reject) => {
+        ClientSessionModel.findOneAndUpdate(
+            { socketId: clientSocketId },
+            { $pull: { providerIds: providerId } }
+        ).then(client => {
+            resolve(client);
+        }).catch(error => {
+            reject(error);
+        });
+    });
 }
 
-function addProviderToClient(providerId, clientSocketId, done) {
-    return CLientSessionModel.findOneAndUpdate(
-        { socketId: clientSocketId },
-        { $push: { providerIds: providerId } },
-        (error, client) => {
-            return error ?
-                done(error, null) : done(null, client);
-        }
-    );
+function addProviderToClient(providerId, clientSocketId) {
+    return new Promise((resolve, reject) => {
+        ClientSessionModel.findOneAndUpdate(
+            { socketId: clientSocketId },
+            { $push: { providerIds: providerId } }
+        ).then(client => {
+            resolve(client);
+        }).catch(error => {
+            reject(error);
+        });
+    });
 }
 
-function deleteClientSession(socketId, done) {
-    return ClientSessionModel.findOneAndRemove({ socketId: socketId },
-        (error, clientSession) => {
-            return error ?
-                done(errorHandler(error), null) : done(null, clientSession);
-        }
-    );
+function deleteClientSession(socketId) {
+    return new Promise((resolve, reject) => {
+        ClientSessionModel.findOneAndRemove({ socketId: socketId })
+        .then(clientSession => {
+            resolve(clientSession);
+        }).catch(error => {
+            reject(errorHandler(error));
+        });
+    });
 }
 
 module.exports = {

@@ -5,61 +5,66 @@ const errorActions = require("../modules/errorActions");
 const errorHandler = errorActions.errorHandler;
 const validationError = errorActions.validationError;
 
-function createNewProviderSession(socketId, providerId, clientSocketIds, done) {
-    return ProviderSessionModel.create({
-        socketId: socketId,
-        providerId: providerId,
-        clientSocketIds: clientSocketIds
-    }, (error, providerSession) => {
-        if (error) {
+function createNewProviderSession(socketId, providerId, clientSocketIds) {
+    return new Promise((resolve, reject) => {
+        ProviderSessionModel.create({
+            socketId: socketId,
+            providerId: providerId,
+            clientSocketIds: clientSocketIds
+        }).then(providerSession => {
+            console.log("New provider session successfully created...");
+            console.log(providerSession.providerId);
+            resolve({
+                socketId: providerSession.socketId,
+                providerId: providerSession.providerId,
+                clientSocketIds: providerSession.clientSocketIds
+            });
+        }).catch(error => {
             console.error("There was an error creating the provider session");
             console.error(error.code);
             console.error(error.name);
-            return (error.name == "validationerror") ?
-                done(validationError(error), null) : done(errorHandler(error), null);
-        }
-        console.log("New provider session successfully created...");
-        console.log(providerSession.providerId);
-        return done(null, {
-            socketId: providerSession.socketId,
-            providerId: providerSession.providerId,
-            clientSocketIds: providerSession.clientSocketIds
+            reject((error.name == "validationerror") ?
+                validationError(error) : errorHandler(error));
         });
     });
 }
 
-function findProviderSessionByProviderId(providerId, done) {
-    return ProviderSessionModel.find({ providerId: providerId },
-        (error, providerSessions) => {
-            if (error) {
-                return done(errorHandler(error), null);
-            } else if (providerSessions.length > 1) {
-                return (done(errorHandler("Error: Multiple providers with same id found in database!"), null));
+function findProviderSessionByProviderId(providerId) {
+    return new Promise((resolve, reject) => {
+        ProviderSessionModel.find({ providerId: providerId })
+        .then(providerSessions => {
+            if (providerSessions.length > 1) {
+                reject(errorHandler("Error: Multiple providers with same id found in database!"));
             } else if (providerSessions.length == 0) {
-                return done(null, null);
+                resolve(null);
             } else if (providerSessions.length == 1) {
-                return done(null, providerSessions[0]);
+                resolve(providerSessions[0]);
+            } else {
+                reject("Error: Invalid state", providerSessions);
             }
-            return done("Error: Invalid state", providerSessions);
-        }
-    );
+        }).catch(error => {
+            reject(errorHandler(error));
+        });
+    });
 }
 
-function findProviderSessionBySocketId(socketId, done) {
-    return ProviderSessionModel.find({ socketId: socketId },
-        (error, providerSessions) => {
-            if (error) {
-                return done(errorHandler(error), null);
-            } else if (providerSessions.length > 1) {
-                return (done(errorHandler("Error: Multiple providers with same id found in database!"), null));
+function findProviderSessionBySocketId(socketId) {
+    return new Promise((resolve, reject) => {
+        ProviderSessionModel.find({ socketId: socketId })
+        .then(providerSessions => {
+            if (providerSessions.length > 1) {
+                reject(errorHandler("Error: Multiple providers with same id found in database!"));
             } else if (providerSessions.length == 0) {
-                return done(null, null);
+                resolve(null, null);
             } else if (providerSessions.length == 1) {
-                return done(null, providerSessions[0]);
+                resolve(providerSessions[0]);
+            } else {
+                reject("Error: Invalid state", providerSessions);
             }
-            return done("Error: Invalid state", providerSessions);
-        }
-    );
+        }).catch(error => {
+            reject(errorHandler(error));
+        });
+    });
 }
 
 /*function viewAllProviderSessions(request, response) {
@@ -71,52 +76,60 @@ function findProviderSessionBySocketId(socketId, done) {
     );
 }*/
 
-function updateProviderSession(socketId, providerId, clientSocketIds, done) {
-    return ProviderSessionModel.findOne({ socketId: socketId },
-        (error, providerSession) => {
-            if (error) {
-                return done(errorHandler(error), null);
-            }
+function updateProviderSession(socketId, providerId, clientSocketIds) {
+    return new Promise((resolve, reject) => {
+        ProviderSessionModel.findOne({ socketId: socketId })
+        .then(providerSession => {
             providerSession.socketId = socketId;
             providerSession.providerId = providerId;
             providerSession.clientSocketIds = clientSocketIds;
-            providerSession.save((error, providerSession) => {
-                return error ?
-                    done(errorHandler(error), null) : done(null, providerSession);
+            providerSession.save()
+            .then(providerSession => {
+                resolve(providerSession);
+            }).catch(error => {
+                reject(errorHandler(error));
             });
-        }
-    );
+        }).catch(error => {
+            reject(errorHandler(error));
+        });
+    });
 }
 
-function removeClientFromProvider(providerId, clientSocketId, done) {
-    return ProviderSessionModel.findOneAndUpdate(
-        { providerId: providerId },
-        { $pull: { clientSocketIds: clientSocketId } },
-        (error, provider) => {
-            return error ?
-                done(error, null) : done(null, provider);
-        }
-    );
+function removeClientFromProvider(providerId, clientSocketId) {
+    return new Promise((resolve, reject) => {
+        ProviderSessionModel.findOneAndUpdate(
+            { providerId: providerId },
+            { $pull: { clientSocketIds: clientSocketId } }
+        ).then(provider => {
+            resolve(provider);
+        }).catch(error => {
+            reject(error);
+        });
+    });
 }
 
-function addClientToProvider(providerId, clientSocketId, done) {
-    return ProviderSessionModel.findOneAndUpdate(
-        { providerId: providerId },
-        { $push: { clientSocketIds: clientSocketId } },
-        (error, provider) => {
-            return error ?
-                done(error, null) : done(null, provider);
-        }
-    );
+function addClientToProvider(providerId, clientSocketId) {
+    return new Promise((resolve, reject) => {
+        ProviderSessionModel.findOneAndUpdate(
+            { providerId: providerId },
+            { $push: { clientSocketIds: clientSocketId } }
+        ).then(provider => {
+            resolve(provider);
+        }).catch(error => {
+            reject(error);
+        });
+    });
 }
 
-function deleteProviderSession(socketId, done) {
-    return ProviderSessionModel.findOneAndRemove({ socketId: socketId },
-        (error, providerSession) => {
-            return error ?
-                done(errorHandler(error), null) : done(null, providerSession);
-        }
-    );
+function deleteProviderSession(socketId) {
+    return new Promise((resolve, reject) => {
+        ProviderSessionModel.findOneAndRemove({ socketId: socketId })
+        .then(providerSession => {
+            resolve(providerSession);
+        }).catch(error => {
+            reject(error);
+        });
+    });
 }
 
 module.exports = {
