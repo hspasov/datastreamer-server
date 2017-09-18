@@ -1,5 +1,3 @@
-const fs = require("fs");
-
 const providerSessionActions = require("../actions/providerSession");
 const clientSessionActions = require("../actions/clientSession");
 const streamSessionActions = require("../actions/streamSession");
@@ -84,9 +82,9 @@ const base = io => {
             io.to(clientId).emit("receiveProviderDescription", description);
         });
 
-        socket.on("sendICECandidate", (receiverType, providerId, candidate) => {
+        socket.on("sendICECandidate", (receiverType, userId, candidate) => {
             if (receiverType === "provider") {
-                findProviderSessionByProviderId(providerId)
+                findProviderSessionByProviderId(userId)
                 .then(providerSession => {
                     if (!providerSession) {
                         console.log("todo");
@@ -97,14 +95,7 @@ const base = io => {
                     console.log(error);
                 });
             } else if (receiverType === "client") {
-                findClientSessionsByProviderId(providerId)
-                .then(clientSessions => {
-                    clientSessions.forEach(client => { // todo: emit only to one client
-                        io.to(client.socketId).emit("receiveICECandidate", candidate);
-                    });
-                }).catch(error => {
-                    console.log(error);
-                });
+                io.to(userId).emit("receiveICECandidate", candidate);
             } else {
                 console.log("Invalid receiver type", receiverType);
             }
@@ -120,30 +111,6 @@ const base = io => {
                 console.log(error);
             });
         });
-
-        // socket.on("sendDirectoryData", (receiver, metadata) => {
-        //     io.to(receiver).emit("receiveDirectoryData", metadata);
-        // });
-
-        // socket.on("sendData", (receiver, metadata) => {
-        //     if (!receiver) {
-        //         io.to(socket.id).emit("receiveData", metadata);
-        //     } else {
-        //         io.to(receiver).emit("receiveData", metadata);
-        //     }
-        // });
-
-        // socket.on("openDirectory", (providerId, selectedDirectory) => {
-        //     findProviderSessionByProviderId(providerId, (error, providerSession) => {
-        //         if (error) {
-        //             console.log(error);
-        //         } else if (!providerSession) {
-        //             console.log("todo");
-        //         } else {
-        //             io.to(providerSession.socketId).emit("openDirectory", socket.id, selectedDirectory);
-        //         }
-        //     });
-        // });
     });
 };
 

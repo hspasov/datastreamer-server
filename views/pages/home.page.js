@@ -31,10 +31,6 @@ class Home extends React.Component {
             this.connectToProvider();
         });
 
-        // this.socket.on("receiveDirectoryData", data => {
-        //     this.setState({ currentDirectory: data, files: [] });
-        //     console.log("received dir:", data);
-        // });
 
         // this.socket.on("receiveData", data => {
         //     if (!data) {
@@ -62,26 +58,25 @@ class Home extends React.Component {
 
         this.sendChannel.onopen = () => {
             console.log("Send channel is ", this.sendChannel.readyState);
-            this.sendChannel.send("It works, from client");
+            this.sendChannel.send(JSON.stringify({
+                action: "message",
+                message: "It works, from client"
+            }));
         }
 
         this.peerConnection.ondatachannel = event => {
             console.log("Receive channel callback");
             this.receiveChannel = event.channel;
             this.receiveChannel.onmessage = event => {
-                console.log("Message: ", event.data);
+                this.processMessage(JSON.parse(event.data));
             }
         }
 
-        this.processData = this.processData.bind(this);
+        this.processMessage = this.processMessage.bind(this);
         this.connectToProvider = this.connectToProvider.bind(this);
     }
 
     componentDidMount() {
-        this.connectToProvider();
-    }
-
-    connectToProvider() {
         this.socket.on("receiveProviderDescription", description => {
             console.log("setting remote description", description);
             this.peerConnection.setRemoteDescription(description);
@@ -106,7 +101,10 @@ class Home extends React.Component {
                 this.socket.emit("sendICECandidate", "provider", this.props.provider.providerId, event.candidate);
             }
         };
+        this.connectToProvider();
+    }
 
+    connectToProvider() {
         this.peerConnection.createOffer().then(
             description => {
                 console.log("setting local description", description);
@@ -120,31 +118,38 @@ class Home extends React.Component {
         );
     }
 
-    processData(data) {
-        switch (data.action) {
+    processMessage(message) {
+        switch (message.action) {
+            case "sendDirectoryData":
+                this.setState({ currentDirectory: message.data, files: [] });
+                console.log("received dir:", message.data);
+                break;
             case "add":
             case "addDir":
                 this.setState({
-                    files: this.state.files.concat([data.value])
+                    files: this.state.files.concat([message.data])
                 });
                 break;
             case "change":
                 this.setState({
                     files: this.state.files.filter(file => {
-                        return file.path !== data.value.path;
+                        return file.path !== message.data.path;
                     })
                 });
                 this.setState({
-                    files: this.state.files.concat([data.value])
+                    files: this.state.files.concat([message.data])
                 });
                 break;
             case "unlink":
             case "unlinkDir":
                 this.setState({
                     files: this.state.files.filter(file => {
-                        return file.path !== data.value.path;
+                        return file.path !== message.data.path;
                     })
                 });
+                break;
+            case "message":
+                console.log(message.message);
                 break;
         }
     }
@@ -156,7 +161,10 @@ class Home extends React.Component {
         }
         this.setState({ files: [] });
         console.log("Opening directory", name);
-        // this.socket.emit("openDirectory", this.props.provider.providerId, name);
+        this.sendChannel.send(JSON.stringify({
+            action: "openDirectory",
+            selectedDirectory: name
+        }));
     }
 
     downloadFile(name) {
