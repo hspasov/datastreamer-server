@@ -31,33 +31,14 @@ class Home extends React.Component {
             this.connectToProvider();
         });
 
-
-        // this.socket.on("receiveData", data => {
-        //     if (!data) {
-        //         console.log("Provider's configuration does not allow to send data to this client. ");
-        //     } else {
-        //         console.log(data);
-        //         this.processData(data);
-        //     }
-        // });
-
-        // this.socket.on("streamFile", stream => {
-        //     console.log("streaming started");
-        //     console.log(stream);
-        // });
-
         this.servers = null;
         this.peerConnectionConstraint = null;
         this.dataConstraint = null;
         this.peerConnection = new RTCPeerConnection(this.servers, this.peerConnectionConstraint);
-        console.log("created peer connection", this.peerConnection);
         this.sendChannel = this.peerConnection.createDataChannel("sendDataChannel", this.dataConstraint);
-        console.log("created send channel", this.sendChannel);
         this.receiveChannel = this.peerConnection.createDataChannel("receiveDataChannel", this.dataConstraint);
-        console.log("created recieve channel", this.receiveChannel);
 
         this.sendChannel.onopen = () => {
-            console.log("Send channel is ", this.sendChannel.readyState);
             this.sendChannel.send(JSON.stringify({
                 action: "message",
                 message: "It works, from client"
@@ -65,7 +46,6 @@ class Home extends React.Component {
         }
 
         this.peerConnection.ondatachannel = event => {
-            console.log("Receive channel callback");
             this.receiveChannel = event.channel;
             this.receiveChannel.onmessage = event => {
                 this.processMessage(JSON.parse(event.data));
@@ -78,16 +58,12 @@ class Home extends React.Component {
 
     componentDidMount() {
         this.socket.on("receiveProviderDescription", description => {
-            console.log("setting remote description", description);
             this.peerConnection.setRemoteDescription(description);
         });
 
         this.socket.on("receiveICECandidate", candidate => {
-            console.log("receiving ICE Candidate", candidate);
             this.peerConnection.addIceCandidate(candidate).then(
-                () => {
-                    console.log("added ice candidate");
-                },
+                () => {},
                 error => {
                     console.log("failed to add candidate", error);
                 }
@@ -95,9 +71,7 @@ class Home extends React.Component {
         });
 
         this.peerConnection.onicecandidate = event => {
-            console.log("ice callback");
             if (event.candidate) {
-                console.log("sending candidate", event.candidate);
                 this.socket.emit("sendICECandidate", "provider", this.props.provider.providerId, event.candidate);
             }
         };
@@ -105,11 +79,10 @@ class Home extends React.Component {
     }
 
     connectToProvider() {
+        console.log("connecting to provider");
         this.peerConnection.createOffer().then(
             description => {
-                console.log("setting local description", description);
                 this.peerConnection.setLocalDescription(description);
-                console.log("Offer from localConnection \n" + description.sdp);
                 this.socket.emit("connectToProvider", this.props.provider.providerId, description);
             },
             error => {
@@ -120,9 +93,11 @@ class Home extends React.Component {
 
     processMessage(message) {
         switch (message.action) {
-            case "sendDirectoryData":
-                this.setState({ currentDirectory: message.data, files: [] });
-                console.log("received dir:", message.data);
+            case "sendCurrentDirectory":
+                this.setState({
+                    currentDirectory: message.data.path,
+                    files: []
+                });
                 break;
             case "add":
             case "addDir":
@@ -155,11 +130,14 @@ class Home extends React.Component {
     }
 
     openDirectory(name) {
-        if (name === this.state.currentDirectory.path) {
+        if (name === this.state.currentDirectory) {
             console.log("You are already in root directory!");
             return;
         }
-        this.setState({ files: [] });
+        this.setState({
+            currentDirectory: name,
+            files: []
+        });
         console.log("Opening directory", name);
         this.sendChannel.send(JSON.stringify({
             action: "openDirectory",
@@ -183,12 +161,11 @@ class Home extends React.Component {
                 <div ref="render">Hello World!</div>
                 {this.state.currentDirectory &&
                 <button
-                    onClick={this.openDirectory.bind(this, path.dirname(this.state.currentDirectory.path))}>
+                    onClick={this.openDirectory.bind(this, path.dirname(this.state.currentDirectory))}>
                     Go back
                 </button>
                 }
                 {this.state.files.map((file, i) => {
-                    {/* if (i > 0) { */}
                         return (
                             <div key={file.path}>
                                 <File
@@ -205,7 +182,6 @@ class Home extends React.Component {
                                 <hr />
                             </div>
                         )
-                    {/* } */}
                 })}
             </div>
         );

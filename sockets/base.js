@@ -42,7 +42,9 @@ const base = io => {
                     sessionInfo.providerIds.forEach(providerId => {
                         findProviderSessionByProviderId(providerId)
                         .then(providerSession => {
-                            io.to(providerSession.socketId).emit("unsubscribedClient", socket.id);
+                            if (providerSession) {
+                                io.to(providerSession.socketId).emit("unsubscribedClient", socket.id);
+                            }
                         }).catch(error => {
                             console.log(error);
                         });
@@ -67,7 +69,7 @@ const base = io => {
                             io.to(socket.id).emit("connectToProviderFail");
                         } else {
                             io.to(socket.id).emit("connectToProviderSuccess");
-                            io.to(providerSession.socketId).emit("setRemoteDescription", socket.id, description);
+                            io.to(providerSession.socketId).emit("subscribedClient", socket.id, description);
                         }
                     }).catch(error => {
                         console.log(error);
