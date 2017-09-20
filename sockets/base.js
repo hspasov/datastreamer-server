@@ -57,7 +57,7 @@ const base = io => {
             });
         });
 
-        socket.on("connectToProvider", (providerId, description) => {
+        socket.on("connectToProvider", providerId => {
             findProviderSessionByProviderId(providerId)
             .then(providerSession => {
                 if (!providerSession) {
@@ -69,7 +69,7 @@ const base = io => {
                             io.to(socket.id).emit("connectToProviderFail");
                         } else {
                             io.to(socket.id).emit("connectToProviderSuccess");
-                            io.to(providerSession.socketId).emit("subscribedClient", socket.id, description);
+                            io.to(providerSession.socketId).emit("subscribedClient", socket.id);
                         }
                     }).catch(error => {
                         console.log(error);
@@ -78,6 +78,32 @@ const base = io => {
             }).catch(error => {
                 console.log(error);
             });
+        });
+
+        socket.on("requestP2PConnection", clientId => {
+            io.to(clientId).emit("requestedP2PConnection");
+        });
+
+        socket.on("offerP2PConnection", (providerId, description) => {
+            findProviderSessionByProviderId(providerId)
+                .then(providerSession => {
+                    if (!providerSession) {
+                        io.to(socket.id).emit("connectToProviderFail");
+                    } else {
+                        addClientToProvider(providerId, socket.id)
+                            .then(providerSession => {
+                                if (!providerSession) {
+                                    io.to(socket.id).emit("connectToProviderFail");
+                                } else {
+                                    io.to(providerSession.socketId).emit("initConnection", socket.id, description);
+                                }
+                            }).catch(error => {
+                                console.log(error);
+                            });
+                    }
+                }).catch(error => {
+                    console.log(error);
+                });
         });
 
         socket.on("connectToClient", (clientId, description) => {

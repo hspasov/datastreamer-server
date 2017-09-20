@@ -24,71 +24,120 @@ class Home extends React.Component {
         });
 
         this.socket.on("connectToProviderFail", () => {
-            console.log("Connect to provider failed");
+            if (this.peerConnection) {
+                console.log("Connect to provider failed");
+                console.log("Closed data channel with label: " + this.sendChannel.label);
+                console.log(this.sendChannel);
+                this.sendChannel && this.sendChannel.close();
+                console.log(this.sendChannel);
+                this.sendChannel = null;
+                console.log("Closed data channel with label: " + this.receiveChannel.label);
+                console.log(this.receiveChannel);
+                this.receiveChannel && this.receiveChannel.close();
+                console.log(this.receiveChannel);
+                this.receiveChannel = null;
+                this.peerConnection && this.peerConnection.close();
+                this.peerConnection = null;
+                console.log("Closed peer connection");
+            }
         });
 
         this.socket.on("providerFound", () => {
             this.connectToProvider();
         });
 
+        this.socket.on("requestedP2PConnection", () => {
+            try {
+                console.log("requested P2P connection");
+                this.peerConnection = new RTCPeerConnection(this.servers, this.peerConnectionConstraint);
+                this.sendChannel = this.peerConnection.createDataChannel("sendDataChannel", this.dataConstraint);
+                this.receiveChannel = this.peerConnection.createDataChannel("receiveDataChannel", this.dataConstraint);
+
+                this.peerConnection.onicecandidate = event => {
+                    if (event.candidate) {
+                        console.log("sending ICE candidate", event.candidate);
+                        this.socket.emit("sendICECandidate", "provider", this.props.provider.providerId, event.candidate);
+                    }
+                };
+
+                this.sendChannel.onopen = () => {
+                    this.sendChannel.send(JSON.stringify({
+                        action: "message",
+                        message: "It works, from client"
+                    }));
+                }
+
+                this.peerConnection.ondatachannel = event => {
+                    this.receiveChannel = event.channel;
+                    this.receiveChannel.onmessage = event => {
+                        this.processMessage(JSON.parse(event.data));
+                    }
+                }
+
+                this.peerConnection.createOffer().then(
+                    description => {
+                        this.peerConnection.setLocalDescription(description);
+                        console.log("just after set local description");
+                        console.log("Offering p2p connection");
+                        this.socket.emit("offerP2PConnection", this.props.provider.providerId, description);
+                    },
+                    error => {
+                        console.log("there was an error creating an offer");
+                    }
+                );
+            } catch (e) {
+                if (!this.peerConnection || !this.sendChannel || !this.receiveChannel) {
+                    console.log("Connection to provider lost.");
+                } else {
+                    throw e;
+                }
+            }
+        });
+
+        this.socket.on("receiveProviderDescription", description => {
+            try {
+                this.peerConnection.setRemoteDescription(description);
+            } catch (e) {
+                if (!this.peerConnection) {
+                    console.log("Connection to provider lost.");
+                } else {
+                    throw e;
+                }
+            }
+        });
+
+        this.socket.on("receiveICECandidate", candidate => {
+            try {
+                this.peerConnection.addIceCandidate(candidate).then(
+                    () => { },
+                    error => {
+                        console.log("failed to add candidate", error);
+                    }
+                );
+            } catch (e) {
+                if (!this.peerConnection) {
+                    console.log("Connection to provider lost.");
+                } else {
+                    throw e;
+                }
+            }
+        });
+
         this.servers = null;
         this.peerConnectionConstraint = null;
         this.dataConstraint = null;
-        this.peerConnection = new RTCPeerConnection(this.servers, this.peerConnectionConstraint);
-        this.sendChannel = this.peerConnection.createDataChannel("sendDataChannel", this.dataConstraint);
-        this.receiveChannel = this.peerConnection.createDataChannel("receiveDataChannel", this.dataConstraint);
-
-        this.sendChannel.onopen = () => {
-            this.sendChannel.send(JSON.stringify({
-                action: "message",
-                message: "It works, from client"
-            }));
-        }
-
-        this.peerConnection.ondatachannel = event => {
-            this.receiveChannel = event.channel;
-            this.receiveChannel.onmessage = event => {
-                this.processMessage(JSON.parse(event.data));
-            }
-        }
 
         this.processMessage = this.processMessage.bind(this);
         this.connectToProvider = this.connectToProvider.bind(this);
     }
 
     componentDidMount() {
-        this.socket.on("receiveProviderDescription", description => {
-            this.peerConnection.setRemoteDescription(description);
-        });
-
-        this.socket.on("receiveICECandidate", candidate => {
-            this.peerConnection.addIceCandidate(candidate).then(
-                () => {},
-                error => {
-                    console.log("failed to add candidate", error);
-                }
-            );
-        });
-
-        this.peerConnection.onicecandidate = event => {
-            if (event.candidate) {
-                this.socket.emit("sendICECandidate", "provider", this.props.provider.providerId, event.candidate);
-            }
-        };
         this.connectToProvider();
     }
 
     connectToProvider() {
         console.log("connecting to provider");
-        this.peerConnection.createOffer().then(
-            description => {
-                this.peerConnection.setLocalDescription(description);
-                this.socket.emit("connectToProvider", this.props.provider.providerId, description);
-            },
-            error => {
-                console.log("there was an error creating an offer");
-            }
-        );
+        this.socket.emit("connectToProvider", this.props.provider.providerId);
     }
 
     processMessage(message) {
@@ -139,10 +188,18 @@ class Home extends React.Component {
             files: []
         });
         console.log("Opening directory", name);
-        this.sendChannel.send(JSON.stringify({
-            action: "openDirectory",
-            selectedDirectory: name
-        }));
+        try {
+            this.sendChannel.send(JSON.stringify({
+                action: "openDirectory",
+                selectedDirectory: name
+            }));
+        } catch (e) {
+            if (!this.sendChannel) {
+                console.log("Can't finish task. Connection to provider lost.");
+            } else {
+                console.log(e);
+            }
+        }
     }
 
     downloadFile(name) {
@@ -161,6 +218,7 @@ class Home extends React.Component {
                 <div ref="render">Hello World!</div>
                 {this.state.currentDirectory &&
                 <button
+                    disabled={path.dirname(this.state.currentDirectory) === this.state.currentDirectory}
                     onClick={this.openDirectory.bind(this, path.dirname(this.state.currentDirectory))}>
                     Go back
                 </button>
