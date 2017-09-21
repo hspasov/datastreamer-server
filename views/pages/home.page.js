@@ -24,22 +24,12 @@ class Home extends React.Component {
         });
 
         this.socket.on("connectToProviderFail", () => {
-            if (this.peerConnection) {
-                console.log("Connect to provider failed");
-                console.log("Closed data channel with label: " + this.sendChannel.label);
-                console.log(this.sendChannel);
-                this.sendChannel && this.sendChannel.close();
-                console.log(this.sendChannel);
-                this.sendChannel = null;
-                console.log("Closed data channel with label: " + this.receiveChannel.label);
-                console.log(this.receiveChannel);
-                this.receiveChannel && this.receiveChannel.close();
-                console.log(this.receiveChannel);
-                this.receiveChannel = null;
-                this.peerConnection && this.peerConnection.close();
-                this.peerConnection = null;
-                console.log("Closed peer connection");
-            }
+            this.deleteP2PConnection();
+        });
+
+        this.socket.on("resetConnection", () => {
+            this.deleteP2PConnection();
+            this.initializeP2PConnection();
         });
 
         this.socket.on("providerFound", () => {
@@ -47,51 +37,7 @@ class Home extends React.Component {
         });
 
         this.socket.on("requestedP2PConnection", () => {
-            try {
-                console.log("requested P2P connection");
-                this.peerConnection = new RTCPeerConnection(this.servers, this.peerConnectionConstraint);
-                this.sendChannel = this.peerConnection.createDataChannel("sendDataChannel", this.dataConstraint);
-                this.receiveChannel = this.peerConnection.createDataChannel("receiveDataChannel", this.dataConstraint);
-
-                this.peerConnection.onicecandidate = event => {
-                    if (event.candidate) {
-                        console.log("sending ICE candidate", event.candidate);
-                        this.socket.emit("sendICECandidate", "provider", this.props.provider.providerId, event.candidate);
-                    }
-                };
-
-                this.sendChannel.onopen = () => {
-                    this.sendChannel.send(JSON.stringify({
-                        action: "message",
-                        message: "It works, from client"
-                    }));
-                }
-
-                this.peerConnection.ondatachannel = event => {
-                    this.receiveChannel = event.channel;
-                    this.receiveChannel.onmessage = event => {
-                        this.processMessage(JSON.parse(event.data));
-                    }
-                }
-
-                this.peerConnection.createOffer().then(
-                    description => {
-                        this.peerConnection.setLocalDescription(description);
-                        console.log("just after set local description");
-                        console.log("Offering p2p connection");
-                        this.socket.emit("offerP2PConnection", this.props.provider.providerId, description);
-                    },
-                    error => {
-                        console.log("there was an error creating an offer");
-                    }
-                );
-            } catch (e) {
-                if (!this.peerConnection || !this.sendChannel || !this.receiveChannel) {
-                    console.log("Connection to provider lost.");
-                } else {
-                    throw e;
-                }
-            }
+            this.initializeP2PConnection();
         });
 
         this.socket.on("receiveProviderDescription", description => {
@@ -112,6 +58,7 @@ class Home extends React.Component {
                     () => { },
                     error => {
                         console.log("failed to add candidate", error);
+                        this.deleteP2PConnection(error);
                     }
                 );
             } catch (e) {
@@ -127,8 +74,10 @@ class Home extends React.Component {
         this.peerConnectionConstraint = null;
         this.dataConstraint = null;
 
+        this.deleteProviderSession = this.deleteP2PConnection.bind(this);
         this.processMessage = this.processMessage.bind(this);
         this.connectToProvider = this.connectToProvider.bind(this);
+        this.initializeP2PConnection = this.initializeP2PConnection.bind(this);
     }
 
     componentDidMount() {
@@ -138,6 +87,77 @@ class Home extends React.Component {
     connectToProvider() {
         console.log("connecting to provider");
         this.socket.emit("connectToProvider", this.props.provider.providerId);
+    }
+
+    initializeP2PConnection() {
+        try {
+            console.log("requested P2P connection");
+            this.peerConnection = new RTCPeerConnection(this.servers, this.peerConnectionConstraint);
+            this.sendChannel = this.peerConnection.createDataChannel("sendDataChannel", this.dataConstraint);
+            this.receiveChannel = this.peerConnection.createDataChannel("receiveDataChannel", this.dataConstraint);
+
+            this.peerConnection.onicecandidate = event => {
+                if (event.candidate) {
+                    console.log("sending ICE candidate", event.candidate);
+                    this.socket.emit("sendICECandidate", "provider", this.props.provider.providerId, event.candidate);
+                }
+            };
+
+            this.sendChannel.onopen = () => {
+                this.sendChannel.send(JSON.stringify({
+                    action: "message",
+                    message: "It works, from client"
+                }));
+            }
+
+            this.peerConnection.ondatachannel = event => {
+                this.receiveChannel = event.channel;
+                this.receiveChannel.onmessage = event => {
+                    this.processMessage(JSON.parse(event.data));
+                }
+            }
+
+            this.peerConnection.createOffer().then(
+                description => {
+                    this.peerConnection.setLocalDescription(description);
+                    console.log("just after set local description");
+                    console.log("Offering p2p connection");
+                    this.socket.emit("offerP2PConnection", this.props.provider.providerId, description);
+                },
+                error => {
+                    console.log("there was an error creating an offer");
+                    this.deleteP2PConnection(error);
+                }
+            );
+        } catch (e) {
+            if (!this.peerConnection || !this.sendChannel || !this.receiveChannel) {
+                console.log("Connection to provider lost.");
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    deleteP2PConnection(error = null) {
+        if (this.peerConnection) {
+            console.log("Connect to provider failed");
+            console.log("Closed data channel with label: " + this.sendChannel.label);
+            console.log(this.sendChannel);
+            this.sendChannel && this.sendChannel.close();
+            console.log(this.sendChannel);
+            this.sendChannel = null;
+            console.log("Closed data channel with label: " + this.receiveChannel.label);
+            console.log(this.receiveChannel);
+            this.receiveChannel && this.receiveChannel.close();
+            console.log(this.receiveChannel);
+            this.receiveChannel = null;
+            this.peerConnection && this.peerConnection.close();
+            this.peerConnection = null;
+            console.log("Closed peer connection");
+            if (error) {
+                this.socket.emit("resetProviderConnection", this.props.provider.providerId);
+            }
+        }
     }
 
     processMessage(message) {

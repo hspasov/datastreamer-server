@@ -80,6 +80,23 @@ const base = io => {
             });
         });
 
+        socket.on("resetClientConnection", clientId => {
+            io.to(clientId).emit("resetConnection");
+        });
+
+        socket.on("resetProviderConnection", providerId => {
+            findProviderSessionByProviderId(providerId)
+                .then(providerSession => {
+                    if (!providerSession) {
+                        io.to(socket.id).emit("connectToProviderFail");
+                    } else {
+                        io.to(providerSession.socketId).emit("resetConnection", socket.id);
+                    }
+                }).catch(error => {
+                    console.log(error);
+                });
+        });
+
         socket.on("requestP2PConnection", clientId => {
             io.to(clientId).emit("requestedP2PConnection");
         });
