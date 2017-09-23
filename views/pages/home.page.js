@@ -15,6 +15,8 @@ class Home extends React.Component {
         });
         this.state = {
             currentDirectory: null,
+            downloadedFile: "",
+            downloadedFileName: "",
             files: []
         };
 
@@ -73,9 +75,11 @@ class Home extends React.Component {
         this.servers = null;
         this.peerConnectionConstraint = null;
         this.dataConstraint = null;
+        this.receiveBuffer = [];
 
         this.deleteProviderSession = this.deleteP2PConnection.bind(this);
         this.processMessage = this.processMessage.bind(this);
+        this.processChunk = this.processChunk.bind(this);
         this.connectToProvider = this.connectToProvider.bind(this);
         this.initializeP2PConnection = this.initializeP2PConnection.bind(this);
     }
@@ -93,8 +97,7 @@ class Home extends React.Component {
         try {
             console.log("requested P2P connection");
             this.peerConnection = new RTCPeerConnection(this.servers, this.peerConnectionConstraint);
-            this.sendChannel = this.peerConnection.createDataChannel("sendDataChannel", this.dataConstraint);
-            this.receiveChannel = this.peerConnection.createDataChannel("receiveDataChannel", this.dataConstraint);
+            this.sendMessageChannel = this.peerConnection.createDataChannel("sendMessageChannel", this.dataConstraint);
 
             this.peerConnection.onicecandidate = event => {
                 if (event.candidate) {
@@ -103,17 +106,28 @@ class Home extends React.Component {
                 }
             };
 
-            this.sendChannel.onopen = () => {
-                this.sendChannel.send(JSON.stringify({
+            this.sendMessageChannel.onopen = () => {
+                this.sendMessageChannel.send(JSON.stringify({
                     action: "message",
                     message: "It works, from client"
                 }));
             }
 
             this.peerConnection.ondatachannel = event => {
-                this.receiveChannel = event.channel;
-                this.receiveChannel.onmessage = event => {
-                    this.processMessage(JSON.parse(event.data));
+                switch (event.channel.label) {
+                    case "sendMessageChannel":
+                        this.receiveMessageChannel = event.channel;
+                        this.receiveMessageChannel.onmessage = event => {
+                            this.processMessage(JSON.parse(event.data));
+                        };
+                        break;
+                    case "sendFileChannel":
+                        this.receiveFileChannel = event.channel;
+                        this.receiveFileChannel.binaryType = "arraybuffer";
+                        this.receiveFileChannel.onmessage = event => {
+                            this.processChunk(event.data);
+                        };
+                        break;
                 }
             }
 
@@ -130,7 +144,7 @@ class Home extends React.Component {
                 }
             );
         } catch (e) {
-            if (!this.peerConnection || !this.sendChannel || !this.receiveChannel) {
+            if (!this.peerConnection || !this.sendMessageChannel || !this.receiveFileChannel || !this.receiveMessageChannel) {
                 console.log("Connection to provider lost.");
             } else {
                 throw e;
@@ -141,16 +155,19 @@ class Home extends React.Component {
     deleteP2PConnection(error = null) {
         if (this.peerConnection) {
             console.log("Connect to provider failed");
-            console.log("Closed data channel with label: " + this.sendChannel.label);
-            console.log(this.sendChannel);
-            this.sendChannel && this.sendChannel.close();
-            console.log(this.sendChannel);
-            this.sendChannel = null;
-            console.log("Closed data channel with label: " + this.receiveChannel.label);
-            console.log(this.receiveChannel);
-            this.receiveChannel && this.receiveChannel.close();
-            console.log(this.receiveChannel);
-            this.receiveChannel = null;
+            this.sendMessageChannel && console.log("Closed data channel with label: " + this.sendMessageChannel.label);
+            console.log(this.sendMessageChannel);
+            this.sendMessageChannel && this.sendMessageChannel.close();
+            console.log(this.sendMessageChannel);
+            this.sendMessageChannel = null;
+            this.receiveMessageChannel && console.log("Closed data channel with label: " + this.receiveMessageChannel.label);
+            console.log(this.receiveMessageChannel);
+            this.receiveMessageChannel && this.receiveMessageChannel.close();
+            console.log(this.receiveMessageChannel);
+            this.receiveMessageChannel = null;
+            this.receiveFileChannel && console.log("Closed data channel with label: " + this.receiveFileChannel.label);
+            console.log(this.receiveFileChannel);
+            this.receiveFileChannel && this.receiveFileChannel.close();
             this.peerConnection && this.peerConnection.close();
             this.peerConnection = null;
             console.log("Closed peer connection");
@@ -192,10 +209,26 @@ class Home extends React.Component {
                     })
                 });
                 break;
+            case "eof":
+                console.log("end of file");
+                let received = new Blob(this.receiveBuffer);
+                console.log(received);
+                this.receiveBuffer = [];
+                this.setState({
+                    downloadedFile: URL.createObjectURL(received),
+                    downloadedFileName: "Download"
+                });
+                break;
             case "message":
                 console.log(message.message);
                 break;
         }
+    }
+
+    processChunk(chunk) {
+        // todo
+        this.receiveBuffer.push(chunk);
+        console.log(new Uint8Array(chunk));
     }
 
     openDirectory(name) {
@@ -209,22 +242,34 @@ class Home extends React.Component {
         });
         console.log("Opening directory", name);
         try {
-            this.sendChannel.send(JSON.stringify({
+            this.sendMessageChannel.send(JSON.stringify({
                 action: "openDirectory",
                 selectedDirectory: name
             }));
         } catch (e) {
-            if (!this.sendChannel) {
+            if (!this.sendMessageChannel) {
                 console.log("Can't finish task. Connection to provider lost.");
             } else {
-                console.log(e);
+                throw e;
             }
         }
     }
 
-    downloadFile(name) {
-        console.log("downloading", name);
-        // this.socket.emit("downloadFile", this.props.provider.providerId, name);
+    downloadFile(filePath) {
+        try {
+            console.log("downloading", name);
+
+            this.sendMessageChannel.send(JSON.stringify({
+                action: "downloadFile",
+                filePath: filePath
+            }));
+        } catch (e) {
+            if (!this.sendMessageChannel) {
+                console.log("Can't finish task. Connection to provider lost.");
+            } else {
+                throw e;
+            }
+        }
     }
 
     render() {
@@ -257,6 +302,7 @@ class Home extends React.Component {
                                         <button onClick={this.openDirectory.bind(this, file.path)}>Open directory</button> :
                                         <button onClick={this.downloadFile.bind(this, file.path)}>Download file</button>
                                 }</p>
+                                <a href={this.state.downloadedFile}>{this.state.downloadedFileName}</a>
                                 <hr />
                             </div>
                         )

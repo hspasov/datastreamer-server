@@ -18,4 +18,14 @@ const ClientSessionSchema = mongoose.Schema({
 
 const ClientSessionModel = mongoose.model("ClientSession", ClientSessionSchema);
 
+// "clientsession" collection has to be empty on server startup.
+// Delete all currently existing client sessions, if any.
+ClientSessionModel.remove({}).then(removed => {
+    if (removed.result.n > 0) {
+        console.log(`Warning: ${removed.result.n} existing client sessions found on server launch. Successfully removed.`);
+    }
+}).catch(error => {
+    console.log(error);
+});
+
 module.exports = ClientSessionModel;
