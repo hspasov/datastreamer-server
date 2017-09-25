@@ -15,8 +15,6 @@ class Home extends React.Component {
         });
         this.state = {
             currentDirectory: null,
-            downloadedFile: "",
-            downloadedFileName: "",
             files: []
         };
 
@@ -186,6 +184,15 @@ class Home extends React.Component {
                 });
                 break;
             case "add":
+                this.setState({
+                    files: this.state.files.concat([{
+                        ...message.data,
+                        download: {
+                            status: "notInitialized"
+                        }
+                    }])
+                });
+                break;
             case "addDir":
                 this.setState({
                     files: this.state.files.concat([message.data])
@@ -197,9 +204,21 @@ class Home extends React.Component {
                         return file.path !== message.data.path;
                     })
                 });
-                this.setState({
-                    files: this.state.files.concat([message.data])
-                });
+
+                if (message.data.type === "directory") {
+                    this.setState({
+                        files: this.state.files.concat([message.data])
+                    });
+                } else {
+                    this.setState({
+                        files: this.state.files.concat([{
+                            ...message.data,
+                            download: {
+                                status: "notInitialized"
+                            }
+                        }])
+                    });
+                }
                 break;
             case "unlink":
             case "unlinkDir":
@@ -215,8 +234,21 @@ class Home extends React.Component {
                 console.log(received);
                 this.receiveBuffer = [];
                 this.setState({
-                    downloadedFile: URL.createObjectURL(received),
-                    downloadedFileName: "Download"
+                    files: this.state.files.map(file => {
+                        if (file.path === message.data.path) {
+                            let download = {
+                                status: "downloaded",
+                                link: URL.createObjectURL(received),
+                                name: message.data.path
+                            };
+                            return {
+                                ...file,
+                                download
+                            };
+                        } else {
+                            return file;
+                        }
+                    })
                 });
                 break;
             case "message":
@@ -302,7 +334,11 @@ class Home extends React.Component {
                                         <button onClick={this.openDirectory.bind(this, file.path)}>Open directory</button> :
                                         <button onClick={this.downloadFile.bind(this, file.path)}>Download file</button>
                                 }</p>
-                                <a href={this.state.downloadedFile}>{this.state.downloadedFileName}</a>
+                                {
+                                    file.type != "directory" &&
+                                    file.download.status === "downloaded" &&
+                                    <a href={file.download.link}>{file.download.name}</a>
+                                }
                                 <hr />
                             </div>
                         )
