@@ -5,12 +5,12 @@ import io from "socket.io-client";
 import path from "path";
 
 import File from "../components/file.component";
-import streamSaver from 'streamsaver';
+import FileSaver from "file-saver";
 
 class Home extends React.Component {
     constructor(props) {
         super(props);
-        this.socket = io("http://localhost:3000", {
+        this.socket = io("http://192.168.1.4:3000", {
             query: `type=client&id=${this.props.provider.providerId}`
         });
         this.state = {
@@ -74,8 +74,12 @@ class Home extends React.Component {
         this.peerConnectionConstraint = null;
         this.dataConstraint = null;
         this.receiveBuffer = [];
+        this.receivedBytes = 0;
+        this.fileSize = 0;
+        this.downloads = [];
 
-        this.deleteProviderSession = this.deleteP2PConnection.bind(this);
+        this.deleteP2PConnection = this.deleteP2PConnection.bind(this);
+        this.downloadFiles = this.downloadFiles.bind(this);
         this.processMessage = this.processMessage.bind(this);
         this.processChunk = this.processChunk.bind(this);
         this.connectToProvider = this.connectToProvider.bind(this);
@@ -228,18 +232,13 @@ class Home extends React.Component {
                     })
                 });
                 break;
-            case "eof":
-                console.log("end of file");
-                let received = new Blob(this.receiveBuffer);
-                console.log(received);
-                this.receiveBuffer = [];
+            case "sendFileMetadata":
                 this.setState({
                     files: this.state.files.map(file => {
                         if (file.path === message.data.path) {
                             let download = {
-                                status: "downloaded",
-                                link: URL.createObjectURL(received),
-                                name: message.data.path
+                                status: "initialized",
+                                mime: message.data.mime
                             };
                             return {
                                 ...file,
@@ -258,8 +257,42 @@ class Home extends React.Component {
     }
 
     processChunk(chunk) {
-        // todo
         this.receiveBuffer.push(chunk);
+        this.receivedBytes += chunk.byteLength;
+        console.log(chunk);
+        if (this.receivedBytes === this.fileSize) {
+            console.log("end of file");
+            this.setState({
+                files: this.state.files.map(file => {
+                    if (file.path === this.downloads[0]) {
+                        let received = new Blob(this.receiveBuffer, file.mime);
+                        console.log(received);
+                        let download = {
+                            ...file.download,
+                            status: "downloaded",
+                            link: URL.createObjectURL(received),
+                            name: file.path
+                        };
+                        FileSaver.saveAs(received, path.basename(download.name));
+                        this.receiveBuffer = [];
+                        this.receivedBytes = 0;
+                        this.fileSize = 0;
+                        return {
+                            ...file,
+                            download
+                        };
+                    } else {
+                        return file;
+                    }
+                })
+            });
+            this.downloads.shift();
+            if (this.downloads.length === 1) {
+                this.downloadFiles();
+            }
+        } else {
+            console.log(`${this.receivedBytes}/${this.fileSize}`);
+        }
         console.log(new Uint8Array(chunk));
     }
 
@@ -287,10 +320,19 @@ class Home extends React.Component {
         }
     }
 
-    downloadFile(filePath) {
-        try {
-            console.log("downloading", name);
+    addToDownloads(filePath) {
+        this.downloads.push(filePath);
+        if (this.downloads.length === 1) {
+            this.downloadFiles();
+        }
+    }
 
+    downloadFiles() {
+        try {
+            let filePath = this.downloads[0];
+            let file = this.state.files.filter(file => file.path === filePath)[0];
+            this.fileSize = file.size;
+            console.log("downloading", filePath);
             this.sendMessageChannel.send(JSON.stringify({
                 action: "downloadFile",
                 filePath: filePath
@@ -332,13 +374,8 @@ class Home extends React.Component {
                                 <p>{
                                     (file.type == "directory") ?
                                         <button onClick={this.openDirectory.bind(this, file.path)}>Open directory</button> :
-                                        <button onClick={this.downloadFile.bind(this, file.path)}>Download file</button>
+                                        <button onClick={this.addToDownloads.bind(this, file.path)}>Download file</button>
                                 }</p>
-                                {
-                                    file.type != "directory" &&
-                                    file.download.status === "downloaded" &&
-                                    <a href={file.download.link}>{file.download.name}</a>
-                                }
                                 <hr />
                             </div>
                         )
