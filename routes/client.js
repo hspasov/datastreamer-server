@@ -15,31 +15,13 @@ const updateClient = clientActions.updateClient;
 const deleteClient = clientActions.deleteClient;
 
 router.use(clientPassport.initialize());
-router.use(clientPassport.session());
 
-function isLoggedIn(req, res, next) {
-    return req.isAuthenticated() ?
-        next() : res.redirect("/login");
-}
-
-router.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "../views/index.html"));
-});
-
-router.get("/login", (req, res) => {
-    res.sendFile(path.join(__dirname, "../views/index.html"));
-});
-
-router.get("/register", (req, res) => {
-    res.sendFile(path.join(__dirname, "../views/index.html"));
-});
-
-router.get("/home", (req, res) => {
+router.route(["/login", "/register", "/home", "/"]).get((req, res) => {
     res.sendFile(path.join(__dirname, "../views/index.html"));
 });
 
 router.post("/login", (req, res, next) => {
-    clientPassport.authenticate("client-login", (err, client, info) => {
+    clientPassport.authenticate("client-login", { session: false }, (err, client) => {
         if (err) {
             return next(err); // will generate a 500 error
         }
@@ -57,8 +39,8 @@ router.post("/login", (req, res, next) => {
 });
 
 
-router.route("/register").post((req, res, next) => {
-    clientPassport.authenticate("client-register", (err, client, info) => {
+router.post("/register", (req, res, next) => {
+    clientPassport.authenticate("client-register", { session: false }, (err, client) => {
         if (err) {
             return next(err); // will generate a 500 error
         }
@@ -74,25 +56,5 @@ router.route("/register").post((req, res, next) => {
         });
     })(req, res, next);
 });
-
-router.post("/logout", (req, res) => {
-    req.logout();
-    req.session.destroy();
-    return res.status(200);
-});
-
-/*
-router.get("/api/clients", (req, res) => {
-    return viewAllClients(req, res);
-});
-router.route("/api/clients/:email")
-.get((req, res) => {
-    return findClient(req, res);
-}).put((req, res) => {
-    return update(req, res);
-}).delete((req, res) => {
-    return deleteClient(req, res);
-});
-*/
 
 module.exports = router;

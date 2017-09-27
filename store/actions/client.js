@@ -8,7 +8,7 @@ function loginClient(client) {
 function logoutClient() {
     return {
         type: "LOGOUT_CLIENT",
-        payload: client
+        payload: null
     }
 }
 

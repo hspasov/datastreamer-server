@@ -16,15 +16,9 @@ var deleteClient = providerActions.deleteClient;
 var router = express.Router();
 
 router.use(passport.initialize());
-router.use(passport.session());
-
-function isLoggedIn(req, res, next) {
-    return req.isAuthenticated() ?
-        next() : res.redirect("/login");
-}
 
 router.post("/login", (req, res, next) => {
-    passport.authenticate("provider-login", (err, provider, info) => {
+    passport.authenticate("provider-login", { session: false }, (err, provider) => {
         if (err) {
             return next(err); // will generate a 500 error
         }
@@ -42,8 +36,8 @@ router.post("/login", (req, res, next) => {
     })(req, res, next);
 });
 
-router.route("/register").post((req, res, next) => {
-    passport.authenticate("provider-register", (err, provider, info) => {
+router.post("/register", (req, res, next) => {
+    passport.authenticate("provider-register", { session: false }, (err, provider) => {
         if (err) {
             return next(err); // will generate a 500 error
         }
@@ -59,13 +53,6 @@ router.route("/register").post((req, res, next) => {
                 });
         });
     })(req, res, next);
-});
-
-router.post("/logout", (req, res) => {
-    console.log("session will be deleted!!");
-    req.logout();
-    req.session.destroy();
-    return res.status(200);
 });
 
 module.exports = router;
