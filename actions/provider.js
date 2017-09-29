@@ -6,7 +6,7 @@ const validationError = errorActions.validationError;
 
 function createNewProvider(request, response) {
     return ProviderModel.create({
-        name: request.body.name,
+        username: request.body.username,
         password: request.body.password
     }, (error, provider) => {
         if (error) {
@@ -21,17 +21,16 @@ function createNewProvider(request, response) {
             }
         }
         console.log("New provider successfully created...");
-        console.log(provider.name);
+        console.log(provider.username);
         return response.json({
             msg: "Provider created!",
-            id: provider._id,
-            name: provider.name
+            username: provider.username
         });
     });
 }
 
 function findProvider(request, response) {
-    return ProviderModel.findOne({ name: request.params.name }, "name",
+    return ProviderModel.findOne({ username: request.params.username }, "username",
         (error, provider) => {
             if (error) {
                 return errorHandler(error);
@@ -41,7 +40,7 @@ function findProvider(request, response) {
                     msg: "Provider does not exist in the dBase"
                 });
             }
-            console.log(provider.name);
+            console.log(provider.username);
             return response.json(provider);
         }
     );
@@ -57,12 +56,12 @@ function viewAllProviders(request, response) {
 }
 
 function updateProvider(request, response) {
-    return ProviderModel.findOne({ name: request.params.name },
+    return ProviderModel.findOne({ username: request.params.username },
         (error, provider) => {
             if (error) {
                 return errorHandler(error);
             }
-            provider.name = request.body.provider;
+            provider.username = request.body.provider;
             provider.password = request.body.password;
             provider.save((error, provider) => {
                 return error ?
@@ -73,7 +72,7 @@ function updateProvider(request, response) {
 }
 
 function deleteProvider(request, response) {
-    return ProviderModel.findOneAndRemove({ name: request.params.name },
+    return ProviderModel.findOneAndRemove({ username: request.params.username },
         (error, provider) => {
             return error ?
                 errorHandler(error) : response.json(provider);

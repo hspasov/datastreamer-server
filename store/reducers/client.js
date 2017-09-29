@@ -1,16 +1,14 @@
-const reducer = (state={email: null, clientId: null}, action) => {
+const reducer = (state={username: null}, action) => {
     switch (action.type) {
         case "LOGIN_CLIENT":
             return {
                 ...state,
-                email: action.payload.email,
-                clientId: action.payload.clientId
+                username: action.payload.username
             };
         case "LOGOUT_CLIENT":
             return {
                 ...state,
-                email: null,
-                clientId: null
+                username: null
             };
     }
     return state;

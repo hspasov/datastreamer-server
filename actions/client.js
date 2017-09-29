@@ -6,7 +6,7 @@ const validationError = errorActions.validationError;
 
 function createNewClient(request, response) {
     return ClientModel.create({
-        email: request.body.email,
+        username: request.body.username,
         password: request.body.password
     }, (error, client) => {
         if (error) {
@@ -21,17 +21,16 @@ function createNewClient(request, response) {
             }
         }
         console.log("New client successfully created...");
-        console.log(client.email);
+        console.log(client.username);
         return response.json({
             msg: "Client created!",
-            id: client._id,
-            email: client.email
+            username: client.username
         });
     });
 }
 
 function findClient(request, response) {
-    return ClientModel.findOne({ email: request.params.email }, "email",
+    return ClientModel.findOne({ username: request.params.username }, "username",
         (error, client) => {
             if (error) {
                 return errorHandler(error);
@@ -42,7 +41,7 @@ function findClient(request, response) {
                     " sign up to login as a client"
                 });
             }
-            console.log(client.email);
+            console.log(client.username);
             return response.json(client);
         }
     );
@@ -61,13 +60,13 @@ function viewAllClients(request, response) {
 }
 
 function updateClient(request, response) {
-    return ClientModel.findOne({ email: request.params.email },
+    return ClientModel.findOne({ username: request.params.username },
         (error, client) => {
             if (error) {
                 return errorHandler(error);
             }
             console.log(client);
-            client.email = request.body.email;
+            client.username = request.body.username;
             client.password = request.body.password;
             client.save((error, client) => {
                 if (error) {
@@ -81,7 +80,7 @@ function updateClient(request, response) {
 }
 
 function deleteClient(request, response) {
-    return ClientModel.findOneAndRemove({ email: request.params.email },
+    return ClientModel.findOneAndRemove({ username: request.params.username },
         (error, client) => {
             if (error) {
                 return errorHandler(error);

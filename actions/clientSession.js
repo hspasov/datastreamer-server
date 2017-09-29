@@ -5,17 +5,17 @@ const errorActions = require("../modules/errorActions");
 const errorHandler = errorActions.errorHandler;
 const validationError = errorActions.validationError;
 
-function createNewClientSession(socketId, providerIds) {
+function createNewClientSession(socketId, providerNames) {
     return new Promise((resolve, reject) => {
         ClientSessionModel.create({
-            socketId: socketId,
-            providerIds: providerIds
+            socketId,
+            providerNames
         }).then(clientSession => {
             console.log("New client session successfully created...");
             console.log(clientSession.socketId);
             resolve({
                 socketId: clientSession.socketId,
-                providerIds: clientSession.providerIds
+                providerNames: clientSession.providerNames
             });
         }).catch(error => {
             console.error("There was an error creating the client session");
@@ -31,9 +31,9 @@ function createNewClientSession(socketId, providerIds) {
     });
 }
 
-function findClientSessionsByProviderId(providerId) {
+function findClientSessionsByProviderName(providerName) {
     return new Promise((resolve, reject) => {
-        ClientSessionModel.find({ providerIds: providerId })
+        ClientSessionModel.find({ providerNames: providerName })
         .then(clientSessions => {
             resolve(clientSessions);
         }).catch(error => {
@@ -73,12 +73,12 @@ function findClientSession(socketId) {
     );
 }*/
 
-function updateClientSession(socketId, providerIds) {
+function updateClientSession(socketId, providerNames) {
     return new Promise((resolve, reject) => {
         ClientSessionModel.findOne({ socketId: socketId })
         .then(clientSession => {
             clientSession.socketId = socketId;
-            clientSession.providerIds = providerIds;
+            clientSession.providerNames = providerNames;
             clientSession.save()
             .then(clientSession => {
                 resolve(clientSession);
@@ -91,11 +91,11 @@ function updateClientSession(socketId, providerIds) {
     });
 }
 
-function removeProviderFromClient(providerId, clientSocketId) {
+function removeProviderFromClient(providerName, clientSocketId) {
     return new Promise((resolve, reject) => {
         ClientSessionModel.findOneAndUpdate(
             { socketId: clientSocketId },
-            { $pull: { providerIds: providerId } }
+            { $pull: { providerNames: providerName } }
         ).then(client => {
             resolve(client);
         }).catch(error => {
@@ -104,11 +104,11 @@ function removeProviderFromClient(providerId, clientSocketId) {
     });
 }
 
-function addProviderToClient(providerId, clientSocketId) {
+function addProviderToClient(providerName, clientSocketId) {
     return new Promise((resolve, reject) => {
         ClientSessionModel.findOneAndUpdate(
             { socketId: clientSocketId },
-            { $push: { providerIds: providerId } }
+            { $push: { providerNames: providerName } }
         ).then(client => {
             resolve(client);
         }).catch(error => {
@@ -131,7 +131,7 @@ function deleteClientSession(socketId) {
 module.exports = {
     createNewClientSession: createNewClientSession,
     findClientSession: findClientSession,
-    findClientSessionsByProviderId: findClientSessionsByProviderId,
+    findClientSessionsByProviderName: findClientSessionsByProviderName,
     updateClientSession: updateClientSession,
     addProviderToClient: addProviderToClient,
     removeProviderFromClient: removeProviderFromClient,

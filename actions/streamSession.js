@@ -16,18 +16,18 @@ const addClientToProvider = providerSessionActions.addClientToProvider;
 
 const createNewClientSession = clientSessionActions.createNewClientSession;
 const findClientSession = clientSessionActions.findClientSession;
-const findClientSessionsByProviderId = clientSessionActions.findClientSessionsByProviderId;
+const findClientSessionsByProviderName = clientSessionActions.findClientSessionsByProviderName;
 const deleteClientSession = clientSessionActions.deleteClientSession;
 
-function createNewStreamSession(socketId, type, providerId) {
+function createNewStreamSession(socketId, type, providerName) {
     return new Promise((resolve, reject) => {
         if (type == "provider") {
-            createNewProviderSession(socketId, providerId, new Array())
+            createNewProviderSession(socketId, providerName, new Array())
             .then(sessionInfo => {
-                findClientSessionsByProviderId(providerId)
+                findClientSessionsByProviderName(providerName)
                 .then(clientSessions => {
                     clientSessions.forEach(clientSession => {
-                        addClientToProvider(providerId, clientSession.socketId)
+                        addClientToProvider(providerName, clientSession.socketId)
                         .catch(error => {
                             reject(error);
                         });
@@ -40,7 +40,7 @@ function createNewStreamSession(socketId, type, providerId) {
                 reject(error);
             });
         } else if (type == "client") {
-            createNewClientSession(socketId, [providerId])
+            createNewClientSession(socketId, [providerName])
             .then(sessionInfo => {
                 resolve(sessionInfo);
             }).catch(error => {
@@ -67,7 +67,7 @@ function deleteStreamSession(socketId, done) {
                             resolve({
                                 type: "provider",
                                 socketId: providerSession.socketId,
-                                providerId: providerSession.providerId,
+                                providerName: providerSession.providerName,
                                 clientSocketIds: providerSession.clientSocketIds
                             });
                         }).catch(error => {
@@ -80,8 +80,8 @@ function deleteStreamSession(socketId, done) {
             } else {
                 deleteClientSession(socketId)
                 .then(clientSession => {
-                    clientSession.providerIds.forEach(providerId => {
-                        removeClientFromProvider(providerId, socketId)
+                    clientSession.providerNames.forEach(providerName => {
+                        removeClientFromProvider(providerName, socketId)
                         .catch(error => {
                             reject(error);
                         });
@@ -89,7 +89,7 @@ function deleteStreamSession(socketId, done) {
                     resolve({
                         type: "client",
                         socketId: clientSession.socketId,
-                        providerIds: clientSession.providerIds
+                        providerNames: clientSession.providerNames
                     });
                 }).catch(error => {
                     reject(error);

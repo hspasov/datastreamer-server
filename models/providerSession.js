@@ -6,7 +6,7 @@ const ProviderSessionSchema = mongoose.Schema({
         type: String,
         required: true
     },
-    providerId: {
+    providerName: {
         type: String,
         required: true
     },

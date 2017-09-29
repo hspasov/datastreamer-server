@@ -22,20 +22,20 @@ passport.deserializeUser((id, done) => {
 passport.use(
     "client-register",
     new LocalStrategy({
-        usernameField: "email",
+        usernameField: "username",
         passwordField: "password",
         passReqToCallback: true
     },
-        (req, email, password, done) => {
+        (req, username, password, done) => {
             process.nextTick(() => {
-                Client.findOne({ email: email }, (error, client) => {
+                Client.findOne({ username }, (error, client) => {
                     if (error) {
                         return errorHandler(error);
                     } else if (client) {
-                        return done(null, false, { errorMsg: "email already exists" });
+                        return done(null, false, { errorMsg: "username already exists" });
                     } else {
                         let newClient = new Client();
-                        newClient.email = email;
+                        newClient.username = username;
                         newClient.password = newClient.generateHash(password);
                         newClient.save(error => {
                             if (error) {
@@ -47,7 +47,7 @@ passport.use(
                                 return errorHandler(error);
                             }
                             console.log("New client successfully created...");
-                            console.log("email", email);
+                            console.log("username", username);
                             return done(null, newClient);
                         });
                     }
@@ -60,12 +60,12 @@ passport.use(
 passport.use(
     "client-login",
     new LocalStrategy({
-        usernameField: "email",
+        usernameField: "username",
         passwordField: "password",
         passReqToCallback: true
     },
-        (req, email, password, done) => {
-            Client.findOne({ email: email }, (error, client) => {
+        (req, username, password, done) => {
+            Client.findOne({ username }, (error, client) => {
                 if (error) {
                     return errorHandler(error);
                 }

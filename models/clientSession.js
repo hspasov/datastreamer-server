@@ -6,7 +6,7 @@ const ClientSessionSchema = mongoose.Schema({
         type: String,
         required: true
     },
-    providerIds: {
+    providerNames: {
         type: [String],
         required: true
     },

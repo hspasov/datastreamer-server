@@ -31,8 +31,7 @@ router.post("/login", (req, res, next) => {
         req.login(client, err => {
             return err ?
                 next(err) : res.status(200).send({
-                    email: client.email,
-                    clientId: client._id
+                    username: client.username
                 });
         });
     })(req, res, next);
@@ -50,8 +49,7 @@ router.post("/register", (req, res, next) => {
         req.login(client, err => {
             return err ?
                 next(err) : res.status(201).send({
-                    email: client.email,
-                    clientId: client._id
+                    username: client.username
                 });
         });
     })(req, res, next);

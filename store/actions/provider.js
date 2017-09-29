@@ -1,11 +1,11 @@
-function connectClient(providerId) {
+function connectClient(username) {
     return {
         type: "CONNECT_CLIENT",
-        payload: providerId
+        payload: username
     }
 }
 
-function disconnectClient(providerId) {
+function disconnectClient() {
     return {
         type: "DISCONNECT_CLIENT",
         payload: null

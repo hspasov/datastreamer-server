@@ -11,7 +11,7 @@ class Home extends React.Component {
     constructor(props) {
         super(props);
         this.socket = io("http://192.168.1.4:3000", {
-            query: `type=client&id=${this.props.provider.providerId}`
+            query: `type=client&username=${this.props.provider.username}`
         });
         this.state = {
             currentDirectory: null,
@@ -92,7 +92,7 @@ class Home extends React.Component {
 
     connectToProvider() {
         console.log("connecting to provider");
-        this.socket.emit("connectToProvider", this.props.provider.providerId);
+        this.socket.emit("connectToProvider", this.props.provider.username);
     }
 
     initializeP2PConnection() {
@@ -104,7 +104,7 @@ class Home extends React.Component {
             this.peerConnection.onicecandidate = event => {
                 if (event.candidate) {
                     console.log("sending ICE candidate", event.candidate);
-                    this.socket.emit("sendICECandidate", "provider", this.props.provider.providerId, event.candidate);
+                    this.socket.emit("sendICECandidate", "provider", this.props.provider.username, event.candidate);
                 }
             };
 
@@ -138,7 +138,7 @@ class Home extends React.Component {
                     this.peerConnection.setLocalDescription(description);
                     console.log("just after set local description");
                     console.log("Offering p2p connection");
-                    this.socket.emit("offerP2PConnection", this.props.provider.providerId, description);
+                    this.socket.emit("offerP2PConnection", this.props.provider.username, description);
                 },
                 error => {
                     console.log("there was an error creating an offer");
@@ -347,7 +347,7 @@ class Home extends React.Component {
     }
 
     render() {
-        if (!this.props.client.clientId) {
+        if (!this.props.client.username) {
             return (
                 <p>Please login or register</p>
             );

@@ -2,32 +2,33 @@ const providerSessionActions = require("../actions/providerSession");
 const clientSessionActions = require("../actions/clientSession");
 const streamSessionActions = require("../actions/streamSession");
 
-const findProviderSessionByProviderId = providerSessionActions.findProviderSessionByProviderId;
+const findProviderSessionByProviderName = providerSessionActions.findProviderSessionByProviderName;
 const findProviderSessionBySocketId = providerSessionActions.findProviderSessionBySocketId;
 const addClientToProvider = providerSessionActions.addClientToProvider;
 
 const findClientSession = clientSessionActions.findClientSession;
-const findClientSessionsByProviderId = clientSessionActions.findClientSessionsByProviderId;
+const findClientSessionsByProviderName = clientSessionActions.findClientSessionsByProviderName;
 
 const createNewStreamSession = streamSessionActions.createNewStreamSession;
 const deleteStreamSession = streamSessionActions.deleteStreamSession;
 
-var clients = [];
-
 const base = io => {
     io.on("connection", socket => {
-        if (socket.handshake.query)
-        createNewStreamSession(
-            socket.id,
-            socket.handshake.query["type"],
-            socket.handshake.query["id"]
-        ).then(sessionInfo => {
-            console.log(`${socket.id} connected`);
-            console.log(sessionInfo);
-            console.log(Object.keys(io.sockets.sockets).length);
-        }).catch(error => {
-            console.log(error);
-        });
+        if (socket.handshake.query) {
+            createNewStreamSession(
+                socket.id,
+                socket.handshake.query["type"],
+                socket.handshake.query["username"]
+            ).then(sessionInfo => {
+                console.log(`${socket.id} connected`);
+                console.log(sessionInfo);
+                console.log(Object.keys(io.sockets.sockets).length);
+            }).catch(error => {
+                console.log(error);
+            });
+        } else {
+            console.log("no handshake query for", socket.id);
+        }
 
         socket.on("disconnect", () => {
             deleteStreamSession(socket.id)
@@ -39,8 +40,8 @@ const base = io => {
                         io.to(client).emit("connectToProviderFail");
                     });
                 } else if (sessionInfo.type == "client") {
-                    sessionInfo.providerIds.forEach(providerId => {
-                        findProviderSessionByProviderId(providerId)
+                    sessionInfo.providerNames.forEach(providerName => {
+                        findProviderSessionByProviderName(providerName)
                         .then(providerSession => {
                             if (providerSession) {
                                 io.to(providerSession.socketId).emit("unsubscribedClient", socket.id);
@@ -57,13 +58,13 @@ const base = io => {
             });
         });
 
-        socket.on("connectToProvider", providerId => {
-            findProviderSessionByProviderId(providerId)
+        socket.on("connectToProvider", providerName => {
+            findProviderSessionByProviderName(providerName)
             .then(providerSession => {
                 if (!providerSession) {
                     io.to(socket.id).emit("connectToProviderFail");
                 } else {
-                    addClientToProvider(providerId, socket.id)
+                    addClientToProvider(providerName, socket.id)
                     .then(providerSession => {
                         if (!providerSession) {
                             io.to(socket.id).emit("connectToProviderFail");
@@ -84,8 +85,8 @@ const base = io => {
             io.to(clientId).emit("resetConnection");
         });
 
-        socket.on("resetProviderConnection", providerId => {
-            findProviderSessionByProviderId(providerId)
+        socket.on("resetProviderConnection", providerName => {
+            findProviderSessionByProviderName(providerName)
                 .then(providerSession => {
                     if (!providerSession) {
                         io.to(socket.id).emit("connectToProviderFail");
@@ -101,13 +102,13 @@ const base = io => {
             io.to(clientId).emit("requestedP2PConnection");
         });
 
-        socket.on("offerP2PConnection", (providerId, description) => {
-            findProviderSessionByProviderId(providerId)
+        socket.on("offerP2PConnection", (providerName, description) => {
+            findProviderSessionByProviderName(providerName)
                 .then(providerSession => {
                     if (!providerSession) {
                         io.to(socket.id).emit("connectToProviderFail");
                     } else {
-                        addClientToProvider(providerId, socket.id)
+                        addClientToProvider(providerName, socket.id)
                             .then(providerSession => {
                                 if (!providerSession) {
                                     io.to(socket.id).emit("connectToProviderFail");
@@ -127,9 +128,9 @@ const base = io => {
             io.to(clientId).emit("receiveProviderDescription", description);
         });
 
-        socket.on("sendICECandidate", (receiverType, userId, candidate) => {
+        socket.on("sendICECandidate", (receiverType, receiver, candidate) => {
             if (receiverType === "provider") {
-                findProviderSessionByProviderId(userId)
+                findProviderSessionByProviderName(receiver)
                 .then(providerSession => {
                     if (!providerSession) {
                         console.log("todo");
@@ -140,14 +141,14 @@ const base = io => {
                     console.log(error);
                 });
             } else if (receiverType === "client") {
-                io.to(userId).emit("receiveICECandidate", candidate);
+                io.to(receiver).emit("receiveICECandidate", candidate);
             } else {
                 console.log("Invalid receiver type", receiverType);
             }
         });
 
-        socket.on("connectToClients", providerId => {
-            findClientSessionsByProviderId(providerId)
+        socket.on("connectToClients", providerName => {
+            findClientSessionsByProviderName(providerName)
             .then(clientSessions => {
                 clientSessions.forEach(client => {
                     io.to(client.socketId).emit("providerFound");

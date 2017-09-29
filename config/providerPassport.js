@@ -22,12 +22,12 @@ passport.deserializeUser((id, done) => {
 passport.use(
     "provider-login",
     new LocalStrategy({
-        usernameField: "name",
+        usernameField: "username",
         passwordField: "password",
         passReqToCallback: true
     },
-        (req, name, password, done) => {
-            Provider.findOne({ name: name }, (error, provider) => {
+        (req, username, password, done) => {
+            Provider.findOne({ username }, (error, provider) => {
                 if (error) {
                     return errorHandler(error);
                 }
@@ -49,22 +49,22 @@ passport.use(
 passport.use(
     "provider-register",
     new LocalStrategy({
-        usernameField: "name",
+        usernameField: "username",
         passwordField: "password",
         passReqToCallback: true
     },
-        (req, name, password, done) => {
+        (req, username, password, done) => {
             process.nextTick(() => {
-                Provider.findOne({ name: name }, (error, provider) => {
+                Provider.findOne({ username }, (error, provider) => {
                     if (error) {
                         return errorHandler(error);
                     }
                     if (provider) {
-                        return done(null, false, { errorMsg: "name already exists" });
+                        return done(null, false, { errorMsg: "username already exists" });
                     }
                     else {
                         let newProvider = new Provider();
-                        newProvider.name = name;
+                        newProvider.username = username;
                         newProvider.password = newProvider.generateHash(password);
                         newProvider.save(error => {
                             if (error) {
@@ -76,7 +76,7 @@ passport.use(
                                 return errorHandler(error);
                             }
                             console.log("New provider successfully created...");
-                            console.log("name", name);
+                            console.log("username", username);
                             return done(null, newProvider);
                         });
                     }

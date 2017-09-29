@@ -1,16 +1,14 @@
-const reducer = (state={name: null, providerId: null}, action) => {
+const reducer = (state={username: null}, action) => {
     switch (action.type) {
         case "CONNECT_CLIENT":
             return {
                 ...state,
-                name: action.payload.name,
-                providerId: action.payload.providerId
+                username: action.payload.username
             };
         case "DISCONNECT_CLIENT":
             return {
                 ...state,
-                name: null,
-                providerId: null
+                username: null
             }
     }
     return state;
