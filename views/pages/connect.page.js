@@ -56,7 +56,7 @@ class Connect extends React.Component {
     }
 
     render() {
-        if (!this.props.client.clientId) {
+        if (!this.props.client.username) {
             return (
                 <p>Please login or register</p>
             );
