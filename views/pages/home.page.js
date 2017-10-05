@@ -66,6 +66,7 @@ class Home extends React.Component {
                 });
                 break;
             case "add":
+                console.log("adding file", message.data);
                 this.setState(prevState => ({
                     files: add(prevState.files, message.data)
                 }));
@@ -95,7 +96,7 @@ class Home extends React.Component {
                 this.setState({ isComponentUpdateAllowed: true });
                 break;
             case "message":
-                console.log(message.message);
+                console.log("There is a message!", message.message);
                 break;
         }
     }
