@@ -1,16 +1,14 @@
 import io from "socket.io-client";
-// import setState from "../views/pages/home.page";
 
 class Socket {
     constructor(RTC, providerName) {
         this.RTC = RTC;
-        this.socket = io("http://192.168.1.4:3000", {
+        this.socket = io("http://localhost:3000", {
             query: `type=client&username=${providerName}`
         });
 
         this.socket.on("connectToProviderSuccess", () => {
             console.log("Successfully connected");
-            // setState({ files: [] });
         });
 
         this.socket.on("connectToProviderFail", () => {

@@ -1,55 +1,27 @@
 import Socket from "../sockets/client";
-import store from "../store/store";
-import path from "path";
-import FileSaver from "file-saver";
 
 class RTC {
-    constructor(files, providerName, processMessage) {
+    constructor(providerName, processMessage, processChunk) {
         this.socket = new Socket(this, providerName).socket;
-        this.files = files;
-        this.providerName = providerName;
-        this.processMessage = processMessage;
-        this.peerConnection = null;
-        this.sendMessageChannel = null;
-        this.receiveMessageChannel = null;
         this.servers = null;
         this.peerConnectionConstraint = null;
         this.dataConstraint = null;
+
+        this.providerName = providerName;
+        this.processMessage = processMessage;
+        this.processChunk = processChunk;
+
+        this.peerConnection = null;
+        this.sendMessageChannel = null;
+        this.receiveMessageChannel = null;
+
         this.receiveBuffer = [];
         this.receivedBytes = 0;
         this.fileSize = 0;
         this.downloads = [];
 
-        this.processChunk = this.processChunk.bind(this);
         this.initializeP2PConnection = this.initializeP2PConnection.bind(this);
         this.deleteP2PConnection = this.deleteP2PConnection.bind(this);
-        this.downloadFiles = this.downloadFiles.bind(this);
-        this.addToDownloads = this.addToDownloads.bind(this);
-    }
-
-    processChunk(chunk) {
-        this.receiveBuffer.push(chunk);
-        this.receivedBytes += chunk.byteLength;
-        console.log(chunk);
-        if (this.receivedBytes === this.fileSize) {
-            console.log("end of file");
-            const file = this.files.finishDownload({ path: this.downloads[0] });
-            const received = new Blob(this.receiveBuffer, file.mime);
-            console.log(received);
-            FileSaver.saveAs(received, path.basename(file.path));
-            this.receiveBuffer = [];
-            this.receivedBytes = 0;
-            this.fileSize = 0;
-            // this.setState({
-            // });
-            this.downloads.shift();
-            if (this.downloads.length === 1) {
-                this.downloadFiles();
-            }
-        } else {
-            console.log(`${this.receivedBytes}/${this.fileSize}`);
-        }
-        console.log(new Uint8Array(chunk));
     }
 
     initializeP2PConnection() {
@@ -94,8 +66,8 @@ class RTC {
                 description => {
                     this.peerConnection.setLocalDescription(description);
                     console.log("just after set local description");
-                    console.log("Offering p2p connection");
                     this.socket.emit("offerP2PConnection", this.providerName, description);
+                    console.log("Offered p2p connection");
                 },
                 error => {
                     console.log("there was an error creating an offer");
@@ -114,17 +86,17 @@ class RTC {
     deleteP2PConnection(error = null) {
         if (this.peerConnection) {
             console.log("Connect to provider failed");
-            this.sendMessageChannel && console.log("Closed data channel with label: " + this.sendMessageChannel.label);
+            this.sendMessageChannel && console.log("Closed data channel with label: ", this.sendMessageChannel.label);
             console.log(this.sendMessageChannel);
             this.sendMessageChannel && this.sendMessageChannel.close();
             console.log(this.sendMessageChannel);
             this.sendMessageChannel = null;
-            this.receiveMessageChannel && console.log("Closed data channel with label: " + this.receiveMessageChannel.label);
+            this.receiveMessageChannel && console.log("Closed data channel with label: ", this.receiveMessageChannel.label);
             console.log(this.receiveMessageChannel);
             this.receiveMessageChannel && this.receiveMessageChannel.close();
             console.log(this.receiveMessageChannel);
             this.receiveMessageChannel = null;
-            this.receiveFileChannel && console.log("Closed data channel with label: " + this.receiveFileChannel.label);
+            this.receiveFileChannel && console.log("Closed data channel with label: ", this.receiveFileChannel.label);
             console.log(this.receiveFileChannel);
             this.receiveFileChannel && this.receiveFileChannel.close();
             this.peerConnection && this.peerConnection.close();
@@ -133,32 +105,6 @@ class RTC {
             if (error) {
                 this.socket.emit("resetProviderConnection", this.providerName);
             }
-        }
-    }
-
-    downloadFiles() {
-        try {
-            let filePath = this.downloads[0];
-            let file = this.files.getFile(filePath);
-            this.fileSize = file.size;
-            console.log("downloading", filePath);
-            this.sendMessageChannel.send(JSON.stringify({
-                action: "downloadFile",
-                filePath: filePath
-            }));
-        } catch (e) {
-            if (!this.sendMessageChannel) {
-                console.log("Can't finish task. Connection to provider lost.");
-            } else {
-                throw e;
-            }
-        }
-    }
-
-    addToDownloads(filePath) {
-        this.downloads.push(filePath);
-        if (this.downloads.length === 1) {
-            this.downloadFiles();
         }
     }
 }

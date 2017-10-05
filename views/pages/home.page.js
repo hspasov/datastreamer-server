@@ -1,67 +1,35 @@
 import React from "react";
-import ReactDOM from "react-dom";
+import FileSaver from "file-saver";
 import { connect } from "react-redux";
-import path from "path";
-import Files from "../../modules/files";
 import RTC from "../../rtc_connection/client";
-
 import File from "../components/file.component";
+import path from "path";
+import {
+    add,
+    addDir,
+    change,
+    unlink,
+    prepareDownload,
+    finishDownload,
+    findFile
+} from "../../modules/files";
 
 class Home extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
+            isComponentUpdateAllowed: false,
             currentDirectory: null,
             files: []
         };
 
-        this.files = new Files();
-        this.RTC = null;
-        this.processMessage = this.processMessage.bind(this);
+        this.onMessage = this.onMessage.bind(this);
+        this.onChunk = this.onChunk.bind(this);
+        this.RTC = new RTC(this.props.provider.username, this.onMessage, this.onChunk);
     }
 
-    componentDidMount() {
-        this.RTC = new RTC(this.files, this.props.provider.username, this.processMessage);
-    }
-
-    processMessage(message) {
-        switch (message.action) {
-            case "sendCurrentDirectory":
-                this.setState({
-                    currentDirectory: message.data.path,
-                    files: []
-                });
-                break;
-            case "add":
-                this.setState({
-                    files: this.files.add(message.data)
-                });
-                break;
-            case "addDir":
-                this.setState({
-                    files: this.files.addDir(message.data)
-                });
-                break;
-            case "change":
-                this.setState({
-                    files: this.files.change(message.data)
-                });
-                break;
-            case "unlink":
-            case "unlinkDir":
-                this.setState({
-                    files: this.files.unlink(message.data)
-                });
-                break;
-            case "sendFileMetadata":
-                this.setState({
-                    files: this.files.prepareDownload(message.data)
-                });
-                break;
-            case "message":
-                console.log(message.message);
-                break;
-        }
+    shouldComponentUpdate(nextProps, nextState) {
+        return nextState.isComponentUpdateAllowed;
     }
 
     openDirectory(name) {
@@ -70,8 +38,9 @@ class Home extends React.Component {
             return;
         }
         this.setState({
+            isComponentUpdateAllowed: false,
             currentDirectory: name,
-            files: this.files.clearFiles()
+            files: []
         });
         console.log("Opening directory", name);
         try {
@@ -85,6 +54,99 @@ class Home extends React.Component {
             } else {
                 throw e;
             }
+        }
+    }
+
+    onMessage(message) {
+        switch (message.action) {
+            case "sendCurrentDirectory":
+                this.setState({
+                    currentDirectory: message.data.path,
+                    files: []
+                });
+                break;
+            case "add":
+                this.setState(prevState => ({
+                    files: add(prevState.files, message.data)
+                }));
+                break;
+            case "addDir":
+                this.setState(prevState => ({
+                    files: addDir(prevState.files, message.data)
+                }));
+                break;
+            case "change":
+                this.setState(prevState => ({
+                    files: change(prevState.files, message.data)
+                }));
+                break;
+            case "unlink":
+            case "unlinkDir":
+                this.setState(prevState => ({
+                    files: unlink(prevState.files, message.data)
+                }));
+                break;
+            case "sendFileMetadata":
+                this.setState(prevState => ({
+                    files: prepareDownload(prevState.files, message.data)
+                }));
+                break;
+            case "doneSending":
+                this.setState({ isComponentUpdateAllowed: true });
+                break;
+            case "message":
+                console.log(message.message);
+                break;
+        }
+    }
+
+    onChunk(chunk) {
+        this.RTC.receiveBuffer.push(chunk);
+        this.RTC.receivedBytes += chunk.byteLength;
+        console.log(chunk);
+        if (this.RTC.receivedBytes === this.RTC.fileSize) {
+            console.log("end of file");
+            const file = finishDownload(this.state.files, { path: this.RTC.downloads[0] });
+            const received = new Blob(this.RTC.receiveBuffer, file.mime);
+            console.log(received);
+            FileSaver.saveAs(received, path.basename(file.path));
+            this.RTC.receiveBuffer = [];
+            this.RTC.receivedBytes = 0;
+            this.RTC.fileSize = 0;
+            this.RTC.downloads.shift();
+            if (this.RTC.downloads.length === 1) {
+                const filePath = this.RTC.downloads[0];
+                const file = findFile(this.state.files, filePath);
+                this.downloadFile(file);
+            }
+        } else {
+            console.log(`${this.RTC.receivedBytes}/${this.RTC.fileSize}`);
+        }
+        console.log(new Uint8Array(chunk));
+    }
+
+    downloadFile(file) {
+        try {
+            this.RTC.fileSize = file.size;
+            this.RTC.sendMessageChannel.send(JSON.stringify({
+                action: "downloadFile",
+                filePath: file.path
+            }));
+        } catch (e) {
+            if (!this.RTC.sendMessageChannel) {
+                console.log("Can't finish task. Connection to provider lost.");
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    addToDownloads(filePath) {
+        this.RTC.downloads.push(filePath);
+        if (this.RTC.downloads.length === 1) {
+            const filePath = this.RTC.downloads[0];
+            const file = findFile(this.state.files, filePath);
+            this.downloadFile(file);
         }
     }
 
@@ -116,7 +178,7 @@ class Home extends React.Component {
                                 <p>{
                                     (file.type == "directory") ?
                                         <button onClick={this.openDirectory.bind(this, file.path)}>Open directory</button> :
-                                        <button onClick={this.RTC.addToDownloads.bind(this.RTC, file.path)}>Download file</button>
+                                        <button onClick={this.addToDownloads.bind(this, file.path)}>Download file</button>
                                 }</p>
                                 <hr />
                             </div>
@@ -134,11 +196,4 @@ const HomePage = connect(store => {
     };
 })(Home);
 
-const setState = state => {
-    HomePage.setState(state);
-};
-
-export {
-    HomePage,
-    setState
-};
+export default HomePage;

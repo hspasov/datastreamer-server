@@ -32,7 +32,7 @@ class Connect extends React.Component {
     }
 
     handleSubmit() {
-        let formData = {
+        const formData = {
             username: this.state.username,
             password: this.state.password
         }
@@ -42,10 +42,10 @@ class Connect extends React.Component {
             headers: { "Content-Type": "application/x-www-form-urlencoded", },
             body: formurlencoded(formData)
         }).then(response => {
-            if (response.status == 409) {
-                throw "Authentication failed";
-            } else {
+            if (response.status == 200) {
                 return response.json();
+            } else {
+                throw `Authentication failed\n${response}`;
             }
             }).then(json => {
             this.props.dispatch(connectClient(json));

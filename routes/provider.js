@@ -28,7 +28,7 @@ router.post("/login", (req, res, next) => {
         req.login(provider, err => {
             return err ?
                 next(err) :
-                res.status(201).json({
+                res.status(200).json({
                     username: provider.username
                 });
         });
