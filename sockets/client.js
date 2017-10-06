@@ -80,13 +80,6 @@ class Socket {
 
         console.log("connecting to provider", providerName);
         this.socket.emit("connectToProvider", providerName);
-        console.log("peerConnection state", this.RTC.peerConnection.connectionState);
-        console.log("current local description", this.RTC.peerConnection.currentLocalDescription);
-        console.log("current remote description", this.RTC.peerConnection.currentRemoteDescription);
-        console.log("local description", this.RTC.peerConnection.localDescription);
-        console.log("remote description", this.RTC.peerConnection.remoteDescription);
-        console.log("pending local description", this.RTC.peerConnection.pendingLocalDescription);
-        console.log("pending remote description", this.RTC.peerConnection.pendingRemoteDescription);
     }
 }
 
