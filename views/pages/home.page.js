@@ -42,7 +42,6 @@ class Home extends React.Component {
             currentDirectory: name,
             files: []
         });
-        console.log("Opening directory", name);
         try {
             this.RTC.sendMessageChannel.send(JSON.stringify({
                 action: "openDirectory",
@@ -66,7 +65,6 @@ class Home extends React.Component {
                 });
                 break;
             case "add":
-                console.log("adding file", message.data);
                 this.setState(prevState => ({
                     files: add(prevState.files, message.data)
                 }));
@@ -104,12 +102,10 @@ class Home extends React.Component {
     onChunk(chunk) {
         this.RTC.receiveBuffer.push(chunk);
         this.RTC.receivedBytes += chunk.byteLength;
-        console.log(chunk);
         if (this.RTC.receivedBytes === this.RTC.fileSize) {
             console.log("end of file");
             const file = finishDownload(this.state.files, { path: this.RTC.downloads[0] });
             const received = new Blob(this.RTC.receiveBuffer, file.mime);
-            console.log(received);
             FileSaver.saveAs(received, path.basename(file.path));
             this.RTC.receiveBuffer = [];
             this.RTC.receivedBytes = 0;
@@ -123,7 +119,6 @@ class Home extends React.Component {
         } else {
             console.log(`${this.RTC.receivedBytes}/${this.RTC.fileSize}`);
         }
-        console.log(new Uint8Array(chunk));
     }
 
     downloadFile(file) {
