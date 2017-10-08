@@ -10,6 +10,8 @@ const http = require("http");
 const session = require("express-session");
 const mongoose = require("mongoose");
 const mongodbStore = require("connect-mongo")(session);
+const bluebird = require("bluebird");
+const redis = require("redis");
 const config = require("../config/config");
 
 /**
@@ -26,7 +28,7 @@ app.set("port", port);
 const server = http.createServer(app);
 
 /*
- * Connect to database
+ * Connect to mongo
  */
 
 mongoose.Promise = global.Promise;
@@ -60,6 +62,18 @@ app.use(session({
     cookie: { maxAge: 1000 * 60 * 15 }
 }));
 
+/*
+ * Connect to redis
+ */
+
+bluebird.promisifyAll(redis.RedisClient.prototype);
+bluebird.promisifyAll(redis.Multi.prototype);
+const redisClient = redis.createClient({ detect_buffers: true });
+
+redisClient.on("error", error => {
+    console.log(error);
+});
+
 /**
  * Listen on provided port, on all network interfaces.
  */
@@ -73,7 +87,7 @@ server.on("listening", onListening);
  */
 
 const io = require("socket.io").listen(server);
-require("../sockets/base")(io);
+require("../sockets/base")(io, redisClient);
 
 /**
  * Normalize a port into a number, string, or false.

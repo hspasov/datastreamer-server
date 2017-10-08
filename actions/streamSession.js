@@ -1,6 +1,3 @@
-const mongoose = require("mongoose");
-const ProviderSessionModel = require("../models/providerSession");
-const ClientSessionModel = require("../models/clientSession");
 const providerSessionActions = require("./providerSession");
 const clientSessionActions = require("./clientSession");
 const errorActions = require("../modules/errorActions");
@@ -10,37 +7,24 @@ const validationError = errorActions.validationError;
 
 const createNewProviderSession = providerSessionActions.createNewProviderSession;
 const deleteProviderSession = providerSessionActions.deleteProviderSession;
-const removeClientFromProvider = providerSessionActions.removeClientFromProvider;
-const findProviderSessionBySocketId = providerSessionActions.findProviderSessionBySocketId;
-const addClientToProvider = providerSessionActions.addClientToProvider;
+const findProviderNameBySocketId = providerSessionActions.findProviderNameBySocketId;
+const findClientSessionsByProviderName = providerSessionActions.findClientSessionsByProviderName;
 
 const createNewClientSession = clientSessionActions.createNewClientSession;
 const findClientSession = clientSessionActions.findClientSession;
-const findClientSessionsByProviderName = clientSessionActions.findClientSessionsByProviderName;
 const deleteClientSession = clientSessionActions.deleteClientSession;
 
-function createNewStreamSession(socketId, type, providerName) {
+function createNewStreamSession(redisClient, socketId, type, providerName) {
     return new Promise((resolve, reject) => {
         if (type == "provider") {
-            createNewProviderSession(socketId, providerName, new Array())
+            createNewProviderSession(redisClient, socketId, providerName)
             .then(sessionInfo => {
-                findClientSessionsByProviderName(providerName)
-                .then(clientSessions => {
-                    clientSessions.forEach(clientSession => {
-                        addClientToProvider(providerName, clientSession.socketId)
-                        .catch(error => {
-                            reject(error);
-                        });
-                    });
-                }).catch(error => {
-                    reject(error);
-                });
                 resolve(sessionInfo);
             }).catch(error => {
                 reject(error);
             });
         } else if (type == "client") {
-            createNewClientSession(socketId, [providerName])
+            createNewClientSession(redisClient, socketId, providerName)
             .then(sessionInfo => {
                 resolve(sessionInfo);
             }).catch(error => {
@@ -52,17 +36,17 @@ function createNewStreamSession(socketId, type, providerName) {
     });
 }
 
-function deleteStreamSession(socketId, done) {
+function deleteStreamSession(redisClient, socketId, done) {
     return new Promise((resolve, reject) => {
-        findClientSession(socketId)
+        findClientSession(redisClient, socketId)
         .then(clientSession => {
             if (!clientSession) {
-                findProviderSessionBySocketId(socketId)
-                .then(providerSession => {
-                    if (!providerSession) {
+                findProviderNameBySocketId(redisClient, socketId)
+                .then(providerName => {
+                    if (!providerName) {
                         reject("Error: Item not found in database!");
                     } else {
-                        deleteProviderSession(socketId)
+                        deleteProviderSession(redisClient, socketId)
                         .then(providerSession => {
                             resolve({
                                 type: "provider",
@@ -78,18 +62,12 @@ function deleteStreamSession(socketId, done) {
                     reject(error);
                 });
             } else {
-                deleteClientSession(socketId)
+                deleteClientSession(redisClient, socketId)
                 .then(clientSession => {
-                    clientSession.providerNames.forEach(providerName => {
-                        removeClientFromProvider(providerName, socketId)
-                        .catch(error => {
-                            reject(error);
-                        });
-                    });
                     resolve({
                         type: "client",
                         socketId: clientSession.socketId,
-                        providerNames: clientSession.providerNames
+                        providerName: clientSession.providerName
                     });
                 }).catch(error => {
                     reject(error);
