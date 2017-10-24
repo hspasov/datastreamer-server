@@ -9,7 +9,6 @@ var validationError = errorActions.validationError;
 
 var createNewClient = providerActions.createNewClient;
 var findClient = providerActions.findClient;
-var viewAllClients = providerActions.viewAllClients;
 var updateClient = providerActions.updateClient;
 var deleteClient = providerActions.deleteClient;
 

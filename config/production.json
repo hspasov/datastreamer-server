@@ -1,6 +1,6 @@
 {
     "host": "localhost",
-    "devURL": "http://localhost:3030",
+    "devURL": "https://localhost:3030",
     "env": "production",
     "dbURL": "mongodb://localhost/dataStreamer",
     "sessionSecret": "qwertyuiop123456789"

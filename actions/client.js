@@ -1,3 +1,9 @@
+const debug = require("debug");
+const log = {
+    info: debug("datastreamer-server:info"),
+    verbose: debug("datastreamer-server:verbose")
+};
+
 const ClientModel = require("../models/client");
 const errorActions = require("../modules/errorActions");
 
@@ -10,18 +16,14 @@ function createNewClient(request, response) {
         password: request.body.password
     }, (error, client) => {
         if (error) {
-            console.error("There was an error creating the client");
-            console.error(error.code);
-            console.error(error.name);
+            log.info(`There was an error creating the client: code ${error.code}, errorName: ${error.name}`);
             if (error.name == "validationerror") {
                 return validationError(error, response);
-            }
-            else {
+            } else {
                 return errorHandler(error);
             }
         }
-        console.log("New client successfully created...");
-        console.log(client.username);
+        log.info(`New client "${client.username}" successfully created `);
         return response.json({
             msg: "Client created!",
             username: client.username
@@ -41,20 +43,8 @@ function findClient(request, response) {
                     " sign up to login as a client"
                 });
             }
-            console.log(client.username);
+            log.verbose(`Function findClient executed. Found client "${client.username}"`);
             return response.json(client);
-        }
-    );
-}
-
-function viewAllClients(request, response) {
-    return ClientModel.find({},
-        (error, clients) => {
-            if (error) {
-                return errorHandler(error);
-            }
-            console.log(clients);
-            return response.json(clients);
         }
     );
 }
@@ -65,14 +55,13 @@ function updateClient(request, response) {
             if (error) {
                 return errorHandler(error);
             }
-            console.log(client);
             client.username = request.body.username;
             client.password = request.body.password;
             client.save((error, client) => {
                 if (error) {
                     return errorHandler(error);
                 }
-                console.log("Client updated: ", client);
+                log.info(`Client updated: "${client.username}"`);
                 return response.json(client);
             });
         }
@@ -85,7 +74,7 @@ function deleteClient(request, response) {
             if (error) {
                 return errorHandler(error);
             }
-            console.log("Client deleted ", client);
+            log.info(`Client deleted: "${client}"`);
             return response.json(client);
         }
     );
@@ -95,7 +84,6 @@ module.exports = {
     validationError: validationError,
     createNewClient: createNewClient,
     findClient: findClient,
-    viewAllClients: viewAllClients,
     updateClient: updateClient,
     deleteClient: deleteClient
 };

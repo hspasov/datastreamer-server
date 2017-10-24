@@ -10,18 +10,18 @@ const validationError = errorActions.validationError;
 
 const createNewClient = clientActions.createNewClient;
 const findClient = clientActions.findClient;
-const viewAllClients = clientActions.viewAllClients;
 const updateClient = clientActions.updateClient;
 const deleteClient = clientActions.deleteClient;
 
 router.use(clientPassport.initialize());
+router.use(clientPassport.session());
 
 router.route(["/login", "/register", "/home", "/"]).get((req, res) => {
     res.sendFile(path.join(__dirname, "../views/index.html"));
 });
 
 router.post("/login", (req, res, next) => {
-    clientPassport.authenticate("client-login", { session: false }, (err, client) => {
+    clientPassport.authenticate("client-login", { session: true }, (err, client) => {
         if (err) {
             return next(err); // will generate a 500 error
         }
@@ -39,7 +39,7 @@ router.post("/login", (req, res, next) => {
 
 
 router.post("/register", (req, res, next) => {
-    clientPassport.authenticate("client-register", { session: false }, (err, client) => {
+    clientPassport.authenticate("client-register", { session: true }, (err, client) => {
         if (err) {
             return next(err); // will generate a 500 error
         }

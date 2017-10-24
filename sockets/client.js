@@ -1,10 +1,12 @@
 import io from "socket.io-client";
 
 class Socket {
-    constructor(RTC, providerName) {
+    constructor(RTC, sessionId) {
         this.RTC = RTC;
-        this.socket = io("http://localhost:3000", {
-            query: `type=client&username=${providerName}`
+        providerName = "provider1"; // todo: replace with token
+        this.socket = io(`https://${window.location.host}`, {
+            query: `session_id=${sessionId}`,
+            secure: true
         });
 
         this.socket.on("connectToProviderSuccess", () => {

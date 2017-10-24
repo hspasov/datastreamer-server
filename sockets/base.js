@@ -11,7 +11,10 @@ const createNewStreamSession = streamSessionActions.createNewStreamSession;
 const deleteStreamSession = streamSessionActions.deleteStreamSession;
 
 const base = (io, redisClient) => {
+    console.log("Inside base");
+    console.log(io);
     io.on("connection", socket => {
+        console.log("Connection");
         if (socket.handshake.query) {
             createNewStreamSession(
                 redisClient,

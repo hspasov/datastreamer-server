@@ -4,14 +4,21 @@
  * Module dependencies.
  */
 
+const fs = require("fs");
+const path = require("path");
 const app = require("../app");
-const debug = require("debug")("datastreamer-server:server");
-const http = require("http");
+const infoLog = require("debug")("datastreamer-server:info");
+const https = require("https");
 const session = require("express-session");
 const mongoose = require("mongoose");
-const mongodbStore = require("connect-mongo")(session);
 const bluebird = require("bluebird");
 const redis = require("redis");
+const redisClient = redis.createClient({ detect_buffers: true });
+const connectRedis = require("connect-redis")(session);
+const redisStore = new connectRedis({ client: redisClient });
+const redisSocketIoAdapter = require("socket.io-redis");
+const passportSocketIo = require("passport.socketio");
+const cookieParser = require("cookie-parser");
 const config = require("../config/config");
 
 /**
@@ -20,12 +27,6 @@ const config = require("../config/config");
 
 const port = normalizePort(process.env.PORT || "3000");
 app.set("port", port);
-
-/**
- * Create HTTP server.
- */
-
-const server = http.createServer(app);
 
 /*
  * Connect to mongo
@@ -38,28 +39,28 @@ mongoose.connect(config.dbURL, {
 const db = mongoose.connection;
 
 db.on("error", function (error) {
-    console.log("There was a db connection error.");
-    return console.error(error.message);
+    infoLog(`There was a db connection error: ${error.message}.`);
 });
 
 db.once("conected", function () {
-    console.log("DB connected to " + config.dbURL);
+    infoLog(`DB connected to ${config.dbURL}`);
 });
 
 db.once("disconnected", function () {
-    console.log("DB disconnecred from " + config.dbURL);
+    infoLog(`DB disconnecred from ${config.dbURL}`);
+});
+
+redisClient.on("error", error => {
+    infoLog(`Redis client error: ${error}`);
 });
 
 app.use(session({
-    name: "xpressBlu.sess",
-    store: new mongodbStore({
-        mongooseConnection: mongoose.connection,
-        touchAfter: 24 * 3600
-    }),
-    secret: "qwertyuiop123456789",
-    resave: false,
-    saveUninitialized: false,
-    cookie: { maxAge: 1000 * 60 * 15 }
+    cookieParser: cookieParser,
+    store: redisStore,
+    key: "express.sid",
+    secret: config.sessionSecret,
+    resave: true,
+    saveUninitialized: false
 }));
 
 /*
@@ -68,25 +69,30 @@ app.use(session({
 
 bluebird.promisifyAll(redis.RedisClient.prototype);
 bluebird.promisifyAll(redis.Multi.prototype);
-const redisClient = redis.createClient({ detect_buffers: true });
 
-redisClient.on("error", error => {
-    console.log(error);
-});
+const options = {
+    key: fs.readFileSync(path.join(__dirname, "../config/server.key")),
+    cert: fs.readFileSync(path.join(__dirname, "../config/server.crt"))
+};
 
-/**
- * Listen on provided port, on all network interfaces.
- */
+const server = https.createServer(options, app);
 
 server.listen(port);
 server.on("error", onError);
-server.on("listening", onListening);
+server.on("listening", () => onListening(server));
 
 /**
  * Socket.io
  */
 
 const io = require("socket.io").listen(server);
+io.adapter(redisSocketIoAdapter({ host: "localhost", port: 6379 }));
+io.use(passportSocketIo.authorize({
+    cookieParser: cookieParser,
+    key: "express.sid",
+    store: redisStore,
+    secret: config.sessionSecret
+}));
 require("../sockets/base")(io, redisClient);
 
 /**
@@ -110,7 +116,7 @@ function normalizePort(val) {
 }
 
 /**
- * Event listener for HTTP server "error" event.
+ * Event listener for HTTPS server "error" event.
  */
 
 function onError(error) {
@@ -125,11 +131,11 @@ function onError(error) {
     // handle specific listen errors with friendly messages
     switch (error.code) {
     case "EACCES":
-        console.error(bind + " requires elevated privileges");
+        infoLog(`${bind} + requires elevated privileges`);
         process.exit(1);
         break;
     case "EADDRINUSE":
-        console.error(bind + " is already in use");
+        infoLog(`${bind} is already in use`);
         process.exit(1);
         break;
     default:
@@ -141,10 +147,10 @@ function onError(error) {
  * Event listener for HTTP server "listening" event.
  */
 
-function onListening() {
+function onListening(server) {
     const addr = server.address();
     const bind = typeof addr === "string"
-        ? "pipe " + addr
-        : "port " + addr.port;
-    debug("Listening on " + bind);
+        ? `pipe ${addr}`
+        : `port ${addr.port}`;
+    infoLog(`Listening on ${bind}`);
 }

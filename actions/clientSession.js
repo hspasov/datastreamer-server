@@ -1,3 +1,9 @@
+const debug = require("debug");
+const log = {
+    info: debug("datastreamer-server:info"),
+    verbose: debug("datastreamer-server:verbose")
+};
+
 const errorActions = require("../modules/errorActions");
 
 const errorHandler = errorActions.errorHandler;
@@ -11,12 +17,11 @@ function createNewClientSession(redisClient, socketId, providerName) {
             .set(`${socketId}:providerName`, providerName)
             .set(`${socketId}:created`, new Date().getTime())
             .execAsync().then(response => {
-                console.log("New client session successfully created...");
-                console.log(response);
+                log.info(`New client session successfully created...`);
+                log.verbose(`Redis response: ${response}`);
                 resolve(socketId);
             }).catch(error => {
-                console.log("There was an error creating the client session");
-                console.log(error);
+                log.info(`There was an error creating the client session for client "${socketId}": ${error}`);
                 reject(errorHandler(error));
             });
     });
@@ -25,8 +30,10 @@ function createNewClientSession(redisClient, socketId, providerName) {
 function findClientSession(redisClient, socketId) {
     return new Promise((resolve, reject) => {
         redisClient.sismemberAsync("clients", socketId).then(response => {
+            // todo: verbose
             resolve(response);
         }).catch(error => {
+            // todo: info
             reject(errorHandler(error));
         });
     });
@@ -44,9 +51,10 @@ function deleteClientSession(redisClient, socketId) {
                 .del(`${socketId}:created`)
                 .execAsync()
         }).then(response => {
-                console.log("Deleted client session", providerName, response);
+                log.info(`Deleted client session "${socketId}" with provider "${providerName}"`);
                 resolve({ socketId, providerName });
         }).catch(error => {
+            // todo: info
             reject(errorActions(error));
         });
     });
