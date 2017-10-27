@@ -2,16 +2,6 @@ const express = require("express");
 const clientPassport = require("../config/clientPassport");
 const router = express.Router();
 const path = require("path");
-const errorActions = require("../modules/errorActions");
-const clientActions = require("../actions/client");
-
-const errorHandler = errorActions.errorHandler;
-const validationError = errorActions.validationError;
-
-const createNewClient = clientActions.createNewClient;
-const findClient = clientActions.findClient;
-const updateClient = clientActions.updateClient;
-const deleteClient = clientActions.deleteClient;
 
 router.use(clientPassport.initialize());
 router.use(clientPassport.session());
@@ -31,7 +21,7 @@ router.post("/login", (req, res, next) => {
         req.login(client, err => {
             return err ?
                 next(err) : res.status(200).send({
-                    username: client.username
+                    token: client.token
                 });
         });
     })(req, res, next);
@@ -49,7 +39,24 @@ router.post("/register", (req, res, next) => {
         req.login(client, err => {
             return err ?
                 next(err) : res.status(201).send({
-                    username: client.username
+                    token: client.token
+                });
+        });
+    })(req, res, next);
+});
+
+router.post("/connect", (req, res, next) => {
+    clientPassport.authenticate("client-connect", { session: true }, (err, connection) => {
+        if (err) {
+            return next(err); // will generate a 500 error
+        }
+        if (!connection) {
+            return res.status(409).send({ message: "fail" });
+        }
+        req.login(connection, err => {
+            return err ?
+                next(err) : res.status(201).send({
+                    token: connection.token
                 });
         });
     })(req, res, next);

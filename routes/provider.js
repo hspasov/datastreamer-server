@@ -1,16 +1,9 @@
 var express = require("express");
 var passport = require("../config/providerPassport");
-var path = require("path");
 var errorActions = require("../modules/errorActions");
-var providerActions = require("../actions/provider");
 
 var errorHandler = errorActions.errorHandler;
 var validationError = errorActions.validationError;
-
-var createNewClient = providerActions.createNewClient;
-var findClient = providerActions.findClient;
-var updateClient = providerActions.updateClient;
-var deleteClient = providerActions.deleteClient;
 
 var router = express.Router();
 
@@ -28,7 +21,7 @@ router.post("/login", (req, res, next) => {
             return err ?
                 next(err) :
                 res.status(200).json({
-                    username: provider.username
+                    token: provider.token
                 });
         });
     })(req, res, next);
@@ -46,7 +39,7 @@ router.post("/register", (req, res, next) => {
             return err ?
                 next(err) :
                 res.status(201).json({
-                    username: provider.username
+                    token: provider.token
                 });
         });
     })(req, res, next);

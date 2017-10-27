@@ -1,13 +1,13 @@
 import Socket from "../sockets/client";
 
 class RTC {
-    constructor(providerName, processMessage, processChunk) {
-        this.socket = new Socket(this, providerName).socket;
+    constructor(token, processMessage, processChunk) {
+        this.socket = new Socket(this, token).socket;
         this.servers = null;
         this.peerConnectionConstraint = null;
         this.dataConstraint = null;
 
-        this.providerName = providerName;
+        this.token = token;
         this.processMessage = processMessage;
         this.processChunk = processChunk;
 
@@ -33,7 +33,7 @@ class RTC {
             this.peerConnection.onicecandidate = event => {
                 if (event.candidate) {
                     console.log("sending ICE candidate", event.candidate);
-                    this.socket.emit("sendICECandidate", "provider", this.providerName, event.candidate);
+                    this.socket.emit("sendICECandidate", "provider", this.token, event.candidate);
                 }
             };
 
@@ -66,7 +66,7 @@ class RTC {
                 description => {
                     this.peerConnection.setLocalDescription(description);
                     console.log("set local description", description);
-                    this.socket.emit("offerP2PConnection", this.providerName, description);
+                    this.socket.emit("offerP2PConnection", this.token, description);
                 },
                 error => {
                     console.log("there was an error creating an offer", error);
@@ -103,7 +103,7 @@ class RTC {
             console.log("Closed peer connection");
             if (error) {
                 console.log("There was an error", error);
-                this.socket.emit("resetProviderConnection", this.providerName);
+                this.socket.emit("resetProviderConnection", this.token);
             }
         }
     }

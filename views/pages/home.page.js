@@ -26,7 +26,7 @@ class Home extends React.Component {
         this.onMessage = this.onMessage.bind(this);
         this.onChunk = this.onChunk.bind(this);
         this.getCookie = this.getCookie.bind(this);
-        this.RTC = new RTC(this.getCookie("io"), this.onMessage, this.onChunk);
+        this.RTC = new RTC(this.props.provider.token, this.onMessage, this.onChunk);
     }
 
     shouldComponentUpdate(nextProps, nextState) {

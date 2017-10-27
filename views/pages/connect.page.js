@@ -34,7 +34,8 @@ class Connect extends React.Component {
     handleSubmit() {
         const formData = {
             username: this.state.username,
-            password: this.state.password
+            password: this.state.password,
+            token: this.props.client.token
         }
 
         fetch("/provider/login", {
@@ -47,7 +48,7 @@ class Connect extends React.Component {
             } else {
                 throw `Authentication failed\n${response}`;
             }
-            }).then(json => {
+        }).then(json => {
             this.props.dispatch(connectClient(json));
             this.props.history.replace("/home");
         }).catch(error => {
@@ -56,7 +57,7 @@ class Connect extends React.Component {
     }
 
     render() {
-        if (!this.props.client.username) {
+        if (!this.props.client.token) {
             return (
                 <p>Please login or register</p>
             );

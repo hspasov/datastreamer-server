@@ -1,7 +1,7 @@
-function loginClient(client) {
+function loginClient(token) {
     return {
         type: "LOGIN_CLIENT",
-        payload: client
+        payload: token
     }
 }
 

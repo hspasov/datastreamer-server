@@ -1,11 +1,10 @@
 import io from "socket.io-client";
 
 class Socket {
-    constructor(RTC, sessionId) {
+    constructor(RTC, token) {
         this.RTC = RTC;
-        providerName = "provider1"; // todo: replace with token
         this.socket = io(`https://${window.location.host}`, {
-            query: `session_id=${sessionId}`,
+            query: `token=${token}`,
             secure: true
         });
 
@@ -23,7 +22,7 @@ class Socket {
         });
 
         this.socket.on("providerFound", () => {
-            this.socket.emit("connectToProvider", providerName);
+            this.socket.emit("connectToProvider", token);
         });
 
         this.socket.on("requestedP2PConnection", () => {
@@ -60,8 +59,8 @@ class Socket {
             }
         });
 
-        console.log("connecting to provider", providerName);
-        this.socket.emit("connectToProvider", providerName);
+        console.log("connecting to provider");
+        this.socket.emit("connectToProvider", token);
     }
 }
 

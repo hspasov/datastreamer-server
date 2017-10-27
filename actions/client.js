@@ -81,7 +81,6 @@ function deleteClient(request, response) {
 }
 
 module.exports = {
-    validationError: validationError,
     createNewClient: createNewClient,
     findClient: findClient,
     updateClient: updateClient,

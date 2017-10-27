@@ -14,7 +14,7 @@ const createNewClientSession = clientSessionActions.createNewClientSession;
 const findClientSession = clientSessionActions.findClientSession;
 const deleteClientSession = clientSessionActions.deleteClientSession;
 
-function createNewStreamSession(redisClient, socketId, type, providerName) {
+function createNewStreamSession(redisClient, socketId, token) {
     return new Promise((resolve, reject) => {
         if (type == "provider") {
             createNewProviderSession(redisClient, socketId, providerName)

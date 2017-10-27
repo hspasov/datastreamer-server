@@ -19,17 +19,18 @@ const base = (io, redisClient) => {
             createNewStreamSession(
                 redisClient,
                 socket.id,
-                socket.handshake.query["type"],
-                socket.handshake.query["username"]
+                socket.handshake.query["token"]
             ).then(sessionInfo => {
                 console.log(`${socket.id} connected`);
                 console.log(sessionInfo);
                 console.log(Object.keys(io.sockets.sockets).length);
             }).catch(error => {
                 console.log(error);
+                socket.disconnect(true);
             });
         } else {
             console.log("no handshake query for", socket.id);
+            socket.disconnect(true);
         }
 
         socket.on("disconnect", () => {

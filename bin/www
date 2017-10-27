@@ -9,16 +9,11 @@ const path = require("path");
 const app = require("../app");
 const infoLog = require("debug")("datastreamer-server:info");
 const https = require("https");
-const session = require("express-session");
 const mongoose = require("mongoose");
 const bluebird = require("bluebird");
 const redis = require("redis");
 const redisClient = redis.createClient({ detect_buffers: true });
-const connectRedis = require("connect-redis")(session);
-const redisStore = new connectRedis({ client: redisClient });
 const redisSocketIoAdapter = require("socket.io-redis");
-const passportSocketIo = require("passport.socketio");
-const cookieParser = require("cookie-parser");
 const config = require("../config/config");
 
 /**
@@ -54,15 +49,6 @@ redisClient.on("error", error => {
     infoLog(`Redis client error: ${error}`);
 });
 
-app.use(session({
-    cookieParser: cookieParser,
-    store: redisStore,
-    key: "express.sid",
-    secret: config.sessionSecret,
-    resave: true,
-    saveUninitialized: false
-}));
-
 /*
  * Connect to redis
  */
@@ -87,12 +73,6 @@ server.on("listening", () => onListening(server));
 
 const io = require("socket.io").listen(server);
 io.adapter(redisSocketIoAdapter({ host: "localhost", port: 6379 }));
-io.use(passportSocketIo.authorize({
-    cookieParser: cookieParser,
-    key: "express.sid",
-    store: redisStore,
-    secret: config.sessionSecret
-}));
 require("../sockets/base")(io, redisClient);
 
 /**
