@@ -1,9 +1,18 @@
+const fs = require("fs");
+const path = require("path");
+const jwt = require("jsonwebtoken");
 const passport = require("passport");
 const config = require("./config");
 const Provider = require("../models/provider");
 const errorActions = require("../modules/errorActions");
 
 const errorHandler = errorActions.errorHandler;
+const debug = require("debug");
+const log = {
+    info: debug("datastreamer-server:info"),
+    error: debug("datastreamer-server:info:ERROR"),
+    verbose: debug("datastreamer-server:verbose")
+};
 
 const host = config.host;
 const LocalStrategy = require("passport-local").Strategy;
@@ -15,7 +24,7 @@ passport.serializeUser((provider, done) => {
 passport.deserializeUser((id, done) => {
     Provider.findById(id, (error, provider) => {
         return error ?
-            console.log(error.message) : done(null, provider);
+            log.error(error.message) : done(null, provider);
     })
 });
 
@@ -40,7 +49,20 @@ passport.use(
                 if (!provider.validPassword(password)) {
                     return done(null, false, { errorMsg: "Invalid password try again" });
                 }
-                return done(null, provider);
+                fs.readFileAsync(path.join(__dirname, "./privkey.pem")).then(certificate => {
+                    return jwt.signAsync({
+                        username: provider.username
+                    }, certificate, {
+                        issuer: "datastreamer-server",
+                        subject: "provider",
+                        algorithm: "RS256",
+                        expiresIn: 60 * 60 // 1 hour
+                    });
+                }).then(token =>{
+                    return done(null, { token });
+                }).catch(error => {
+                    return done(null, false, errorHandler(error));
+                });
             });
         }
     )
@@ -54,33 +76,44 @@ passport.use(
         passReqToCallback: true
     },
         (req, username, password, done) => {
-            process.nextTick(() => {
-                Provider.findOne({ username }, (error, provider) => {
-                    if (error) {
-                        return errorHandler(error);
-                    }
-                    if (provider) {
-                        return done(null, false, { errorMsg: "username already exists" });
-                    }
-                    else {
-                        let newProvider = new Provider();
-                        newProvider.username = username;
-                        newProvider.password = newProvider.generateHash(password);
-                        newProvider.save(error => {
-                            if (error) {
-                                console.log(error);
-                                if (error.message == "Provider validation failed") {
-                                    console.log(error.message);
-                                    return done(null, false, { errorMsg: "Please fill all fields" });
-                                }
-                                return errorHandler(error);
+            Provider.findOne({ username }, (error, provider) => {
+                if (error) {
+                    return errorHandler(error);
+                }
+                if (provider) {
+                    return done(null, false, { errorMsg: "username already exists" });
+                }
+                else {
+                    let newProvider = new Provider();
+                    newProvider.username = username;
+                    newProvider.password = newProvider.generateHash(password);
+                    newProvider.save(error => {
+                        if (error) {
+                            log.error(error);
+                            if (error.message == "Provider validation failed") {
+                                log.error(error.message);
+                                return done(null, false, { errorMsg: "Please fill all fields" });
                             }
-                            console.log("New provider successfully created...");
-                            console.log("username", username);
-                            return done(null, newProvider);
+                            return errorHandler(error);
+                        }
+                        log.info("New provider successfully created...");
+                        log.info(`username: ${username}`);
+                        fs.readFileAsync(path.join(__dirname, "./privkey.pem")).then(certificate => {
+                            return jwt.signAsync({
+                                username: newProvider.username
+                            }, certificate, {
+                                issuer: "datastreamer-server",
+                                subject: "provider",
+                                algorithm: "RS256",
+                                expiresIn: 60 * 60 // 1 hour
+                            });
+                        }).then(token =>{
+                            return done(null, { token });
+                        }).catch(error => {
+                            return done(null, false, errorHandler(error));
                         });
-                    }
-                });
+                    });
+                }
             });
         }
     )

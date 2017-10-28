@@ -1,6 +1,9 @@
+const redisClient = require("redis").createClient({ detect_buffers: true });
+
 const debug = require("debug");
 const log = {
     info: debug("datastreamer-server:info"),
+    error: debug("datastreamer-server:info:ERROR"),
     verbose: debug("datastreamer-server:verbose")
 };
 
@@ -9,9 +12,11 @@ const errorActions = require("../modules/errorActions");
 const errorHandler = errorActions.errorHandler;
 const validationError = errorActions.validationError;
 
-function createNewClientSession(redisClient, socketId, providerName) {
+function createNewClientSession(socketId, providerName) {
     return new Promise((resolve, reject) => {
         redisClient.multi()
+            .sismember("providers", providerName)
+            .get(`${providerName}:socketId`)
             .sadd("clients", socketId)
             .sadd(`${providerName}:clientSocketIds`, socketId)
             .set(`${socketId}:providerName`, providerName)
@@ -19,15 +24,22 @@ function createNewClientSession(redisClient, socketId, providerName) {
             .execAsync().then(response => {
                 log.info(`New client session successfully created...`);
                 log.verbose(`Redis response: ${response}`);
-                resolve(socketId);
+                resolve({
+                    type: "clientConnection",
+                    provider: {
+                        providerName,
+                        isConnected: response[0],
+                        socketId: response[1]
+                    }
+                });
             }).catch(error => {
-                log.info(`There was an error creating the client session for client "${socketId}": ${error}`);
+                log.error(`There was an error creating the client session for client "${socketId}": ${error}`);
                 reject(errorHandler(error));
             });
     });
 }
 
-function findClientSession(redisClient, socketId) {
+function findClientSession(socketId) {
     return new Promise((resolve, reject) => {
         redisClient.sismemberAsync("clients", socketId).then(response => {
             // todo: verbose
@@ -39,7 +51,7 @@ function findClientSession(redisClient, socketId) {
     });
 }
 
-function deleteClientSession(redisClient, socketId) {
+function deleteClientSession(socketId) {
     return new Promise((resolve, reject) => {
         let providerName = "";
         redisClient.getAsync(`${socketId}:providerName`).then(response => {

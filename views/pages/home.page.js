@@ -155,7 +155,7 @@ class Home extends React.Component {
     }
 
     render() {
-        if (!this.props.client.username) {
+        if (!this.props.client.token) {
             return (
                 <p>Please login or register</p>
             );

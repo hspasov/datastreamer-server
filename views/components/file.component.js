@@ -3,7 +3,6 @@ import PropTypes from "prop-types";
 
 class File extends React.Component {
     render() {
-        console.log(this.props.name);
         return (
             <div>
                 <p>File name: {this.props.name}</p>

@@ -3,9 +3,8 @@ import io from "socket.io-client";
 class Socket {
     constructor(RTC, token) {
         this.RTC = RTC;
-        this.socket = io(`https://${window.location.host}`, {
-            query: `token=${token}`,
-            secure: true
+        this.socket = io(`http://${window.location.host}`, {
+            query: `token=${token}`
         });
 
         this.socket.on("connectToProviderSuccess", () => {
@@ -13,16 +12,13 @@ class Socket {
         });
 
         this.socket.on("connectToProviderFail", () => {
+            console.log("connect to provider failed");
             this.RTC.deleteP2PConnection();
         });
 
         this.socket.on("resetConnection", () => {
             this.RTC.deleteP2PConnection();
             this.RTC.initializeP2PConnection();
-        });
-
-        this.socket.on("providerFound", () => {
-            this.socket.emit("connectToProvider", token);
         });
 
         this.socket.on("requestedP2PConnection", () => {
@@ -60,7 +56,6 @@ class Socket {
         });
 
         console.log("connecting to provider");
-        this.socket.emit("connectToProvider", token);
     }
 }
 

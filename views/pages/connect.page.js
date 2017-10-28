@@ -38,7 +38,7 @@ class Connect extends React.Component {
             token: this.props.client.token
         }
 
-        fetch("/provider/login", {
+        fetch("/connect", {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded", },
             body: formurlencoded(formData)

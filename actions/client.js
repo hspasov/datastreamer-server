@@ -1,6 +1,7 @@
 const debug = require("debug");
 const log = {
     info: debug("datastreamer-server:info"),
+    error: debug("datastreamer-server:info:ERROR"),
     verbose: debug("datastreamer-server:verbose")
 };
 
@@ -16,7 +17,7 @@ function createNewClient(request, response) {
         password: request.body.password
     }, (error, client) => {
         if (error) {
-            log.info(`There was an error creating the client: code ${error.code}, errorName: ${error.name}`);
+            log.error(`There was an error creating the client: code ${error.code}, errorName: ${error.name}`);
             if (error.name == "validationerror") {
                 return validationError(error, response);
             } else {

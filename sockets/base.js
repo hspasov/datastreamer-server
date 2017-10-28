@@ -1,75 +1,72 @@
+const debug = require("debug");
+const log = {
+    info: debug("datastreamer-server:info"),
+    error: debug("datastreamer-server:info:ERROR"),
+    verbose: debug("datastreamer-server:verbose")
+};
+
 const providerSessionActions = require("../actions/providerSession");
 const clientSessionActions = require("../actions/clientSession");
 const streamSessionActions = require("../actions/streamSession");
 
-const findProviderSocketIdByProviderName = providerSessionActions.findProviderSocketIdByProviderName;
-const findClientSessionsByProviderName = providerSessionActions.findClientSessionsByProviderName;
+const findProviderSocketIdByClientSocketId = providerSessionActions.findProviderSocketIdByClientSocketId;
+const findClientSessionsByProviderSocketId = providerSessionActions.findClientSessionsByProviderSocketId;
 
 const findClientSession = clientSessionActions.findClientSession;
 
 const createNewStreamSession = streamSessionActions.createNewStreamSession;
 const deleteStreamSession = streamSessionActions.deleteStreamSession;
 
-const base = (io, redisClient) => {
-    console.log("Inside base");
-    console.log(io);
+const base = io => {
+    log.verbose("Initialising sockets");
     io.on("connection", socket => {
-        console.log("Connection");
+        log.verbose("A new socket connection.");
         if (socket.handshake.query) {
             createNewStreamSession(
-                redisClient,
                 socket.id,
                 socket.handshake.query["token"]
             ).then(sessionInfo => {
-                console.log(`${socket.id} connected`);
-                console.log(sessionInfo);
-                console.log(Object.keys(io.sockets.sockets).length);
+                log.info(`${socket.id} connected`);
+                log.verbose(sessionInfo);
+                log.verbose(Object.keys(io.sockets.sockets).length);
+                if (sessionInfo.type === "clientConnection") {
+                    if (sessionInfo.provider.isConnected) {
+                        io.to(socket.id).emit("connectToProviderSuccess");
+                        io.to(sessionInfo.provider.socketId).emit("subscribedClient", socket.id);
+                    } else {
+                        io.to(socket.id).emit("connectToProviderFail");
+                    }
+                }
             }).catch(error => {
-                console.log(error);
+                log.error(error);
                 socket.disconnect(true);
             });
         } else {
-            console.log("no handshake query for", socket.id);
+            log.error("no handshake query for", socket.id);
             socket.disconnect(true);
         }
 
         socket.on("disconnect", () => {
-            deleteStreamSession(redisClient, socket.id)
-            .then(sessionInfo => {
-                console.log(`${socket.id} disconnected`);
-                console.log(Object.keys(io.sockets.sockets).length);
+            deleteStreamSession(socket.id).then(sessionInfo => {
+                log.info(`${socket.id} disconnected`);
+                log.info(`${Object.keys(io.sockets.sockets).length} sockets left.`);
                 if (sessionInfo.type == "provider") {
                     sessionInfo.clientSocketIds.forEach(client => {
                         io.to(client).emit("connectToProviderFail");
                     });
                 } else if (sessionInfo.type == "client") {
-                    findProviderSocketIdByProviderName(redisClient, sessionInfo.providerName)
-                    .then(socketId => {
+                    findProviderSocketIdByClientSocketId(socket.id).then(socketId => {
                         if (socketId) {
                             io.to(socketId).emit("unsubscribedClient", socket.id);
                         }
                     }).catch(error => {
-                        console.log(error);
+                        log.error(error);
                     });
                 } else {
-                    console.log("ERROR: Invalid session type", sessionInfo.type);
+                    log.error("ERROR: Invalid session type", sessionInfo.type);
                 }
             }).catch(error => {
-                console.log(error);
-            });
-        });
-
-        socket.on("connectToProvider", providerName => {
-            findProviderSocketIdByProviderName(redisClient, providerName)
-            .then(socketId => {
-                if (!socketId) {
-                    io.to(socket.id).emit("connectToProviderFail");
-                } else {
-                    io.to(socket.id).emit("connectToProviderSuccess");
-                    io.to(socketId).emit("subscribedClient", socket.id);
-                }
-            }).catch(error => {
-                console.log(error);
+                log.error(error);
             });
         });
 
@@ -77,67 +74,62 @@ const base = (io, redisClient) => {
             io.to(clientId).emit("resetConnection");
         });
 
-        socket.on("resetProviderConnection", providerName => {
-            findProviderSocketIdByProviderName(redisClient, providerName)
-                .then(socketId => {
-                    if (!socketId) {
-                        io.to(socket.id).emit("connectToProviderFail");
-                    } else {
-                        io.to(socketId).emit("resetConnection", socket.id);
-                    }
-                }).catch(error => {
-                    console.log(error);
-                });
+        socket.on("resetProviderConnection", () => {
+            findProviderSocketIdByClientSocketId(socket.id).then(socketId => {
+                if (!socketId) {
+                    io.to(socket.id).emit("connectToProviderFail");
+                } else {
+                    io.to(socketId).emit("resetConnection", socket.id);
+                }
+            }).catch(error => {
+                log.error(error);
+            });
         });
 
         socket.on("requestP2PConnection", clientId => {
             io.to(clientId).emit("requestedP2PConnection");
         });
 
-        socket.on("offerP2PConnection", (providerName, description) => {
-            findProviderSocketIdByProviderName(redisClient, providerName)
-                .then(socketId => {
-                    if (!socketId) {
-                        io.to(socket.id).emit("connectToProviderFail");
-                    } else {
-                        io.to(socketId).emit("initConnection", socket.id, description);
-                    }
-                }).catch(error => {
-                    console.log(error);
-                });
+        socket.on("offerP2PConnection", description => {
+            findProviderSocketIdByClientSocketId(socket.id).then(socketId => {
+                if (!socketId) {
+                    io.to(socket.id).emit("connectToProviderFail");
+                } else {
+                    io.to(socketId).emit("initConnection", socket.id, description);
+                }
+            }).catch(error => {
+                log.error(error);
+            });
         });
 
         socket.on("connectToClient", (clientId, description) => {
             io.to(clientId).emit("receiveProviderDescription", description);
         });
 
-        socket.on("sendICECandidate", (receiverType, receiver, candidate) => {
-            if (receiverType === "provider") {
-                findProviderSocketIdByProviderName(redisClient, receiver)
-                .then(socketId => {
+        socket.on("sendICECandidate", (candidate, receiver) => {
+            if (receiver) {
+                io.to(receiver).emit("receiveICECandidate", candidate);
+            } else {
+                findProviderSocketIdByClientSocketId(socket.id).then(socketId => {
                     if (!socketId) {
-                        console.log("todo");
+                        log.info("todo");
                     } else {
                         io.to(socketId).emit("receiveICECandidate", socket.id, candidate);
                     }
                 }).catch(error => {
-                    console.log(error);
+                    log.error(error);
                 });
-            } else if (receiverType === "client") {
-                io.to(receiver).emit("receiveICECandidate", candidate);
-            } else {
-                console.log("Invalid receiver type", receiverType);
             }
         });
 
-        socket.on("connectToClients", providerName => {
-            findClientSessionsByProviderName(redisClient, providerName)
-            .then(clientSessions => {
+        socket.on("connectToClients", () => {
+            findClientSessionsByProviderSocketId(socket.id).then(clientSessions => {
                 clientSessions.forEach(client => {
-                    io.to(client).emit("providerFound");
+                    io.to(socket.id).emit("subscribedClient", client);
+                    io.to(client).emit("connectToProviderSuccess");
                 });
             }).catch(error => {
-                console.log(error);
+                log.error(error);
             });
         });
     });

@@ -1,3 +1,10 @@
+const debug = require("debug");
+const log = {
+    info: debug("datastreamer-server:info"),
+    error: debug("datastreamer-server:info:ERROR"),
+    verbose: debug("datastreamer-server:verbose")
+};
+
 const ProviderModel = require("../models/provider");
 const errorActions = require("../modules/errorActions");
 
@@ -10,9 +17,9 @@ function createNewProvider(request, response) {
         password: request.body.password
     }, (error, provider) => {
         if (error) {
-            console.error("There was an error creating the provider");
-            console.error(error.code);
-            console.error(error.name);
+            log.error("There was an error creating the provider");
+            log.error(error.code);
+            log.error(error.name);
             if (error.name == "validationerror") {
                 return validationError(error, response);
             }
@@ -20,8 +27,8 @@ function createNewProvider(request, response) {
                 return errorHandler(error);
             }
         }
-        console.log("New provider successfully created...");
-        console.log(provider.username);
+        log.info("New provider successfully created...");
+        log.info(provider.username);
         return response.json({
             msg: "Provider created!",
             username: provider.username
@@ -40,7 +47,7 @@ function findProvider(request, response) {
                     msg: "Provider does not exist in the dBase"
                 });
             }
-            console.log(provider.username);
+            log.verbose(`Result of function findProvider: ${provider.username}`);
             return response.json(provider);
         }
     );

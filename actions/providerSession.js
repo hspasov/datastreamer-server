@@ -1,31 +1,42 @@
+const debug = require("debug");
+const log = {
+    info: debug("datastreamer-server:info"),
+    error: debug("datastreamer-server:info:ERROR"),
+    verbose: debug("datastreamer-server:verbose")
+};
+
+const redisClient = require("redis").createClient({ detect_buffers: true });
+
 const errorActions = require("../modules/errorActions");
 
 const errorHandler = errorActions.errorHandler;
 const validationError = errorActions.validationError;
 
-function createNewProviderSession(redisClient, socketId, providerName) {
+function createNewProviderSession(socketId, providerName) {
     return new Promise((resolve, reject) => {
         redisClient.multi()
+            .smembers(`${providerName}:clientSocketIds`)
             .sadd("providers", providerName)
             .set(`${socketId}:providerName`, providerName)
             .set(`${providerName}:socketId`, socketId)
             .set(`${providerName}:created`, new Date().getTime())
             .execAsync().then(response => {
-                console.log("New provider session successfully created...");
-                console.log(response);
+                log.info("New provider session successfully created...");
+                log.verbose(`Redis response: ${response}`);
                 resolve({
                     type: "provider",
-                    socketId: socketId,
-                    providerName: providerName
+                    clientSocketIds: response[0],
+                    socketId,
+                    providerName
                 });
             }).catch(error => {
-                console.error("There was an error creating the provider session");
+                log.error("There was an error creating the provider session");
                 reject(errorHandler(error));
             });
     });
 }
 
-function findProviderSocketIdByProviderName(redisClient, providerName) {
+function findProviderSocketIdByProviderName(providerName) {
     return new Promise((resolve, reject) => {
         redisClient.getAsync(`${providerName}:socketId`).then(socketId => {
             resolve(socketId);
@@ -35,7 +46,19 @@ function findProviderSocketIdByProviderName(redisClient, providerName) {
     });
 }
 
-function findProviderNameBySocketId(redisClient, socketId) {
+function findProviderSocketIdByClientSocketId(clientSocketId) {
+    return new Promise((resolve, reject) => {
+        redisClient.getAsync(`${clientSocketId}:providerName`).then(providerName => {
+            return findProviderSocketIdByProviderName(providerName);
+        }).then(providerSocketId => {
+            resolve(providerSocketId);
+        }).catch(error => {
+            reject(errorHandler(error));
+        });
+    });
+}
+
+function findProviderNameBySocketId(socketId) {
     return new Promise((resolve, reject) => {
         redisClient.getAsync(`${socketId}:providerName`).then(providerName => {
             resolve(providerName);
@@ -45,7 +68,7 @@ function findProviderNameBySocketId(redisClient, socketId) {
     });
 }
 
-function findClientSessionsByProviderName(redisClient, providerName) {
+function findClientSessionsByProviderName(providerName) {
     return new Promise((resolve, reject) => {
         redisClient.smembersAsync(`${providerName}:clientSocketIds`).then(clientSessions => {
             resolve(clientSessions);
@@ -55,9 +78,21 @@ function findClientSessionsByProviderName(redisClient, providerName) {
     });
 }
 
-function deleteProviderSession(redisClient, socketId) {
+function findClientSessionsByProviderSocketId(socketId) {
     return new Promise((resolve, reject) => {
-        findProviderNameBySocketId(redisClient, socketId).then(providerName => {
+        findProviderNameBySocketId(socketId).then(providerName => {
+            return findClientSessionsByProviderName(providerName);
+        }).then(clientSessions => {
+            resolve(clientSessions);
+        }).catch(error => {
+            reject(errorHandler(error));
+        });
+    });
+}
+
+function deleteProviderSession(socketId) {
+    return new Promise((resolve, reject) => {
+        findProviderNameBySocketId(socketId).then(providerName => {
             redisClient.multi()
                 .get(`${providerName}:socketId`)
                 .smembers(`${providerName}:clientSocketIds`)
@@ -66,8 +101,7 @@ function deleteProviderSession(redisClient, socketId) {
                 .del(`${providerName}:socketId`)
                 .del(`${providerName}:created`)
                 .execAsync().then(response => {
-                    console.log("execAsync at deleteProviderSession:");
-                    console.log(response);
+                    log.verbose(`execAsync at deleteProviderSession: ${response}`);
                     resolve({
                         socketId: response[0],
                         providerName,
@@ -84,8 +118,8 @@ function deleteProviderSession(redisClient, socketId) {
 
 module.exports = {
     createNewProviderSession: createNewProviderSession,
-    findProviderSocketIdByProviderName: findProviderSocketIdByProviderName,
+    findProviderSocketIdByClientSocketId: findProviderSocketIdByClientSocketId,
     findProviderNameBySocketId: findProviderNameBySocketId,
-    findClientSessionsByProviderName: findClientSessionsByProviderName,
+    findClientSessionsByProviderSocketId: findClientSessionsByProviderSocketId,
     deleteProviderSession: deleteProviderSession
 };

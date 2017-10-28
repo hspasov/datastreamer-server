@@ -5,10 +5,11 @@
  */
 
 const fs = require("fs");
+const jwt = require("jsonwebtoken");
 const path = require("path");
 const app = require("../app");
 const infoLog = require("debug")("datastreamer-server:info");
-const https = require("https");
+const http = require("http");
 const mongoose = require("mongoose");
 const bluebird = require("bluebird");
 const redis = require("redis");
@@ -55,13 +56,15 @@ redisClient.on("error", error => {
 
 bluebird.promisifyAll(redis.RedisClient.prototype);
 bluebird.promisifyAll(redis.Multi.prototype);
+bluebird.promisifyAll(jwt);
+bluebird.promisifyAll(fs);
 
 const options = {
     key: fs.readFileSync(path.join(__dirname, "../config/server.key")),
     cert: fs.readFileSync(path.join(__dirname, "../config/server.crt"))
 };
 
-const server = https.createServer(options, app);
+const server = http.createServer(app);
 
 server.listen(port);
 server.on("error", onError);
@@ -73,7 +76,7 @@ server.on("listening", () => onListening(server));
 
 const io = require("socket.io").listen(server);
 io.adapter(redisSocketIoAdapter({ host: "localhost", port: 6379 }));
-require("../sockets/base")(io, redisClient);
+require("../sockets/base")(io);
 
 /**
  * Normalize a port into a number, string, or false.

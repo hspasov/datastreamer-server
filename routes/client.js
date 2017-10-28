@@ -1,7 +1,7 @@
+const path = require("path");
 const express = require("express");
 const clientPassport = require("../config/clientPassport");
 const router = express.Router();
-const path = require("path");
 
 router.use(clientPassport.initialize());
 router.use(clientPassport.session());
@@ -11,7 +11,7 @@ router.route(["/login", "/register", "/home", "/"]).get((req, res) => {
 });
 
 router.post("/login", (req, res, next) => {
-    clientPassport.authenticate("client-login", { session: true }, (err, client) => {
+    clientPassport.authenticate("client-login", { session: false }, (err, client) => {
         if (err) {
             return next(err); // will generate a 500 error
         }
@@ -29,7 +29,7 @@ router.post("/login", (req, res, next) => {
 
 
 router.post("/register", (req, res, next) => {
-    clientPassport.authenticate("client-register", { session: true }, (err, client) => {
+    clientPassport.authenticate("client-register", { session: false }, (err, client) => {
         if (err) {
             return next(err); // will generate a 500 error
         }
@@ -46,7 +46,7 @@ router.post("/register", (req, res, next) => {
 });
 
 router.post("/connect", (req, res, next) => {
-    clientPassport.authenticate("client-connect", { session: true }, (err, connection) => {
+    clientPassport.authenticate("client-connect", { session: false }, (err, connection) => {
         if (err) {
             return next(err); // will generate a 500 error
         }
@@ -55,7 +55,7 @@ router.post("/connect", (req, res, next) => {
         }
         req.login(connection, err => {
             return err ?
-                next(err) : res.status(201).send({
+                next(err) : res.status(200).send({
                     token: connection.token
                 });
         });
