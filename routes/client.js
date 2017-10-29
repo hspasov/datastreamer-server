@@ -1,7 +1,15 @@
 const path = require("path");
 const express = require("express");
 const clientPassport = require("../config/clientPassport");
+const invalidateToken = require("../actions/streamSession").invalidateToken;
 const router = express.Router();
+
+const debug = require("debug");
+const log = {
+    info: debug("datastreamer-server:info"),
+    error: debug("datastreamer-server:info:ERROR"),
+    verbose: debug("datastreamer-server:verbose")
+};
 
 router.use(clientPassport.initialize());
 router.use(clientPassport.session());
@@ -60,6 +68,26 @@ router.post("/connect", (req, res, next) => {
                 });
         });
     })(req, res, next);
+});
+
+router.post("/disconnect", (req, res, next) => {
+    invalidateToken(req.body.connectionToken).then(() => {
+        res.status(200).send();
+    }).catch(error => {
+        log.error(error);
+        res.status(400).end();
+    });
+});
+
+router.post("/logout", (req, res, next) => {
+    invalidateToken(req.body.clientToken).then(() => {
+        return invalidateToken(req.body.connectionToken);
+    }).then(() => {
+        res.status(200).send();
+    }).catch(error => {
+        log.error(error);
+        res.status(400).end();
+    });
 });
 
 module.exports = router;

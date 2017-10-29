@@ -3,6 +3,7 @@ import { Navbar, Button } from "react-bootstrap";
 import { connect } from "react-redux";
 import { logoutClient } from "../../store/actions/client";
 import { disconnectClient } from "../../store/actions/provider";
+import formurlencoded from "form-urlencoded";
 
 class App extends React.Component {
     constructor(props) {
@@ -13,14 +14,37 @@ class App extends React.Component {
     }
 
     disconnect() {
-        this.props.dispatch(disconnectClient());
-        this.goTo("connect");
+        const formData = {
+            connectionToken: this.props.provider.token
+        };
+        fetch("/disconnect", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded", },
+            body: formurlencoded(formData)
+        }).then(response => {
+            this.props.dispatch(disconnectClient());
+            this.goTo("home");
+        }).catch(error => {
+            console.log(error);
+        });
     }
 
     logout() {
-        this.props.dispatch(disconnectClient());
-        this.props.dispatch(logoutClient());
-        this.goTo("");
+        const formData = {
+            clientToken: this.props.client.token,
+            connectionToken: this.props.provider.token
+        };
+        fetch("/logout", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded", },
+            body: formurlencoded(formData)
+        }).then(response => {
+            this.props.dispatch(disconnectClient());
+            this.props.dispatch(logoutClient());
+            this.goTo("");
+        }).catch(error => {
+            console.log(error);
+        });
     }
 
     goTo(route) {

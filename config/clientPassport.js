@@ -18,6 +18,7 @@ const log = {
 const host = config.host;
 const LocalStrategy = require("passport-local").Strategy;
 const CustomStrategy = require("passport-custom");
+const isInvalidated = require("../actions/streamSession").isInvalidated;
 
 passport.serializeUser((client, done) => {
     log.verbose(`Serializing user: ${client}`);
@@ -119,7 +120,13 @@ passport.use(
 );
 
 passport.use("client-connect", new CustomStrategy((req, done) => {
-    fs.readFileAsync(path.join(__dirname, "./pubkey.pem")).then(publicKey => {
+    isInvalidated(req.body.token).then(isInvalidated => {
+        if (isInvalidated) {
+            throw "Authentication failed. Token has been invalidated.";
+        } else {
+            return fs.readFileAsync(path.join(__dirname, "./pubkey.pem"));
+        }
+    }).then(publicKey => {
         return jwt.verifyAsync(req.body.token, publicKey, {
             issuer: "datastreamer-server",
             subject: "client",
@@ -139,7 +146,7 @@ passport.use("client-connect", new CustomStrategy((req, done) => {
             if (!provider.validPassword(req.body.password)) {
                 return done(null, false, { errorMsg: "Invalid password try again" });
             }
-            return fs.readFileAsync(path.join(__dirname, "./privkey.pem")).then(privateKey => {
+            fs.readFileAsync(path.join(__dirname, "./privkey.pem")).then(privateKey => {
                 return jwt.signAsync({
                     client: decoded.username,
                     provider: provider.username
@@ -149,10 +156,10 @@ passport.use("client-connect", new CustomStrategy((req, done) => {
                     algorithm: "RS256",
                     expiresIn: 60 * 60 // 1 hour
                 });
+            }).then(token => {
+                return done(null, { token });
             });
         });
-    }).then(token => {
-        return done(null, { token });
     }).catch(error => {
         return done(null, false, errorHandler(error));
     });
