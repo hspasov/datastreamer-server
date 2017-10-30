@@ -34,11 +34,13 @@ const base = io => {
                         io.to(socket.id).emit("connectToProviderSuccess");
                         io.to(sessionInfo.provider.socketId).emit("subscribedClient", socket.id);
                     } else {
-                        io.to(socket.id).emit("connectToProviderFail");
+                        io.to(socket.id).emit("connectToProviderFail", "ProviderNotConnectedError");
                     }
                 }
             }).catch(error => {
                 log.error(error);
+                log.error(error.name);
+                io.to(socket.id).emit("connectToProviderFail", error.name);
                 socket.disconnect(true);
             });
         } else {
@@ -52,7 +54,7 @@ const base = io => {
                 log.info(`${Object.keys(io.sockets.sockets).length} sockets left.`);
                 if (sessionInfo.type == "provider") {
                     sessionInfo.clientSocketIds.forEach(client => {
-                        io.to(client).emit("connectToProviderFail");
+                        io.to(client).emit("connectToProviderFail", "ProviderNotConnectedError");
                     });
                 } else if (sessionInfo.type == "client") {
                     findProviderSocketIdByClientSocketId(socket.id).then(socketId => {
@@ -77,7 +79,7 @@ const base = io => {
         socket.on("resetProviderConnection", () => {
             findProviderSocketIdByClientSocketId(socket.id).then(socketId => {
                 if (!socketId) {
-                    io.to(socket.id).emit("connectToProviderFail");
+                    io.to(socket.id).emit("connectToProviderFail", "ProviderNotConnectedError");
                 } else {
                     io.to(socketId).emit("resetConnection", socket.id);
                 }
@@ -93,7 +95,7 @@ const base = io => {
         socket.on("offerP2PConnection", description => {
             findProviderSocketIdByClientSocketId(socket.id).then(socketId => {
                 if (!socketId) {
-                    io.to(socket.id).emit("connectToProviderFail");
+                    io.to(socket.id).emit("connectToProviderFail", "ProviderNotConnectedError");
                 } else {
                     io.to(socketId).emit("initConnection", socket.id, description);
                 }

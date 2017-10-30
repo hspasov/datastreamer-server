@@ -3,16 +3,29 @@ import io from "socket.io-client";
 class Socket {
     constructor(RTC, token) {
         this.RTC = RTC;
-        this.socket = io(`http://${window.location.host}`, {
-            query: `token=${token}`
+        this.socket = io(`https://${window.location.host}`, {
+            query: `token=${token}`,
+            secure: true
         });
 
         this.socket.on("connectToProviderSuccess", () => {
             console.log("Successfully connected");
         });
 
-        this.socket.on("connectToProviderFail", () => {
-            console.log("connect to provider failed");
+        this.socket.on("connectToProviderFail", error => {
+            switch (error) {
+                case "TokenExpiredError":
+                    console.log("Token Expired");
+                    break;
+                case "JsonWebTokenError":
+                    console.log("JsonWebTokenError");
+                    break;
+                case "ProviderNotConnectedError":
+                    console.log("connect to provider failed");
+                    break;
+                default:
+                    console.log("Something went wrong...");
+            }
             this.RTC.deleteP2PConnection();
         });
 

@@ -25,7 +25,6 @@ class Home extends React.Component {
 
         this.onMessage = this.onMessage.bind(this);
         this.onChunk = this.onChunk.bind(this);
-        this.getCookie = this.getCookie.bind(this);
         this.RTC = new RTC(this.props.provider.token, this.onMessage, this.onChunk);
     }
 
@@ -145,13 +144,6 @@ class Home extends React.Component {
             const file = findFile(this.state.files, filePath);
             this.downloadFile(file);
         }
-    }
-
-    getCookie(name) {
-        console.log(document.cookie.length);
-        const value = `; ${document.cookie}`.split(`; ${name}=`).pop().split(";").shift();
-        var parts = value.split(`; ${name}=`);
-        if (parts.length == 2) return parts.pop().split(";").shift();
     }
 
     render() {

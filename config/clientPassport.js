@@ -161,6 +161,9 @@ passport.use("client-connect", new CustomStrategy((req, done) => {
             });
         });
     }).catch(error => {
+        log.error("While connecting:");
+        log.error(error.name);
+        log.error(error.message);
         return done(null, false, errorHandler(error));
     });
 }));

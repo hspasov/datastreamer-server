@@ -9,7 +9,7 @@ const jwt = require("jsonwebtoken");
 const path = require("path");
 const app = require("../app");
 const infoLog = require("debug")("datastreamer-server:info");
-const http = require("http");
+const https = require("https");
 const mongoose = require("mongoose");
 const bluebird = require("bluebird");
 const redis = require("redis");
@@ -64,7 +64,7 @@ const options = {
     cert: fs.readFileSync(path.join(__dirname, "../config/server.crt"))
 };
 
-const server = http.createServer(app);
+const server = https.createServer(options, app);
 
 server.listen(port);
 server.on("error", onError);

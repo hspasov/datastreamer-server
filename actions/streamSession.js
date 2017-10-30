@@ -50,6 +50,9 @@ function createNewStreamSession(socketId, token) {
         }).then(sessionInfo => {
             resolve(sessionInfo);
         }).catch(error => {
+            log.error("While creating stream session:");
+            log.error(error.name);
+            log.error(error.message);
             reject(error);
         });
     });
@@ -109,6 +112,9 @@ function invalidateToken(token) {
             log.verbose(redisResponse);
             resolve();
         }).catch(error => {
+            log.error("While invalidating token:");
+            log.error(error.name);
+            log.error(error.message);
             reject(error);
         })
     });
