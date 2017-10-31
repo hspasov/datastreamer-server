@@ -1,102 +1,109 @@
 import React from "react";
+import { Container, Divider, Dropdown, Grid, Header, Image, List, Menu, Segment } from "semantic-ui-react";
 import { Navbar, Button } from "react-bootstrap";
 import { connect } from "react-redux";
-import { logoutClient } from "../../store/actions/client";
-import { disconnectClient } from "../../store/actions/provider";
-import formurlencoded from "form-urlencoded";
+import SidebarNavComponent from "../components/sidebarNav";
 
 class App extends React.Component {
     constructor(props) {
         super(props);
-
-        this.disconnect = this.disconnect.bind(this);
-        this.logout = this.logout.bind(this);
-    }
-
-    disconnect() {
-        const formData = {
-            connectionToken: this.props.provider.token
-        };
-        fetch("/disconnect", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded", },
-            body: formurlencoded(formData)
-        }).then(response => {
-            this.props.dispatch(disconnectClient());
-            this.goTo("home");
-        }).catch(error => {
-            console.log(error);
-        });
-    }
-
-    logout() {
-        const formData = {
-            clientToken: this.props.client.token,
-            connectionToken: this.props.provider.token
-        };
-        fetch("/logout", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded", },
-            body: formurlencoded(formData)
-        }).then(response => {
-            this.props.dispatch(disconnectClient());
-            this.props.dispatch(logoutClient());
-            this.goTo("");
-        }).catch(error => {
-            console.log(error);
-        });
-    }
-
-    goTo(route) {
-        this.props.history.replace(`/${route}`);
     }
 
     render() {
         return (
             <div>
-                <Navbar fluid>
-                    <Navbar.Header>
-                        <Navbar.Brand>
-                            <a href="#">DataStreamer</a>
-                        </Navbar.Brand>
-                        <Button
-                            bsStyle="primary"
-                            className="btn-margin"
-                            onClick={this.goTo.bind(this, "home")}>
-                            Home
-                        </Button>
-                        <Button
-                            bsStyle="primary"
-                            className="btn-margin"
-                            onClick={this.goTo.bind(this, "login")}>
-                            Login
-                        </Button>
-                        <Button
-                            bsStyle="primary"
-                            className="btn-margin"
-                            onClick={this.goTo.bind(this, "register")}>
-                            Register
-                        </Button>
-                        <Button
-                            bsStyle="primary"
-                            className="btn-margin"
-                            onClick={this.goTo.bind(this, "connect")}>
-                            Connect
-                        </Button>
-                        <Button
-                            bsStyle="primary"
-                            className="btn-margin"
-                            onClick={this.disconnect}>
-                            Disconnect
-                        </Button>
-                        <Button
-                            bsStyle="primary"
-                            className="btn-margin"
-                            onClick={this.logout}>
-                            Logout
-                        </Button>
-                    </Navbar.Header>
-                </Navbar>
+                <Menu fixed='top' inverted>
+                    <Container>
+                        <Menu.Item as='a' header>
+                            <Image
+                                size='mini'
+                                src='/logo.png'
+                                style={{ marginRight: '1.5em' }}
+                            />
+                            DataStreamer
+                        </Menu.Item>
+                        <Menu.Item as='a'>Home</Menu.Item>
+                        <Dropdown item simple text='Dropdown'>
+                            <Dropdown.Menu>
+                                <Dropdown.Item>List Item</Dropdown.Item>
+                                <Dropdown.Item>List Item</Dropdown.Item>
+                                <Dropdown.Divider />
+                                <Dropdown.Header>Header Item</Dropdown.Header>
+                                <Dropdown.Item>
+                                    <i className='dropdown icon' />
+                                    <span className='text'>Submenu</span>
+                                    <Dropdown.Menu>
+                                        <Dropdown.Item>List Item</Dropdown.Item>
+                                        <Dropdown.Item>List Item</Dropdown.Item>
+                                    </Dropdown.Menu>
+                                </Dropdown.Item>
+                                <Dropdown.Item>List Item</Dropdown.Item>
+                            </Dropdown.Menu>
+                        </Dropdown>
+                    </Container>
+                </Menu>
+                <SidebarNavComponent history={this.props.history}>
+                    <Container text style={{ marginTop: '7em' }}>
+                        {this.props.children}
+                    </Container>
+
+                    <Segment
+                        inverted
+                        vertical
+                        style={{ margin: '5em 0em 0em', padding: '5em 0em' }}
+                    >
+                        <Container textAlign='center'>
+                            <Grid divided inverted stackable>
+                                <Grid.Row>
+                                    <Grid.Column width={3}>
+                                        <Header inverted as='h4' content='Group 1' />
+                                        <List link inverted>
+                                            <List.Item as='a'>Link One</List.Item>
+                                            <List.Item as='a'>Link Two</List.Item>
+                                            <List.Item as='a'>Link Three</List.Item>
+                                            <List.Item as='a'>Link Four</List.Item>
+                                        </List>
+                                    </Grid.Column>
+                                    <Grid.Column width={3}>
+                                        <Header inverted as='h4' content='Group 2' />
+                                        <List link inverted>
+                                            <List.Item as='a'>Link One</List.Item>
+                                            <List.Item as='a'>Link Two</List.Item>
+                                            <List.Item as='a'>Link Three</List.Item>
+                                            <List.Item as='a'>Link Four</List.Item>
+                                        </List>
+                                    </Grid.Column>
+                                    <Grid.Column width={3}>
+                                        <Header inverted as='h4' content='Group 3' />
+                                        <List link inverted>
+                                            <List.Item as='a'>Link One</List.Item>
+                                            <List.Item as='a'>Link Two</List.Item>
+                                            <List.Item as='a'>Link Three</List.Item>
+                                            <List.Item as='a'>Link Four</List.Item>
+                                        </List>
+                                    </Grid.Column>
+                                    <Grid.Column width={3}>
+                                        <Header inverted as='h4' content='Footer Header' />
+                                        <p>Extra space for a call to action inside the footer that could help re-engage users.</p>
+                                    </Grid.Column>
+                                </Grid.Row>
+                            </Grid>
+
+                            <Divider inverted section />
+                            <Image
+                                centered
+                                size='mini'
+                                src='/logo.png'
+                            />
+                            <List horizontal inverted divided link>
+                                <List.Item as='a' href='#'>Site Map</List.Item>
+                                <List.Item as='a' href='#'>Contact Us</List.Item>
+                                <List.Item as='a' href='#'>Terms and Conditions</List.Item>
+                                <List.Item as='a' href='#'>Privacy Policy</List.Item>
+                            </List>
+                        </Container>
+                    </Segment>
+                </SidebarNavComponent>
             </div>
         );
     }

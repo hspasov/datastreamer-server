@@ -14,7 +14,7 @@ const log = {
 router.use(clientPassport.initialize());
 router.use(clientPassport.session());
 
-router.route(["/login", "/register", "/home", "/"]).get((req, res) => {
+router.route(["/login", "/register", "/home", "/connect", "/",]).get((req, res) => {
     res.sendFile(path.join(__dirname, "../views/index.html"));
 });
 

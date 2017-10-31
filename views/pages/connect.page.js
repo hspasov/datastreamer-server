@@ -2,6 +2,7 @@ import React from "react";
 import { connect } from "react-redux";
 import { connectClient } from "../../store/actions/provider";
 import formurlencoded from "form-urlencoded";
+import AppContainer from "../containers/app.container";
 
 class Connect extends React.Component {
     constructor(props) {

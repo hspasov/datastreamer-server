@@ -13,6 +13,7 @@ import {
     finishDownload,
     findFile
 } from "../../modules/files";
+import AppContainer from "../containers/app.container";
 
 class Home extends React.Component {
     constructor(props) {
