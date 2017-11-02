@@ -189,7 +189,8 @@ class Home extends React.Component {
 const HomePage = connect(store => {
     return {
         client: store.client,
-        provider: store.provider
+        provider: store.provider,
+        router: store.router
     };
 })(Home);
 

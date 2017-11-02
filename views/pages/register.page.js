@@ -1,5 +1,6 @@
 import React from "react";
 import { connect } from "react-redux";
+import { push } from "react-router-redux";
 import { loginClient } from "../../store/actions/client";
 import formurlencoded from "form-urlencoded";
 import AppContainer from "../containers/app.container";
@@ -62,7 +63,7 @@ class Register extends React.Component {
             }
         }).then(json => {
             this.props.dispatch(loginClient(json));
-            this.props.history.replace("/connect");
+            this.props.dispatch(push("/connect"));
         }).catch(error => {
             console.log(error);
         });

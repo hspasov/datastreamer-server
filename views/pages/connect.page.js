@@ -1,5 +1,6 @@
 import React from "react";
 import { connect } from "react-redux";
+import { push } from "react-router-redux";
 import { connectClient } from "../../store/actions/provider";
 import formurlencoded from "form-urlencoded";
 import AppContainer from "../containers/app.container";
@@ -51,7 +52,7 @@ class Connect extends React.Component {
             }
         }).then(json => {
             this.props.dispatch(connectClient(json));
-            this.props.history.replace("/home");
+            this.props.dispatch(push("/home"));
         }).catch(error => {
             console.log(error);
         });
@@ -76,7 +77,8 @@ class Connect extends React.Component {
 const ConnectPage = connect(store => {
     return {
         client: store.client,
-        provider: store.provider
+        provider: store.provider,
+        router: store.router
     };
 })(Connect);
 
