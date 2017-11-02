@@ -3,7 +3,6 @@ import { connect } from "react-redux";
 import { push } from "react-router-redux";
 import { connectClient } from "../../store/actions/provider";
 import formurlencoded from "form-urlencoded";
-import AppContainer from "../containers/app.container";
 
 class Connect extends React.Component {
     constructor(props) {
@@ -77,8 +76,7 @@ class Connect extends React.Component {
 const ConnectPage = connect(store => {
     return {
         client: store.client,
-        provider: store.provider,
-        router: store.router
+        provider: store.provider
     };
 })(Connect);
 

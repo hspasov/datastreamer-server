@@ -1,6 +1,7 @@
 import React from "react";
 import FileSaver from "file-saver";
 import { connect } from "react-redux";
+import { Dimmer, Item, Loader, Segment } from "semantic-ui-react";
 import RTC from "../../rtc_connection/client";
 import File from "../components/file.component";
 import path from "path";
@@ -13,7 +14,6 @@ import {
     finishDownload,
     findFile
 } from "../../modules/files";
-import AppContainer from "../containers/app.container";
 
 class Home extends React.Component {
     constructor(props) {
@@ -154,34 +154,37 @@ class Home extends React.Component {
             );
         }
         return (
-            <div>
-                <div ref="render">Hello World!</div>
-                {this.state.currentDirectory &&
-                <button
-                    disabled={path.dirname(this.state.currentDirectory) === this.state.currentDirectory}
-                    onClick={this.openDirectory.bind(this, path.dirname(this.state.currentDirectory))}>
-                    Go back
-                </button>
+            <Segment>
+                <Dimmer active={!this.state.isComponentUpdateAllowed}>
+                    <Loader>Getting files...</Loader>
+                </Dimmer>
+                    {this.state.currentDirectory &&
+                    <button
+                        disabled={path.dirname(this.state.currentDirectory) === this.state.currentDirectory}
+                        onClick={this.openDirectory.bind(this, path.dirname(this.state.currentDirectory))}>
+                        Go back
+                    </button>
                 }
-                {this.state.files.map((file, i) => {
+                    <Item.Group divided>
+                    {this.state.files.map((file, i) => {
                         return (
-                            <div key={file.path}>
-                                <File
-                                    name={file.name}
-                                    type={file.type}
-                                    size={file.size}
-                                    access={file.access}
-                                />
-                                <p>{
-                                    (file.type == "directory") ?
-                                        <button onClick={this.openDirectory.bind(this, file.path)}>Open directory</button> :
-                                        <button onClick={this.addToDownloads.bind(this, file.path)}>Download file</button>
-                                }</p>
-                                <hr />
-                            </div>
-                        )
-                })}
-            </div>
+                                <Item key={file.path}>
+                                    <File
+                                        name={file.name}
+                                        type={file.type}
+                                        size={file.size}
+                                        access={file.access}
+                                    />
+                                    <p>{
+                                        (file.type == "directory") ?
+                                            <button onClick={this.openDirectory.bind(this, file.path)}>Open directory</button> :
+                                            <button onClick={this.addToDownloads.bind(this, file.path)}>Download file</button>
+                                    }</p>
+                                </Item>
+                            )
+                        })}
+                </Item.Group>
+            </Segment>
         );
     }
 }
@@ -189,8 +192,7 @@ class Home extends React.Component {
 const HomePage = connect(store => {
     return {
         client: store.client,
-        provider: store.provider,
-        router: store.router
+        provider: store.provider
     };
 })(Home);
 

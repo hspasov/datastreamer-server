@@ -9,7 +9,6 @@
     "watch": "watchify views/index.js -t babelify -o public/js/bundle.js --debug --verbose"
   },
   "dependencies": {
-    "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "bcrypt-nodejs": "0.0.3",
     "bluebird": "^3.5.1",
     "body-parser": "~1.17.1",
@@ -29,7 +28,6 @@
     "passport-custom": "^1.0.5",
     "passport-local": "^1.0.0",
     "react": "^15.6.1",
-    "react-bootstrap": "^0.31.2",
     "react-dom": "^15.6.1",
     "react-redux": "^5.0.6",
     "react-router-dom": "^4.2.2",
@@ -44,6 +42,7 @@
     "socket.io-redis": "^5.2.0"
   },
   "devDependencies": {
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-preset-es2015": "^6.24.1",
     "babel-preset-react": "^6.24.1",
     "babelify": "^7.3.0",

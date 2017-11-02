@@ -1,17 +1,21 @@
 import React from "react";
 import PropTypes from "prop-types";
+import { Icon, Item } from "semantic-ui-react";
 
 class File extends React.Component {
     render() {
         return (
-            <div>
-                <p>File name: {this.props.name}</p>
-                <p>Type: {this.props.type}</p>
-                <p>Size: {this.props.size}</p>
-                <p>Read access: {this.props.access.read.toString()}</p>
-                <p>Write access: {this.props.access.write.toString()}</p>
-                <p>Execute access: {this.props.access.execute.toString()}</p>
-            </div>
+            <Item>
+                {/*<Icon name="file" size="massive" />*/}
+                <Item.Content>
+                    <Item.Header>{this.props.name}</Item.Header>
+                    <Item.Meta>Type: {this.props.type}</Item.Meta>
+                        <Item.Meta>Size: {this.props.size}</Item.Meta>
+                        <p>Read access: {this.props.access.read.toString()}</p>
+                        <p>Write access: {this.props.access.write.toString()}</p>
+                        <p>Execute access: {this.props.access.execute.toString()}</p>
+                </Item.Content>
+            </Item>
         );
     }
 }

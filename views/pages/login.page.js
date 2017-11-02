@@ -3,7 +3,6 @@ import { connect } from "react-redux";
 import { push } from "react-router-redux";
 import { loginClient } from "../../store/actions/client";
 import formurlencoded from "form-urlencoded";
-import AppContainer from "../containers/app.container";
 
 class Login extends React.Component {
     constructor(props) {
@@ -23,7 +22,7 @@ class Login extends React.Component {
         event.preventDefault();
         this.setState({
             username: event.target.value
-        })
+        });
     }
 
     handlePasswordChange(event) {
@@ -70,8 +69,7 @@ class Login extends React.Component {
 
 const LoginPage = connect(store => {
     return {
-        client: store.client,
-        router: store.router
+        client: store.client
     };
 })(Login);
 

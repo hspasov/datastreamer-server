@@ -1,12 +1,17 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import { Provider } from "react-redux";
-import { makeMainRoutes } from "./routes/routes";
+import { ConnectedRouter } from "react-router-redux";
+import createHistory from "history/createBrowserHistory";
+import AppContainer from "./containers/app.container";
+
 import store from "../store/store";
 
-const routes = makeMainRoutes();
-
 ReactDOM.render(
-    <Provider store={store}>{routes}</Provider>,
+    <Provider store={store}>
+        <ConnectedRouter history={createHistory()}>
+            <AppContainer />
+        </ConnectedRouter>
+    </Provider>,
     document.getElementById("content")
 );
