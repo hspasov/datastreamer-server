@@ -76,7 +76,8 @@ class Connect extends React.Component {
 const ConnectPage = connect(store => {
     return {
         client: store.client,
-        provider: store.provider
+        provider: store.provider,
+        router: store.router
     };
 })(Connect);
 

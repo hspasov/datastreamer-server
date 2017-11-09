@@ -82,7 +82,8 @@ class Register extends React.Component {
 
 const RegisterPage = connect(store => {
     return {
-        client: store.client
+        client: store.client,
+        router: store.router
     };
 })(Register);
 

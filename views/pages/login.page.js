@@ -69,7 +69,8 @@ class Login extends React.Component {
 
 const LoginPage = connect(store => {
     return {
-        client: store.client
+        client: store.client,
+        router: store.router
     };
 })(Login);
 
