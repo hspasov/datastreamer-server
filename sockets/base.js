@@ -34,6 +34,7 @@ const base = io => {
                         io.to(socket.id).emit("connectToProviderSuccess");
                         io.to(sessionInfo.provider.socketId).emit("subscribedClient", socket.id);
                     } else {
+                        log.verbose(`Client "${socket.id}" could not connect to provider "${sessionInfo.providerName}". Provider not connected.`);
                         io.to(socket.id).emit("connectToProviderFail", "ProviderNotConnectedError");
                     }
                 }
@@ -133,6 +134,10 @@ const base = io => {
             }).catch(error => {
                 log.error(error);
             });
+        });
+
+        socket.on("test", () => {
+            console.log("inside test");
         });
     });
 };

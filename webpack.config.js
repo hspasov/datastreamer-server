@@ -8,17 +8,33 @@ module.exports = {
         publicPath: "/js"
     },
     module: {
-        rules: [{
-            test: /\.js$/,
-            use: [{
-                loader: "babel-loader",
-                options: {
-                    presets: ["env", "react"]
-                }
-            }]
-        }]
+        rules: [
+            {
+                test: /\.js$/,
+                exclude: /node_modules/,
+                use: [{
+                    loader: "babel-loader",
+                    options: {
+                        presets: ["env", "react"],
+                        plugins: ["transform-object-rest-spread"]
+                    }
+                }]
+            },
+            {
+                test: /\.css$/,
+                use: ["style-loader", "css-loader"]
+            },
+            {
+                test: /\.svg$|\.woff$|\.woff2$|\.[ot]tf$|\.eot$|\.png$/,
+                loader: "url-loader"
+            }
+        ]
     },
     plugins: [
 
-    ]
+    ],
+    watch: true,
+    watchOptions: {
+        ignored: /node_modules/
+    }
 };

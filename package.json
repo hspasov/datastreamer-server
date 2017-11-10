@@ -4,10 +4,9 @@
   "private": true,
   "scripts": {
     "start": "node ./bin/www",
-    "build": "webpack",
+    "watch": "webpack",
     "debug": "DEBUG=datastreamer-server:info* node ./bin/www",
-    "debug-verbose": "DEBUG=datastreamer-server:* node ./bin/www",
-    "watch": "watchify views/index.js -t babelify -o public/js/bundle.js --debug --verbose"
+    "debug-verbose": "DEBUG=datastreamer-server:* node ./bin/www"
   },
   "dependencies": {
     "bcrypt-nodejs": "0.0.3",
@@ -40,7 +39,9 @@
     "serve-favicon": "~2.4.2",
     "socket.io": "^2.0.3",
     "socket.io-client": "^2.0.3",
-    "socket.io-redis": "^5.2.0"
+    "socket.io-redis": "^5.2.0",
+    "style-loader": "^0.19.0",
+    "url-loader": "^0.6.2"
   },
   "devDependencies": {
     "babel-core": "^6.26.0",
@@ -48,6 +49,7 @@
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-preset-env": "^1.6.1",
     "babel-preset-react": "^6.24.1",
+    "css-loader": "^0.28.7",
     "webpack": "^3.8.1",
     "webpack-dev-server": "^2.9.4"
   }
