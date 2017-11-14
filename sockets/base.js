@@ -135,10 +135,6 @@ const base = io => {
                 log.error(error);
             });
         });
-
-        socket.on("test", () => {
-            console.log("inside test");
-        });
     });
 };
 
