@@ -29,7 +29,7 @@ class SidebarNav extends React.Component {
             body: formurlencoded(formData)
         }).then(response => {
             this.props.dispatch(disconnectClient());
-            this.props.dispatch(push("/home"));
+            this.props.history.push("/home");
         }).catch(error => {
             console.log(error);
         });
@@ -47,7 +47,7 @@ class SidebarNav extends React.Component {
         }).then(response => {
             this.props.dispatch(disconnectClient());
             this.props.dispatch(logoutClient());
-            this.props.dispatch(push("/"));
+            this.props.history.push("/");
         }).catch(error => {
             console.log(error);
         });

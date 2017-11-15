@@ -51,7 +51,7 @@ class Connect extends React.Component {
             }
         }).then(json => {
             this.props.dispatch(connectClient(json));
-            this.props.dispatch(push("/home"));
+            this.props.history.push("/home");
         }).catch(error => {
             console.log(error);
         });
