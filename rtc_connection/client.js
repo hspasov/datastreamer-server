@@ -33,7 +33,7 @@ class RTC {
             this.peerConnection.onicecandidate = event => {
                 if (event.candidate) {
                     console.log("sending ICE candidate", event.candidate);
-                    this.socket.emit("sendICECandidate", event.candidate);
+                    this.socket.emit("sendICECandidate", JSON.stringify(event.candidate));
                 }
             };
 
@@ -66,7 +66,7 @@ class RTC {
                 description => {
                     this.peerConnection.setLocalDescription(description);
                     console.log("set local description", description);
-                    this.socket.emit("offerP2PConnection", description);
+                    this.socket.emit("offerP2PConnection", JSON.stringify(description));
                 },
                 error => {
                     console.log("there was an error creating an offer", error);

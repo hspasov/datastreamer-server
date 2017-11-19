@@ -40,7 +40,9 @@ class Socket {
 
         this.socket.on("receiveProviderDescription", description => {
             try {
-                this.RTC.peerConnection.setRemoteDescription(description);
+                console.log("inside receiveProviderDescription:")
+                console.log(description);
+                this.RTC.peerConnection.setRemoteDescription(JSON.parse(description));
             } catch (e) {
                 if (!this.RTC.peerConnection) {
                     console.log("Connection to provider lost.");
@@ -52,6 +54,8 @@ class Socket {
 
         this.socket.on("receiveICECandidate", candidate => {
             try {
+                console.log("inside receiveICECandidate");
+                console.log(candidate);
                 this.RTC.peerConnection.addIceCandidate(candidate).then(
                     () => { },
                     error => {
