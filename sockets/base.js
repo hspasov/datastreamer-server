@@ -9,6 +9,7 @@ const providerSessionActions = require("../actions/providerSession");
 const clientSessionActions = require("../actions/clientSession");
 const streamSessionActions = require("../actions/streamSession");
 
+const findProviderSocketIdByProviderName = providerSessionActions.findProviderSocketIdByProviderName;
 const findProviderSocketIdByClientSocketId = providerSessionActions.findProviderSocketIdByClientSocketId;
 const findClientSessionsByProviderSocketId = providerSessionActions.findClientSessionsByProviderSocketId;
 
@@ -58,7 +59,7 @@ const base = io => {
                         io.to(client).emit("connectToProviderFail", "ProviderNotConnectedError");
                     });
                 } else if (sessionInfo.type == "client") {
-                    findProviderSocketIdByClientSocketId(socket.id).then(socketId => {
+                    findProviderSocketIdByProviderName(sessionInfo.providerName).then(socketId => {
                         if (socketId) {
                             io.to(socketId).emit("unsubscribedClient", socket.id);
                         }

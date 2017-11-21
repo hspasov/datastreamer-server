@@ -118,6 +118,7 @@ function deleteProviderSession(socketId) {
 
 module.exports = {
     createNewProviderSession: createNewProviderSession,
+    findProviderSocketIdByProviderName: findProviderSocketIdByProviderName,
     findProviderSocketIdByClientSocketId: findProviderSocketIdByClientSocketId,
     findProviderNameBySocketId: findProviderNameBySocketId,
     findClientSessionsByProviderSocketId: findClientSessionsByProviderSocketId,
