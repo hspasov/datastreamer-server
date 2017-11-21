@@ -56,7 +56,7 @@ class Socket {
             try {
                 console.log("inside receiveICECandidate");
                 console.log(candidate);
-                this.RTC.peerConnection.addIceCandidate(candidate).then(
+                this.RTC.peerConnection.addIceCandidate(JSON.parse(candidate)).then(
                     () => { },
                     error => {
                         console.log("failed to add candidate", error);
