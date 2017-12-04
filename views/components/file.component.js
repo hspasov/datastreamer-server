@@ -6,7 +6,7 @@ class File extends React.Component {
     render() {
         return (
             <Item>
-                {/*<Icon name="file" size="massive" />*/}
+                <Icon name="file" size="large" />
                 <Item.Content>
                     <Item.Header>{this.props.name}</Item.Header>
                     <Item.Meta>Type: {this.props.type}</Item.Meta>

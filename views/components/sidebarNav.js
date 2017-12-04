@@ -55,8 +55,8 @@ class SidebarNav extends React.Component {
 
     render() {
         return (
-            <Sidebar.Pushable as={Segment}>
-                <Sidebar as={Menu} animation="slide along" width="thin" visible={this.props.sidebar.visible} icon="labeled" vertical inverted>
+            <Sidebar.Pushable as={Segment} attached>
+                <Sidebar as={Menu} animation="slide along" width="thin" visible={this.props.sidebar.visible} icon="labeled" vertical inverted fixed="left">
                     <Menu.Item as={Link} to="/home">Home</Menu.Item>
                     <Menu.Item as={Link} to="/login">Log in</Menu.Item>
                     <Menu.Item as={Link} to="/register">Register</Menu.Item>
@@ -65,14 +65,20 @@ class SidebarNav extends React.Component {
                     <Menu.Item onClick={this.logout}>Logout</Menu.Item>
                 </Sidebar>
                 <Sidebar.Pusher>
-                    <Segment basic>
+                    <div id="page">
+                        <style>{`
+                        body > div,
+                        body > div.login-form {
+                            height: 100%;
+                        }
+                        `}</style>
                         <Switch>
                             <Route path="/home" component={HomePage} />
                             <Route path="/login" component={LoginPage} />
                             <Route path="/register" component={RegisterPage} />
                             <Route path="/connect" component={ConnectPage} />
                         </Switch>
-                    </Segment>
+                    </div>
                 </Sidebar.Pusher>
             </Sidebar.Pushable>
         );

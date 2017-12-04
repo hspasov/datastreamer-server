@@ -1,8 +1,10 @@
 import React from "react";
+import { Link, Redirect } from "react-router-dom";
 import { connect } from "react-redux";
 import { push } from "react-router-redux";
 import { loginClient } from "../../store/actions/client";
 import formurlencoded from "form-urlencoded";
+import { Button, Form, Grid, Header, Message, Segment } from "semantic-ui-react";
 
 class Register extends React.Component {
     constructor(props) {
@@ -11,7 +13,8 @@ class Register extends React.Component {
         this.state = {
             username: "",
             password: "",
-            confirmPassword: ""
+            confirmPassword: "",
+            formRaised: false
         }
 
         this.handleUsernameChange = this.handleUsernameChange.bind(this);
@@ -70,13 +73,51 @@ class Register extends React.Component {
 
     render() {
         return (
-            <div>
-                <input type="text" placeholder="Username: " onChange={this.handleUsernameChange} />
-                <input type="password" placeholder="Password: " onChange={this.handlePasswordChange} />
-                <input type="password" placeholder="Confirm password: " onChange={this.handleConfirmPasswordChange} />
-                <button onClick={this.handleSubmit}>Register</button>
-            </div>
-        );
+            <Grid
+                textAlign="center"
+                style={{ height: "100%" }}
+                verticalAlign="middle"
+            >
+                <Grid.Column style={{ maxWidth: 450 }} >
+                    <Header as="h2" color="black" textAlign="center">
+                        Create new account
+                        </Header>
+                    <Form size="massive">
+                        <Segment>
+                            <Form.Input
+                                fluid
+                                icon="user"
+                                iconPosition="left"
+                                placeholder="Username"
+                                required
+                                onChange={this.handleUsernameChange}
+                            />
+                            <Form.Input
+                                fluid
+                                icon="lock"
+                                iconPosition="left"
+                                placeholder="Password"
+                                type="password"
+                                required
+                                onChange={this.handlePasswordChange}
+                            />
+                            <Form.Input
+                                fluid
+                                icon="lock"
+                                iconPosition="left"
+                                placeholder="Confirm password"
+                                type="password"
+                                onChange={this.handleConfirmPasswordChange}
+                            />
+                            <Button color="black" fluid size="large" onClick={this.handleSubmit}>Register</Button>
+                        </Segment>
+                    </Form>
+                    <Message>
+                        Already have an account? <Link to="/login">Login</Link>
+                    </Message>
+                </Grid.Column>
+            </Grid>
+        )
     }
 }
 

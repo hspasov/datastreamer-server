@@ -154,7 +154,7 @@ class Home extends React.Component {
             );
         }
         return (
-            <Segment>
+            <div>
                 <Dimmer active={!this.state.isComponentUpdateAllowed}>
                     <Loader>Getting files...</Loader>
                 </Dimmer>
@@ -184,7 +184,7 @@ class Home extends React.Component {
                             )
                         })}
                 </Item.Group>
-            </Segment>
+            </div>
         );
     }
 }

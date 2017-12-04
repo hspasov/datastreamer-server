@@ -1,5 +1,5 @@
 import React from "react";
-import { Divider, Image, Menu, Breadcrumb } from "semantic-ui-react";
+import { Divider, Grid, Image, Menu, Breadcrumb } from "semantic-ui-react";
 import { Route } from "react-router-dom";
 import { connect } from "react-redux";
 import SidebarNavComponent from "../components/sidebarNav";
@@ -18,26 +18,30 @@ class App extends React.Component {
 
     render() {
         return (
-            <div>
-                <Menu color="green" inverted fluid fixed="top">
-                    <Menu.Item onClick={this.toggleSidebar} as='a' header active={this.props.sidebar.visible}>
-                        {/*<Image
-                            size='mini'
-                            src='/logo.png'
-                            style={{ marginRight: '1.5em' }}
-                        />*/}
-                        DataStreamer
-                    </Menu.Item>
-                    <Menu.Item as={Breadcrumb}>
-                        <Breadcrumb.Section link>Home</Breadcrumb.Section>
-                        <Breadcrumb.Divider />
-                        <Breadcrumb.Section link>Store</Breadcrumb.Section>
-                        <Breadcrumb.Divider />
-                        <Breadcrumb.Section active>T-Shirt</Breadcrumb.Section>
-                    </Menu.Item>
-                </Menu>
-                <Route path="/" component={SidebarNavComponent}/>
-            </div>
+                <Grid
+                    style={{ height: '100%' }}
+                >
+                <Grid.Column>
+                    <Menu color="green" inverted fluid compact>
+                        <Menu.Item onClick={this.toggleSidebar} as='a' header active={this.props.sidebar.visible}>
+                            {/*<Image
+                                size='mini'
+                                src='/logo.png'
+                                style={{ marginRight: '1.5em' }}
+                            />*/}
+                            DataStreamer
+                        </Menu.Item>
+                        <Menu.Item as={Breadcrumb}>
+                            <Breadcrumb.Section link>Home</Breadcrumb.Section>
+                            <Breadcrumb.Divider />
+                            <Breadcrumb.Section link>Store</Breadcrumb.Section>
+                            <Breadcrumb.Divider />
+                            <Breadcrumb.Section active>T-Shirt</Breadcrumb.Section>
+                        </Menu.Item>
+                    </Menu>
+                        <Route path="/" component={SidebarNavComponent} />
+                    </Grid.Column>
+                </Grid>
         );
     }
 }

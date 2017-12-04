@@ -1,8 +1,11 @@
 import React from "react";
+import { Redirect } from "react-router";
 import { connect } from "react-redux";
 import { push } from "react-router-redux";
 import { connectClient } from "../../store/actions/provider";
 import formurlencoded from "form-urlencoded";
+import { Button, Form, Grid, Header, Message, Segment } from "semantic-ui-react";
+
 
 class Connect extends React.Component {
     constructor(props) {
@@ -60,15 +63,43 @@ class Connect extends React.Component {
     render() {
         if (!this.props.client.token) {
             return (
-                <p>Please login or register</p>
+                <Redirect to="/login"></Redirect>
             );
         }
         return (
-            <div>
-                <input type="text" name="name" placeholder="Name: " onChange={this.handleUsernameChange} />
-                <input type="password" name="password" placeholder="Password: " onChange={this.handlePasswordChange} />
-                <button onClick={this.handleSubmit}>Log in</button>
-            </div>
+            <Grid
+                textAlign="center"
+                style={{ height: "100%" }}
+                verticalAlign="middle"
+            >
+                <Grid.Column style={{ maxWidth: 450 }} >
+                    <Header as="h2" color="black" textAlign="center">
+                        Connect to provider
+                        </Header>
+                    <Form size="massive">
+                        <Segment>
+                            <Form.Input
+                                fluid
+                                icon="user"
+                                iconPosition="left"
+                                placeholder="Provider name"
+                                required
+                                onChange={this.handleUsernameChange}
+                            />
+                            <Form.Input
+                                fluid
+                                icon="lock"
+                                iconPosition="left"
+                                placeholder="Password"
+                                type="password"
+                                required
+                                onChange={this.handlePasswordChange}
+                            />
+                            <Button color="black" fluid size="large" onClick={this.handleSubmit}>Connect</Button>
+                        </Segment>
+                    </Form>
+                </Grid.Column>
+            </Grid>
         );
     }
 }

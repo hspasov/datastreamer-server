@@ -1,8 +1,10 @@
 import React from "react";
+import { Link, Redirect } from "react-router-dom";
 import { connect } from "react-redux";
 import { push } from "react-router-redux";
 import { loginClient } from "../../store/actions/client";
 import formurlencoded from "form-urlencoded";
+import { Button, Form, Grid, Header, Message, Segment } from "semantic-ui-react";
 
 class Login extends React.Component {
     constructor(props) {
@@ -10,7 +12,8 @@ class Login extends React.Component {
 
         this.state = {
             username: "",
-            password: ""
+            password: "",
+            formRaised: false
         }
 
         this.handleUsernameChange = this.handleUsernameChange.bind(this);
@@ -58,11 +61,43 @@ class Login extends React.Component {
 
     render() {
         return (
-            <div>
-                <input type="text" name="username" placeholder="Username: " onChange={this.handleUsernameChange} />
-                <input type="password" name="password" placeholder="Password: " onChange={this.handlePasswordChange} />
-                <button onClick={this.handleSubmit}>Log in</button>
-            </div>
+                <Grid
+                    textAlign="center"
+                    style={{ height: "100%" }}
+                    verticalAlign="middle"
+                >
+                    <Grid.Column style={{ maxWidth: 450 }} >
+                    <Header as="h2" color="black" textAlign="center">
+                            Log-in to your account
+                        </Header>
+                        <Form size="massive">
+                        <Segment>
+                                <Form.Input
+                                    fluid
+                                    icon="user"
+                                    iconPosition="left"
+                                    placeholder="Username"
+                                    required
+                                    onChange={this.handleUsernameChange}
+                                />
+                                <Form.Input
+                                    fluid
+                                    icon="lock"
+                                    iconPosition="left"
+                                    placeholder="Password"
+                                    type="password"
+                                    required
+                                    onChange={this.handlePasswordChange}
+                                />
+
+                            <Button color="black" fluid size="large" onClick={this.handleSubmit}>Login</Button>
+                            </Segment>
+                        </Form>
+                        <Message>
+                            Don't have an account? <Link to="/register">Register</Link>
+                        </Message>
+                    </Grid.Column>
+                </Grid>
         );
     }
 }
