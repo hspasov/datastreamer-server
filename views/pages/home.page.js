@@ -1,9 +1,8 @@
 import React from "react";
 import FileSaver from "file-saver";
 import { connect } from "react-redux";
-import { Accordion, Dimmer, Header, Icon, Item, Loader, Message, Segment } from "semantic-ui-react";
+import { Accordion, Button, Dimmer, Header, Icon, Item, Loader, Message, Segment } from "semantic-ui-react";
 import RTC from "../../rtc_connection/client";
-import File from "../components/file.component";
 import path from "path";
 import {
     add,
@@ -19,8 +18,8 @@ class Home extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            isComponentUpdateAllowed: false,
-            isLoaderDisabled: false,
+            isComponentUpdateAllowed: true,
+            isDimmerActive: true,
             loaderMessage: "Connecting to provider...",
             currentDirectory: null,
             showError: false,
@@ -47,7 +46,6 @@ class Home extends React.Component {
             return;
         }
         this.setState({
-            isComponentUpdateAllowed: false,
             currentDirectory: name,
             files: []
         });
@@ -75,6 +73,7 @@ class Home extends React.Component {
         switch (message.action) {
             case "sendCurrentDirectory":
                 this.setState({
+                    isComponentUpdateAllowed: false,
                     currentDirectory: message.data.path,
                     files: []
                 });
@@ -106,7 +105,7 @@ class Home extends React.Component {
                 }));
                 break;
             case "doneSending":
-                this.setState({ isComponentUpdateAllowed: true });
+                this.setState({ isDimmerActive: false, isComponentUpdateAllowed: true, showError: false });
                 break;
             case "connectSuccess":
                 console.log("Connect success!");
@@ -168,9 +167,9 @@ class Home extends React.Component {
     }
 
     toggleErrorMessageMore() {
-        this.setState(prevState => {
-            showErrorMessageMore: !prevState.showErrorMessageMore
-        });
+        this.setState(prevState => ({
+            showErrorMessageMore: !(prevState.showErrorMessageMore)
+        }));
     }
 
     errorHandler(error) {
@@ -201,8 +200,9 @@ class Home extends React.Component {
                 break;
         }
         this.setState({
-            isLoaderDisabled: true,
-            showError: true
+            showError: true,
+            isDimmerActive: true,
+            isComponentUpdateAllowed: true
         });
         console.log(error);
     }
@@ -210,13 +210,13 @@ class Home extends React.Component {
     render() {
         if (!this.props.client.token) {
             return (
-                <p>Please login or register</p>
+                <Redirect to="/login"></Redirect>
             );
         }
         return (
             <div>
-                <Dimmer active={!this.state.isComponentUpdateAllowed}>
-                    <Loader disabled={this.state.isLoaderDisabled}>{this.state.loaderMessage}</Loader>
+                <Dimmer active={this.state.isDimmerActive}>
+                    <Loader disabled={this.state.showError}>{this.state.loaderMessage}</Loader>
                     <Message negative hidden={!this.state.showError}>
                         <Message.Header>{this.state.errorMessage}</Message.Header>
                         <Accordion>
@@ -231,28 +231,31 @@ class Home extends React.Component {
                     </Message>
                 </Dimmer>
                     {this.state.currentDirectory &&
-                    <button
+                    <Button
                         disabled={path.dirname(this.state.currentDirectory) === this.state.currentDirectory}
                         onClick={this.openDirectory.bind(this, path.dirname(this.state.currentDirectory))}>
                         Go back
-                    </button>
+                    </Button>
                 }
                     <Item.Group divided>
                     {this.state.files.map((file, i) => {
                         return (
-                                <Item key={file.path}>
-                                    <File
-                                        name={file.name}
-                                        type={file.type}
-                                        size={file.size}
-                                        access={file.access}
-                                    />
-                                    <p>{
+                            <Item key={file.path}>
+                                <Item.Content>
+                                    <Icon name="file" size="massive" />
+                                    <Item.Header>{file.name}</Item.Header>
+                                    <Item.Meta>Type: {file.type}</Item.Meta>
+                                    <Item.Meta>Size: {file.size}</Item.Meta>
+                                    <Item.Meta>Read access: {file.access.read.toString()}</Item.Meta>
+                                    <Item.Meta>Write access: {file.access.write.toString()}</Item.Meta>
+                                    <Item.Meta>Execute access: {file.access.execute.toString()}</Item.Meta>
+                                    {
                                         (file.type == "directory") ?
-                                            <button onClick={this.openDirectory.bind(this, file.path)}>Open directory</button> :
-                                            <button onClick={this.addToDownloads.bind(this, file.path)}>Download file</button>
-                                    }</p>
-                                </Item>
+                                            <Button onClick={this.openDirectory.bind(this, file.path)}>Open directory</Button> :
+                                            <Button onClick={this.addToDownloads.bind(this, file.path)}>Download file</Button>
+                                    }
+                                </Item.Content>
+                            </Item>
                             )
                         })}
                 </Item.Group>

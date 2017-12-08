@@ -22,7 +22,7 @@ class App extends React.Component {
                     style={{ height: '100%' }}
                 >
                 <Grid.Column >
-                    <Menu color="green" inverted fluid compact>
+                    <Menu color="green" inverted fluid compact size="massive">
                         <Menu.Item onClick={this.toggleSidebar} as='a' header active={this.props.sidebar.visible}>
                             {/*<Image
                                 size='mini'

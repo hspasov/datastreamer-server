@@ -3,6 +3,7 @@ import { Link, Route, Switch } from "react-router-dom";
 import { Menu, Segment, Sidebar, Sticky } from "semantic-ui-react";
 import { connect } from "react-redux";
 import { push } from "react-router-redux";
+import { Helmet } from "react-helmet";
 import { logoutClient } from "../../store/actions/client";
 import { disconnectClient } from "../../store/actions/provider";
 import HomePage from "../pages/home.page";
@@ -56,7 +57,7 @@ class SidebarNav extends React.Component {
     render() {
         return (
             <Sidebar.Pushable as={Segment} attached>
-                <Sidebar as={Menu} animation="slide along" width="thin" visible={this.props.sidebar.visible} icon="labeled" vertical inverted>
+                <Sidebar className="fixedSidebar" as={Menu} animation="slide along" width="wide" size="massive" visible={this.props.sidebar.visible} icon="labeled" vertical inverted>
                     <Menu.Item as={Link} to="/home">Home</Menu.Item>
                     <Menu.Item as={Link} to="/login">Log in</Menu.Item>
                     <Menu.Item as={Link} to="/register">Register</Menu.Item>
@@ -66,15 +67,14 @@ class SidebarNav extends React.Component {
                 </Sidebar>
                 <Sidebar.Pusher>
                     <div id="page">
-                        <style>{`
-                        body > div,
-                        body > div#page {
-                            height: 100%;
-                        },
-                        div#page {
-                            overflow-y:scroll;
-                        }
-                        `}</style>
+                        <Helmet>
+                            <style>{`
+                            body > div,
+                            div#page {
+                                height: 100%;
+                            }
+                            `}</style>
+                        </Helmet>
                         <Switch>
                             <Route path="/home" component={HomePage} />
                             <Route path="/login" component={LoginPage} />
