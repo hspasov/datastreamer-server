@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, Route, Switch } from "react-router-dom";
-import { Menu, Segment, Sidebar } from "semantic-ui-react";
+import { Menu, Segment, Sidebar, Sticky } from "semantic-ui-react";
 import { connect } from "react-redux";
 import { push } from "react-router-redux";
 import { logoutClient } from "../../store/actions/client";
@@ -56,7 +56,7 @@ class SidebarNav extends React.Component {
     render() {
         return (
             <Sidebar.Pushable as={Segment} attached>
-                <Sidebar as={Menu} animation="slide along" width="thin" visible={this.props.sidebar.visible} icon="labeled" vertical inverted fixed="left">
+                <Sidebar as={Menu} animation="slide along" width="thin" visible={this.props.sidebar.visible} icon="labeled" vertical inverted>
                     <Menu.Item as={Link} to="/home">Home</Menu.Item>
                     <Menu.Item as={Link} to="/login">Log in</Menu.Item>
                     <Menu.Item as={Link} to="/register">Register</Menu.Item>
@@ -68,8 +68,11 @@ class SidebarNav extends React.Component {
                     <div id="page">
                         <style>{`
                         body > div,
-                        body > div.login-form {
+                        body > div#page {
                             height: 100%;
+                        },
+                        div#page {
+                            overflow-y:scroll;
                         }
                         `}</style>
                         <Switch>

@@ -1,7 +1,7 @@
 import React from "react";
 import FileSaver from "file-saver";
 import { connect } from "react-redux";
-import { Dimmer, Item, Loader, Segment } from "semantic-ui-react";
+import { Accordion, Dimmer, Header, Icon, Item, Loader, Message, Segment } from "semantic-ui-react";
 import RTC from "../../rtc_connection/client";
 import File from "../components/file.component";
 import path from "path";
@@ -20,13 +20,21 @@ class Home extends React.Component {
         super(props);
         this.state = {
             isComponentUpdateAllowed: false,
+            isLoaderDisabled: false,
+            loaderMessage: "Connecting to provider...",
             currentDirectory: null,
+            showError: false,
+            showErrorMessageMore: false,
+            errorMessage: "",
+            errorMessageMore: "",
             files: []
         };
 
         this.onMessage = this.onMessage.bind(this);
         this.onChunk = this.onChunk.bind(this);
-        this.RTC = new RTC(this.props.provider.token, this.onMessage, this.onChunk);
+        this.errorHandler = this.errorHandler.bind(this);
+        this.toggleErrorMessageMore = this.toggleErrorMessageMore.bind(this);
+        this.RTC = new RTC(this.props.provider.token, this.onMessage, this.onChunk, this.errorHandler);
     }
 
     shouldComponentUpdate(nextProps, nextState) {
@@ -48,11 +56,17 @@ class Home extends React.Component {
                 action: "openDirectory",
                 selectedDirectory: name
             }));
-        } catch (e) {
+        } catch (error) {
             if (!this.RTC.sendMessageChannel) {
-                console.log("Can't finish task. Connection to provider lost.");
+                this.errorHandler({
+                    type: "connection",
+                    message: "Connection to provider failed."
+                });
             } else {
-                throw e;
+                this.errorHandler({
+                    type: "generic",
+                    message: error
+                });
             }
         }
     }
@@ -94,8 +108,8 @@ class Home extends React.Component {
             case "doneSending":
                 this.setState({ isComponentUpdateAllowed: true });
                 break;
-            case "message":
-                console.log("There is a message!", message.message);
+            case "connectSuccess":
+                console.log("Connect success!");
                 break;
         }
     }
@@ -129,11 +143,17 @@ class Home extends React.Component {
                 action: "downloadFile",
                 filePath: file.path
             }));
-        } catch (e) {
+        } catch (error) {
             if (!this.RTC.sendMessageChannel) {
-                console.log("Can't finish task. Connection to provider lost.");
+                this.errorHandler({
+                    type: "connection",
+                    message: "Connection to provider failed."
+                });
             } else {
-                throw e;
+                this.errorHandler({
+                    type: "generic",
+                    message: error
+                });
             }
         }
     }
@@ -147,6 +167,46 @@ class Home extends React.Component {
         }
     }
 
+    toggleErrorMessageMore() {
+        this.setState(prevState => {
+            showErrorMessageMore: !prevState.showErrorMessageMore
+        });
+    }
+
+    errorHandler(error) {
+        switch (error.type) {
+            case "generic":
+                this.setState({
+                    errorMessage: "Something went wrong",
+                    errorMessageMore: error.message
+                });
+                break;
+            case "connection":
+                this.setState({
+                    errorMessage: "Connection failure",
+                    errorMessageMore: error.message
+                });
+                break;
+            case "invalidToken":
+                this.setState({
+                    errorMessage: "Authentication failed",
+                    errorMessageMore: error.message
+                });
+                break;
+            case "sessionExpired":
+                this.setState({
+                    errorMessage: "Session expired",
+                    errorMessageMore: error.message
+                });
+                break;
+        }
+        this.setState({
+            isLoaderDisabled: true,
+            showError: true
+        });
+        console.log(error);
+    }
+
     render() {
         if (!this.props.client.token) {
             return (
@@ -156,7 +216,19 @@ class Home extends React.Component {
         return (
             <div>
                 <Dimmer active={!this.state.isComponentUpdateAllowed}>
-                    <Loader>Getting files...</Loader>
+                    <Loader disabled={this.state.isLoaderDisabled}>{this.state.loaderMessage}</Loader>
+                    <Message negative hidden={!this.state.showError}>
+                        <Message.Header>{this.state.errorMessage}</Message.Header>
+                        <Accordion>
+                            <Accordion.Title onClick={this.toggleErrorMessageMore}>
+                                <Icon name="dropdown" />
+                                More information
+                            </Accordion.Title>
+                            <Accordion.Content active={this.state.showErrorMessageMore}>
+                                <p>{this.state.errorMessageMore}</p>
+                            </Accordion.Content>
+                        </Accordion>
+                    </Message>
                 </Dimmer>
                     {this.state.currentDirectory &&
                     <button

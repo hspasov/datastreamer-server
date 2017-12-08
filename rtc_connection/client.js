@@ -1,8 +1,8 @@
 import Socket from "../sockets/client";
 
 class RTC {
-    constructor(token, processMessage, processChunk) {
-        this.socket = new Socket(this, token).socket;
+    constructor(token, processMessage, processChunk, errorHandler) {
+        this.socket = new Socket(this, token, errorHandler).socket;
         this.servers = null;
         this.peerConnectionConstraint = null;
         this.dataConstraint = null;
@@ -10,6 +10,7 @@ class RTC {
         this.token = token;
         this.processMessage = processMessage;
         this.processChunk = processChunk;
+        this.errorHandler = errorHandler;
 
         this.peerConnection = null;
         this.sendMessageChannel = null;
@@ -69,15 +70,24 @@ class RTC {
                     this.socket.emit("offerP2PConnection", JSON.stringify(description));
                 },
                 error => {
-                    console.log("there was an error creating an offer", error);
+                    this.errorHandler({
+                        type: "generic",
+                        message: error
+                    });
                     this.deleteP2PConnection(error);
                 }
             );
-        } catch (e) {
+        } catch (error) {
             if (!this.peerConnection || !this.sendMessageChannel || !this.receiveFileChannel || !this.receiveMessageChannel) {
-                console.log("Connection to provider lost.");
+                this.errorHandler({
+                    type: "connection",
+                    message: "Connection to provider failed."
+                });
             } else {
-                throw e;
+                this.errorHandler({
+                    type: "generic",
+                    message: error
+                });
             }
         }
     }

@@ -1,11 +1,13 @@
 import io from "socket.io-client";
 
-function Socket(RTC, token) {
+function Socket(RTC, token, errorHandler) {
     this.RTC = RTC;
     this.socket = io(`https://${window.location.host}`, {
         query: `token=${token}`,
         secure: true
     });
+
+    this.errorHandler = errorHandler;
 
     this.socket.on("connectToProviderSuccess", () => {
         console.log("Successfully connected");
@@ -14,16 +16,28 @@ function Socket(RTC, token) {
     this.socket.on("connectToProviderFail", error => {
         switch (error) {
             case "TokenExpiredError":
-                console.log("Token Expired");
+                this.errorHandler({
+                    type: "sessionExpired",
+                    message: "Session has expired. Please authenticate again!"
+                });
                 break;
             case "JsonWebTokenError":
-                console.log("JsonWebTokenError");
+                this.errorHandler({
+                    type: "invalidToken",
+                    message: "Authentication failed. Server received an invalid token."
+                });
                 break;
             case "ProviderNotConnectedError":
-                console.log("connect to provider failed");
+                this.errorHandler({
+                    type: "connection",
+                    message: "Connection to provider failed."
+                });
                 break;
             default:
-                console.log("Something went wrong...");
+                this.errorHandler({
+                    type: "generic",
+                    message: `Unknown error. Code: ${error}`
+                });
         }
         this.RTC.deleteP2PConnection();
     });
@@ -42,11 +56,17 @@ function Socket(RTC, token) {
             console.log("inside receiveProviderDescription:")
             console.log(description);
             this.RTC.peerConnection.setRemoteDescription(JSON.parse(description));
-        } catch (e) {
+        } catch (error) {
             if (!this.RTC.peerConnection) {
-                console.log("Connection to provider lost.");
+                this.errorHandler({
+                    type: "connection",
+                    message: "Connection to provider failed."
+                });
             } else {
-                throw e;
+                this.errorHandler({
+                    type: "generic",
+                    message: error
+                });
             }
         }
     });
@@ -58,15 +78,24 @@ function Socket(RTC, token) {
             this.RTC.peerConnection.addIceCandidate(JSON.parse(candidate)).then(
                 () => { },
                 error => {
-                    console.log("failed to add candidate", error);
+                    this.errorHandler({
+                        type: "generic",
+                        message: error
+                    });
                     this.RTC.deleteP2PConnection(error);
                 }
             );
-        } catch (e) {
+        } catch (error) {
             if (!this.RTC.peerConnection) {
-                console.log("Connection to provider lost.");
+                this.errorHandler({
+                    type: "connection",
+                    message: "Connection to provider failed."
+                });
             } else {
-                throw e;
+                this.errorHandler({
+                    type: "generic",
+                    message: error
+                });
             }
         }
     });

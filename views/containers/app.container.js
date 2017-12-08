@@ -1,5 +1,5 @@
 import React from "react";
-import { Divider, Grid, Image, Menu, Breadcrumb } from "semantic-ui-react";
+import { Divider, Grid, Icon, Image, Menu, Breadcrumb } from "semantic-ui-react";
 import { Route } from "react-router-dom";
 import { connect } from "react-redux";
 import SidebarNavComponent from "../components/sidebarNav";
@@ -21,7 +21,7 @@ class App extends React.Component {
                 <Grid
                     style={{ height: '100%' }}
                 >
-                <Grid.Column>
+                <Grid.Column >
                     <Menu color="green" inverted fluid compact>
                         <Menu.Item onClick={this.toggleSidebar} as='a' header active={this.props.sidebar.visible}>
                             {/*<Image
@@ -29,6 +29,7 @@ class App extends React.Component {
                                 src='/logo.png'
                                 style={{ marginRight: '1.5em' }}
                             />*/}
+                            <Icon name="list layout" />
                             DataStreamer
                         </Menu.Item>
                         <Menu.Item as={Breadcrumb}>

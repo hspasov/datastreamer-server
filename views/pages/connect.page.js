@@ -5,6 +5,7 @@ import { push } from "react-router-redux";
 import { connectClient } from "../../store/actions/provider";
 import formurlencoded from "form-urlencoded";
 import { Button, Form, Grid, Header, Message, Segment } from "semantic-ui-react";
+import FormSubmitError from "../components/formSubmitError.component";
 
 
 class Connect extends React.Component {
@@ -13,7 +14,9 @@ class Connect extends React.Component {
 
         this.state = {
             username: "",
-            password: ""
+            password: "",
+            hasFormErrors: false,
+            formErrors: []
         }
 
         this.handleUsernameChange = this.handleUsernameChange.bind(this);
@@ -36,6 +39,16 @@ class Connect extends React.Component {
     }
 
     handleSubmit() {
+        if (!(this.state.username && this.state.password)) {
+            this.setState({
+                hasFormErrors: true,
+                formErrors: ["empty"]
+            });
+            return;
+        }
+        this.setState({
+            hasFormErrors: false
+        });
         const formData = {
             username: this.state.username,
             password: this.state.password,
@@ -50,6 +63,10 @@ class Connect extends React.Component {
             if (response.status == 200) {
                 return response.json();
             } else {
+                this.setState({
+                    hasFormErrors: true,
+                    formErrors: ["validation"]
+                });
                 throw `Authentication failed\n${response}`;
             }
         }).then(json => {
@@ -96,6 +113,7 @@ class Connect extends React.Component {
                                 onChange={this.handlePasswordChange}
                             />
                             <Button color="black" fluid size="large" onClick={this.handleSubmit}>Connect</Button>
+                            <FormSubmitError visible={this.state.hasFormErrors} errors={this.state.formErrors}/>
                         </Segment>
                     </Form>
                 </Grid.Column>

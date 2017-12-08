@@ -77,7 +77,8 @@ class Login extends React.Component {
                                     icon="user"
                                     iconPosition="left"
                                     placeholder="Username"
-                                    required
+                                required
+                                error
                                     onChange={this.handleUsernameChange}
                                 />
                                 <Form.Input
