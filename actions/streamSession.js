@@ -93,7 +93,12 @@ function deleteStreamSession(socketId) {
 
 function invalidateToken(token) {
     return new Promise((resolve, reject) => {
-        log.verbose(`Invalidising token ${token}`);
+        if (!token) {
+            resolve(false);
+            return;
+        } else {
+            log.verbose(`Invalidising token ${token}`);
+        }
         fs.readFileAsync(path.join(__dirname, "../config/pubkey.pem")).then(certificate => {
             return jwt.verifyAsync(token, certificate, {
                 issuer: "datastreamer-server",
@@ -110,7 +115,7 @@ function invalidateToken(token) {
             });
         }).then(redisResponse => {
             log.verbose(redisResponse);
-            resolve();
+            resolve(true);
         }).catch(error => {
             log.error("While invalidating token:");
             log.error(error.name);

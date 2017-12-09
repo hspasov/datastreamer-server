@@ -80,9 +80,15 @@ router.post("/disconnect", (req, res, next) => {
 });
 
 router.post("/logout", (req, res, next) => {
-    invalidateToken(req.body.clientToken).then(() => {
+    invalidateToken(req.body.clientToken).then(success => {
+        if (!success) {
+            throw `Can't invalidate session. Invalid client token "${req.body.clientToken}" was sent.`;
+        }
         return invalidateToken(req.body.connectionToken);
-    }).then(() => {
+    }).then(success => {
+        if (!success) {
+            log.info("Client was not connected to provider when requested to log out.");
+        }
         res.status(200).send();
     }).catch(error => {
         log.error(error);

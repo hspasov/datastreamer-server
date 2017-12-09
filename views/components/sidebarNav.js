@@ -1,11 +1,12 @@
 import React from "react";
 import { Link, Route, Switch } from "react-router-dom";
-import { Menu, Segment, Sidebar, Sticky } from "semantic-ui-react";
+import { Divider, Grid, Header, Icon, Menu, Segment, Sidebar, Sticky } from "semantic-ui-react";
 import { connect } from "react-redux";
 import { push } from "react-router-redux";
 import { Helmet } from "react-helmet";
 import { logoutClient } from "../../store/actions/client";
 import { disconnectClient } from "../../store/actions/provider";
+import disconnect from "../../modules/disconnect";
 import HomePage from "../pages/home.page";
 import LoginPage from "../pages/login.page";
 import RegisterPage from "../pages/register.page";
@@ -16,24 +17,8 @@ class SidebarNav extends React.Component {
     constructor(props) {
         super(props);
 
-        this.disconnect = this.disconnect.bind(this);
+        this.disconnect = disconnect.bind(this);
         this.logout = this.logout.bind(this);
-    }
-
-    disconnect() {
-        const formData = {
-            connectionToken: this.props.provider.token
-        };
-        fetch("/disconnect", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded", },
-            body: formurlencoded(formData)
-        }).then(response => {
-            this.props.dispatch(disconnectClient());
-            this.props.history.push("/home");
-        }).catch(error => {
-            console.log(error);
-        });
     }
 
     logout() {
@@ -48,22 +33,52 @@ class SidebarNav extends React.Component {
         }).then(response => {
             this.props.dispatch(disconnectClient());
             this.props.dispatch(logoutClient());
-            this.props.history.push("/");
         }).catch(error => {
             console.log(error);
         });
     }
 
     render() {
+        const client = (this.props.client.token) ?
+            <div>
+                <Menu.Item><Header as="h4" color="grey">Your client</Header></Menu.Item>
+                <Menu.Item><Header as="h4" color="grey">test1</Header></Menu.Item>
+                <Menu.Item onClick={this.logout}>Logout</Menu.Item>
+                <Menu.Item><Divider /></Menu.Item>
+            </div> :
+            <div>
+                <Menu.Item><Header as="h4" color="grey">Your client</Header></Menu.Item>
+                <Menu.Item as={Link} to="/login">Log in</Menu.Item>
+                <Menu.Item as={Link} to="/register">Register</Menu.Item>
+                <Menu.Item><Divider /></Menu.Item>
+            </div>;
+
+        const connection = <div>
+            <Menu.Item><Header as="h4" color="grey">Connection</Header></Menu.Item>
+            <Menu.Item>{
+                (this.props.provider.token) ?
+                    <div>
+                        <Header as="h2" color="green">provider1</Header>
+                        <Menu.Item onClick={this.disconnect}>Disconnect</Menu.Item>
+                    </div> :
+                    <Header as="h2" color="red">No provider</Header>
+            }</Menu.Item>
+            <Menu.Item><Divider /></Menu.Item>
+        </div>;
+
+        const availableProviders = <div>
+            <Menu.Item><Header as="h4" color="grey">Available Providers</Header></Menu.Item>
+            <Menu.Item as={Link} to="/connect"><Grid><Grid.Row centered><Icon name="plus" corner/>Connect to provider</Grid.Row></Grid></Menu.Item>
+            <Menu.Item><Divider /></Menu.Item>
+        </div>;
+
         return (
             <Sidebar.Pushable as={Segment} attached>
-                <Sidebar className="fixedSidebar" as={Menu} animation="slide along" width="wide" size="massive" visible={this.props.sidebar.visible} icon="labeled" vertical inverted>
-                    <Menu.Item as={Link} to="/home">Home</Menu.Item>
-                    <Menu.Item as={Link} to="/login">Log in</Menu.Item>
-                    <Menu.Item as={Link} to="/register">Register</Menu.Item>
-                    <Menu.Item as={Link} to="/connect">Connect</Menu.Item >
-                    <Menu.Item onClick={this.disconnect}>Disconnect</Menu.Item>
-                    <Menu.Item onClick={this.logout}>Logout</Menu.Item>
+                <Sidebar as={Menu} animation="slide along" width="wide" size="massive" visible={this.props.sidebar.visible} icon="labeled" vertical inverted borderless>
+                    {/* <Menu.Item as={Link} to="/home">Home</Menu.Item> */}
+                    {client}
+                    {this.props.client.token && connection}
+                    {this.props.client.token && availableProviders}
                 </Sidebar>
                 <Sidebar.Pusher>
                     <div id="page">

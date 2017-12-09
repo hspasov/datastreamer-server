@@ -1,4 +1,4 @@
-const reducer = (state = { token: null }, action) => {
+const reducer = (state = { token: "" }, action) => {
     switch (action.type) {
         case "LOGIN_CLIENT":
             return {
@@ -8,7 +8,7 @@ const reducer = (state = { token: null }, action) => {
         case "LOGOUT_CLIENT":
             return {
                 ...state,
-                token: null
+                token: ""
             };
     }
     return state;

@@ -1,6 +1,7 @@
 import React from "react";
 import FileSaver from "file-saver";
 import { connect } from "react-redux";
+import { Redirect } from "react-router";
 import { Accordion, Button, Dimmer, Header, Icon, Item, Loader, Message, Segment } from "semantic-ui-react";
 import RTC from "../../rtc_connection/client";
 import path from "path";
@@ -209,9 +210,10 @@ class Home extends React.Component {
 
     render() {
         if (!this.props.client.token) {
-            return (
-                <Redirect to="/login"></Redirect>
-            );
+            return <Redirect to="/login"></Redirect>;
+        }
+        if (!this.props.provider.token) {
+            return <Redirect to="/connect"></Redirect>;
         }
         return (
             <div>

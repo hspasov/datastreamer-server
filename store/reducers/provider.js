@@ -1,4 +1,4 @@
-const reducer = (state={token: null}, action) => {
+const reducer = (state={token: ""}, action) => {
     switch (action.type) {
         case "CONNECT_CLIENT":
             return {
@@ -8,7 +8,7 @@ const reducer = (state={token: null}, action) => {
         case "DISCONNECT_CLIENT":
             return {
                 ...state,
-                token: null
+                token: ""
             }
     }
     return state;

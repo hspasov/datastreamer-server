@@ -3,6 +3,7 @@ import { Redirect } from "react-router";
 import { connect } from "react-redux";
 import { push } from "react-router-redux";
 import { connectClient } from "../../store/actions/provider";
+import disconnect from "../../modules/disconnect";
 import formurlencoded from "form-urlencoded";
 import { Button, Form, Grid, Header, Message, Segment } from "semantic-ui-react";
 import FormSubmitError from "../components/formSubmitError.component";
@@ -22,6 +23,8 @@ class Connect extends React.Component {
         this.handleUsernameChange = this.handleUsernameChange.bind(this);
         this.handlePasswordChange = this.handlePasswordChange.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
+
+        this.props.provider.token && disconnect.bind(this)();
     }
 
     handleUsernameChange(event) {
