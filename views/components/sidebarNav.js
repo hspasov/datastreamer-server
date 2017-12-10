@@ -33,6 +33,7 @@ class SidebarNav extends React.Component {
         }).then(response => {
             this.props.dispatch(disconnectClient());
             this.props.dispatch(logoutClient());
+            this.props.history.push("/login");
         }).catch(error => {
             console.log(error);
         });

@@ -41,6 +41,10 @@ class Home extends React.Component {
         return nextState.isComponentUpdateAllowed;
     }
 
+    componentWillUnmount() {
+        this.RTC.socket.disconnect();
+    }
+
     openDirectory(name) {
         if (name === this.state.currentDirectory) {
             console.log("You are already in root directory!");
