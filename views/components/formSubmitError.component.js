@@ -7,19 +7,21 @@ class FormSubmitError extends React.Component {
 
         this.errorTypes = {
             "empty": "One or more fields were left empty",
-            "validation": "Invalid username or password"
+            "validation": "Invalid username or password",
+            "match": "Passwords don't match",
+            "connect": "Can't connect to server"
         };
     }
 
     render() {
         const errorsList = this.props.errors.map(error => this.errorTypes[error]);
-        return (<Message
-                visible={this.props.visible}
-                size="tiny"
-                error
-                header="There were some errors with your submission"
-                list={errorsList}
-        />);
+        return <Message
+            visible={this.props.visible}
+            size="tiny"
+            error
+            header="There were some errors with your submission"
+            list={errorsList}
+        />;
     }
 }
 

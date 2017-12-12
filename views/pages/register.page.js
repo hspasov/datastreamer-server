@@ -5,6 +5,7 @@ import { push } from "react-router-redux";
 import { loginClient } from "../../store/actions/client";
 import formurlencoded from "form-urlencoded";
 import { Button, Form, Grid, Header, Message, Segment } from "semantic-ui-react";
+import FormSubmitError from "../components/formSubmitError.component";
 
 class Register extends React.Component {
     constructor(props) {
@@ -14,7 +15,8 @@ class Register extends React.Component {
             username: "",
             password: "",
             confirmPassword: "",
-            formRaised: false
+            hasFormErrors: false,
+            formErrors: []
         }
 
         this.handleUsernameChange = this.handleUsernameChange.bind(this);
@@ -45,14 +47,27 @@ class Register extends React.Component {
     }
 
     handleSubmit() {
-        if (this.state.password != this.state.confirmPassword) {
-            console.log("Passwords don't match");
+        if (!(this.state.username && this.state.password)) {
+            this.setState({
+                hasFormErrors: true,
+                formErrors: ["empty"]
+            });
             return;
         }
+
+        if (this.state.password != this.state.confirmPassword) {
+            this.setState({
+                hasFormErrors: true,
+                formErrors: ["match"]
+            });
+            return;
+        }
+
         const formData = {
             username: this.state.username,
             password: this.state.password
         };
+
         fetch("/register", {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded", },
@@ -67,18 +82,17 @@ class Register extends React.Component {
             this.props.dispatch(loginClient(json));
             this.props.history.push("/connect");
         }).catch(error => {
-            console.log(error);
+            this.setState({
+                hasFormErrors: true,
+                formErrors: ["connect"]
+            });
         });
     }
 
     render() {
         return (
-            <Grid
-                textAlign="center"
-                style={{ height: "100%" }}
-                verticalAlign="middle"
-            >
-                <Grid.Column style={{ maxWidth: 450 }} >
+            <Grid textAlign="center" style={{ height: "100%" }} verticalAlign="middle">
+                <Grid.Column style={{ maxWidth: 450 }}>
                     <Header as="h2" color="black" textAlign="center">
                         Create new account
                         </Header>
@@ -110,6 +124,7 @@ class Register extends React.Component {
                                 onChange={this.handleConfirmPasswordChange}
                             />
                             <Button color="black" fluid size="large" onClick={this.handleSubmit}>Register</Button>
+                            <FormSubmitError visible={this.state.hasFormErrors} errors={this.state.formErrors} />
                         </Segment>
                     </Form>
                     <Message>

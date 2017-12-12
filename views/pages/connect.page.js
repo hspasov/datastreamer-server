@@ -76,52 +76,46 @@ class Connect extends React.Component {
             this.props.dispatch(connectClient(json));
             this.props.history.push("/home");
         }).catch(error => {
-            console.log(error);
+            this.setState({
+                hasFormErrors: true,
+                formErrors: ["connect"]
+            });
         });
     }
 
     render() {
         if (!this.props.client.token) {
-            return (
-                <Redirect to="/login"></Redirect>
-            );
+            return <Redirect to="/login"></Redirect>;
         }
-        return (
-            <Grid
-                textAlign="center"
-                style={{ height: "100%" }}
-                verticalAlign="middle"
-            >
-                <Grid.Column style={{ maxWidth: 450 }} >
-                    <Header as="h2" color="black" textAlign="center">
-                        Connect to provider
-                        </Header>
-                    <Form size="massive">
-                        <Segment>
-                            <Form.Input
-                                fluid
-                                icon="user"
-                                iconPosition="left"
-                                placeholder="Provider name"
-                                required
-                                onChange={this.handleUsernameChange}
-                            />
-                            <Form.Input
-                                fluid
-                                icon="lock"
-                                iconPosition="left"
-                                placeholder="Password"
-                                type="password"
-                                required
-                                onChange={this.handlePasswordChange}
-                            />
-                            <Button color="black" fluid size="large" onClick={this.handleSubmit}>Connect</Button>
-                            <FormSubmitError visible={this.state.hasFormErrors} errors={this.state.formErrors}/>
-                        </Segment>
-                    </Form>
-                </Grid.Column>
-            </Grid>
-        );
+
+        return <Grid textAlign="center" style={{ height: "100%" }} verticalAlign="middle">
+            <Grid.Column style={{ maxWidth: 450 }} >
+                <Header as="h2" color="black" textAlign="center">
+                    Connect to provider
+                </Header>
+                <Form size="massive">
+                    <Segment>
+                        <Form.Input
+                            fluid
+                            icon="user"
+                            iconPosition="left"
+                            placeholder="Provider name"
+                            required
+                            onChange={this.handleUsernameChange} />
+                        <Form.Input
+                            fluid
+                            icon="lock"
+                            iconPosition="left"
+                            placeholder="Password"
+                            type="password"
+                            required
+                            onChange={this.handlePasswordChange} />
+                        <Button color="black" fluid size="large" onClick={this.handleSubmit}>Connect</Button>
+                        <FormSubmitError visible={this.state.hasFormErrors} errors={this.state.formErrors}/>
+                    </Segment>
+                </Form>
+            </Grid.Column>
+        </Grid>;
     }
 }
 

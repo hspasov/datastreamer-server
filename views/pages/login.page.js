@@ -5,6 +5,7 @@ import { push } from "react-router-redux";
 import { loginClient } from "../../store/actions/client";
 import formurlencoded from "form-urlencoded";
 import { Button, Form, Grid, Header, Message, Segment } from "semantic-ui-react";
+import FormSubmitError from "../components/formSubmitError.component";
 
 class Login extends React.Component {
     constructor(props) {
@@ -13,7 +14,9 @@ class Login extends React.Component {
         this.state = {
             username: "",
             password: "",
-            formRaised: false
+            formRaised: false,
+            hasFormErrors: false,
+            formErrors: []
         }
 
         this.handleUsernameChange = this.handleUsernameChange.bind(this);
@@ -36,6 +39,17 @@ class Login extends React.Component {
     }
 
     handleSubmit() {
+        if (!(this.state.username && this.state.password)) {
+            this.setState({
+                hasFormErrors: true,
+                formErrors: ["empty"]
+            });
+            return;
+        }
+        this.setState({
+            hasFormErrors: false
+        });
+
         const formData = {
             username: this.state.username,
             password: this.state.password
@@ -49,57 +63,55 @@ class Login extends React.Component {
             if (response.status == 200) {
                 return response.json();
             } else {
-                throw `Authentication failed\n${response}`;
+                this.setState({
+                    hasFormErrors: true,
+                    formErrors: ["validation"]
+                });
             }
         }).then(json => {
             this.props.dispatch(loginClient(json));
             this.props.history.push("/connect");
         }).catch(error => {
-            console.log(error);
+            this.setState({
+                hasFormErrors: true,
+                formErrors: ["connect"]
+            });
         });
     }
 
     render() {
-        return (
-                <Grid
-                    textAlign="center"
-                    style={{ height: "100%" }}
-                    verticalAlign="middle"
-                >
-                    <Grid.Column style={{ maxWidth: 450 }} >
-                    <Header as="h2" color="black" textAlign="center">
-                            Log-in to your account
-                        </Header>
-                        <Form size="massive">
-                        <Segment>
-                                <Form.Input
-                                    fluid
-                                    icon="user"
-                                    iconPosition="left"
-                                    placeholder="Username"
-                                required
-                                error
-                                    onChange={this.handleUsernameChange}
-                                />
-                                <Form.Input
-                                    fluid
-                                    icon="lock"
-                                    iconPosition="left"
-                                    placeholder="Password"
-                                    type="password"
-                                    required
-                                    onChange={this.handlePasswordChange}
-                                />
-
-                            <Button color="black" fluid size="large" onClick={this.handleSubmit}>Login</Button>
-                            </Segment>
-                        </Form>
-                        <Message>
-                            Don't have an account? <Link to="/register">Register</Link>
-                        </Message>
-                    </Grid.Column>
-                </Grid>
-        );
+        return <Grid textAlign="center" style={{ height: "100%" }} verticalAlign="middle">
+            <Grid.Column style={{ maxWidth: 450 }} >
+                <Header as="h2" color="black" textAlign="center">
+                    Log-in to your account
+                </Header>
+                <Form size="massive">
+                <Segment>
+                        <Form.Input
+                            fluid
+                            icon="user"
+                            iconPosition="left"
+                            placeholder="Username"
+                            required
+                            error
+                            onChange={this.handleUsernameChange}/>
+                        <Form.Input
+                            fluid
+                            icon="lock"
+                            iconPosition="left"
+                            placeholder="Password"
+                            type="password"
+                            required
+                            onChange={this.handlePasswordChange}/>
+                        <Button color="black" fluid size="large" onClick={this.handleSubmit}>Login</Button>
+                        <FormSubmitError visible={this.state.hasFormErrors} errors={this.state.formErrors} />
+                    </Segment>
+                </Form>
+                <Message>
+                    Don't have an account? <Link to="/register">Register</Link>
+                </Message>
+            </Grid.Column>
+        </Grid>;
     }
 }
 
