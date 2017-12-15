@@ -25,41 +25,39 @@ const findFile = (files, path) => {
     return files.filter(file => file.path === path)[0];
 }
 
-const prepareDownload = (files, file) => {
-    return files.map(f => {
-        if (f.path === file.path) {
-            const download = {
-                status: "initialized",
-                mime: file.mime
-            };
-            return {
+const setThumbnail = (files, path, thumbnail) => {
+    return files.map(f =>
+        f.path === path ?
+            {
                 ...f,
-                download
-            };
-        } else {
-            return f;
-        }
-    });
+                thumbnail
+            } : f
+    );
+}
+
+const prepareDownload = (files, file) => {
+    return files.map(f =>
+        f.path === file.path ?
+            {
+                ...f,
+                download: {
+                    status: "initialized",
+                }
+            } : f
+    );
 }
 
 const finishDownload = (files, file) => {
-    let downloaded = null;
-    files = files.map(f => {
-        if (f.path === file.path) {
-            const download = {
-                ...f.download,
-                status: "downloaded"
-            };
-            downloaded = {
+    return files.map(f =>
+        f.path === file.path ?
+            {
                 ...f,
-                download
-            };
-            return downloaded;
-        } else {
-            return f;
-        }
-    });
-    return downloaded;
+                download: {
+                    ...f.download,
+                    status: "downloaded"
+                }
+            } : f
+    );
 }
 
 export {
@@ -69,5 +67,6 @@ export {
     unlink,
     prepareDownload,
     finishDownload,
+    setThumbnail,
     findFile
 };

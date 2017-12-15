@@ -2,7 +2,7 @@ import React from "react";
 import FileSaver from "file-saver";
 import { connect } from "react-redux";
 import { Redirect } from "react-router";
-import { Accordion, Button, Dimmer, Header, Icon, Item, Loader, Message, Segment } from "semantic-ui-react";
+import { Accordion, Button, Dimmer, Header, Icon, Image, Item, Loader, Message, Segment } from "semantic-ui-react";
 import RTC from "../../rtc_connection/client";
 import path from "path";
 import {
@@ -12,8 +12,10 @@ import {
     unlink,
     prepareDownload,
     finishDownload,
+    setThumbnail,
     findFile
 } from "../../modules/files";
+import Thumbnail from "../components/thumbnail.component";
 
 class Home extends React.Component {
     constructor(props) {
@@ -30,6 +32,7 @@ class Home extends React.Component {
             files: []
         };
 
+        this.downloadFile = this.downloadFile.bind(this);
         this.onMessage = this.onMessage.bind(this);
         this.onChunk = this.onChunk.bind(this);
         this.errorHandler = this.errorHandler.bind(this);
@@ -83,6 +86,9 @@ class Home extends React.Component {
                     files: []
                 });
                 break;
+            case "sendThumbnail":
+                console.log(message.data);
+                break;
             case "add":
                 this.setState(prevState => ({
                     files: add(prevState.files, message.data)
@@ -104,11 +110,6 @@ class Home extends React.Component {
                     files: unlink(prevState.files, message.data)
                 }));
                 break;
-            case "sendFileMetadata":
-                this.setState(prevState => ({
-                    files: prepareDownload(prevState.files, message.data)
-                }));
-                break;
             case "doneSending":
                 this.setState({ isDimmerActive: false, isComponentUpdateAllowed: true, showError: false });
                 break;
@@ -123,16 +124,33 @@ class Home extends React.Component {
         this.RTC.receivedBytes += chunk.byteLength;
         if (this.RTC.receivedBytes === this.RTC.fileSize) {
             console.log("end of file");
-            const file = finishDownload(this.state.files, { path: this.RTC.downloads[0] });
-            const received = new Blob(this.RTC.receiveBuffer, file.mime);
-            FileSaver.saveAs(received, path.basename(file.path));
+            const file = findFile(this.state.files, this.RTC.downloads[0].path);
+            const received = new Blob(this.RTC.receiveBuffer, { type: file.mime });
+            switch(this.RTC.downloads[0].context) {
+                case "download":
+                    this.setState(prevState => ({
+                        files: finishDownload(this.state.files, file.path)
+                    }));
+                    FileSaver.saveAs(received, path.basename(file.path));
+                    break;
+
+                case "thumbnail":
+                    const imageURL = window.URL.createObjectURL(received);
+                    console.log(imageURL);
+                    console.log(file.path);
+                    console.log(setThumbnail(this.state.files, file.path, imageURL));
+                    this.setState(prevState => ({
+                        files: setThumbnail(this.state.files, file.path, imageURL)
+                    }));
+                    break;
+            }
             this.RTC.receiveBuffer = [];
             this.RTC.receivedBytes = 0;
             this.RTC.fileSize = 0;
             this.RTC.downloads.shift();
-            if (this.RTC.downloads.length === 1) {
-                const filePath = this.RTC.downloads[0];
-                const file = findFile(this.state.files, filePath);
+            if (this.RTC.downloads.length >= 1) {
+                const download = this.RTC.downloads[0];
+                const file = findFile(this.state.files, download.path);
                 this.downloadFile(file);
             }
         } else {
@@ -140,9 +158,16 @@ class Home extends React.Component {
         }
     }
 
-    downloadFile(file) {
+    downloadFile(file, context) {
         try {
             this.RTC.fileSize = file.size;
+            switch(context) {
+                case "download":
+                    this.setState(prevState => ({
+                        files: prepareDownload(prevState.files, file)
+                    }));
+                    break;
+            }
             this.RTC.sendMessageChannel.send(JSON.stringify({
                 action: "downloadFile",
                 filePath: file.path
@@ -162,13 +187,18 @@ class Home extends React.Component {
         }
     }
 
-    addToDownloads(filePath) {
-        this.RTC.downloads.push(filePath);
+    addToDownloads(filePath, context) {
+        this.RTC.downloads.push({path: filePath, context});
         if (this.RTC.downloads.length === 1) {
-            const filePath = this.RTC.downloads[0];
-            const file = findFile(this.state.files, filePath);
-            this.downloadFile(file);
+            const download = this.RTC.downloads[0];
+            console.log(download);
+            const file = findFile(this.state.files, download.path);
+            this.downloadFile(file, context);
         }
+    }
+
+    getThumbnail(filePath) {
+        this.addToDownloads.bind(this)(filePath, "thumbnail");
     }
 
     toggleErrorMessageMore() {
@@ -248,7 +278,10 @@ class Home extends React.Component {
                         return (
                             <Item key={file.path}>
                                 <Item.Content>
-                                    <Icon name="file" size="massive" />
+                                    <Thumbnail
+                                        mime={file.mime}
+                                        thumbnail={file.thumbnail}
+                                        onClick={this.addToDownloads.bind(this, file.path, "thumbnail")} />
                                     <Item.Header>{file.name}</Item.Header>
                                     <Item.Meta>Type: {file.type}</Item.Meta>
                                     <Item.Meta>Size: {file.size}</Item.Meta>
@@ -258,7 +291,7 @@ class Home extends React.Component {
                                     {
                                         (file.type == "directory") ?
                                             <Button onClick={this.openDirectory.bind(this, file.path)}>Open directory</Button> :
-                                            <Button onClick={this.addToDownloads.bind(this, file.path)}>Download file</Button>
+                                            <Button onClick={this.addToDownloads.bind(this, file.path, "download")}>Download file</Button>
                                     }
                                 </Item.Content>
                             </Item>
