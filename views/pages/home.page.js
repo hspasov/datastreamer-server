@@ -37,6 +37,8 @@ class Home extends React.Component {
         this.onChunk = this.onChunk.bind(this);
         this.errorHandler = this.errorHandler.bind(this);
         this.toggleErrorMessageMore = this.toggleErrorMessageMore.bind(this);
+        this.replaceDefaultIcon = this.replaceDefaultIcon.bind(this);
+        this.getThumbnail = this.getThumbnail.bind(this);
         this.RTC = new RTC(this.props.provider.token, this.onMessage, this.onChunk, this.errorHandler);
     }
 
@@ -86,13 +88,17 @@ class Home extends React.Component {
                     files: []
                 });
                 break;
-            case "sendThumbnail":
-                console.log(message.data);
+            case "sendThumbnailSize":
+                this.RTC.fileSize = message.data;
+                this.RTC.sendMessageChannel.send(JSON.stringify({
+                    action: "readyForThumbnail"
+                }));
                 break;
             case "add":
                 this.setState(prevState => ({
                     files: add(prevState.files, message.data)
                 }));
+                this.replaceDefaultIcon(message.data);
                 break;
             case "addDir":
                 this.setState(prevState => ({
@@ -151,7 +157,11 @@ class Home extends React.Component {
             if (this.RTC.downloads.length >= 1) {
                 const download = this.RTC.downloads[0];
                 const file = findFile(this.state.files, download.path);
-                this.downloadFile(file);
+                console.log(`i'm actually here, length is ${this.RTC.downloads.length}`);
+                console.log(file);
+                this.downloadFile(file, download.context);
+            } else {
+                console.log(`cant download more, length is ${this.RTC.downloads.length}`);
             }
         } else {
             console.log(`${this.RTC.receivedBytes}/${this.RTC.fileSize}`);
@@ -160,18 +170,24 @@ class Home extends React.Component {
 
     downloadFile(file, context) {
         try {
-            this.RTC.fileSize = file.size;
             switch(context) {
                 case "download":
+                    this.RTC.fileSize = file.size;
                     this.setState(prevState => ({
                         files: prepareDownload(prevState.files, file)
                     }));
+                    this.RTC.sendMessageChannel.send(JSON.stringify({
+                        action: "downloadFile",
+                        filePath: file.path
+                    }));
+                    break;
+                case "thumbnail":
+                    this.RTC.sendMessageChannel.send(JSON.stringify({
+                        action: "getThumbnail",
+                        filePath: file.path
+                    }));
                     break;
             }
-            this.RTC.sendMessageChannel.send(JSON.stringify({
-                action: "downloadFile",
-                filePath: file.path
-            }));
         } catch (error) {
             if (!this.RTC.sendMessageChannel) {
                 this.errorHandler({
@@ -188,12 +204,22 @@ class Home extends React.Component {
     }
 
     addToDownloads(filePath, context) {
-        this.RTC.downloads.push({path: filePath, context});
+        this.RTC.downloads.push({ path: filePath, context });
+        console.log(`added to downlads, length is ${this.RTC.downloads.length}`);
         if (this.RTC.downloads.length === 1) {
             const download = this.RTC.downloads[0];
             console.log(download);
             const file = findFile(this.state.files, download.path);
             this.downloadFile(file, context);
+        }
+    }
+
+    replaceDefaultIcon(file) {
+        switch (file.mime) {
+            case "image/jpeg":
+            case "image/png":
+                this.getThumbnail(file.path);
+                break;
         }
     }
 
