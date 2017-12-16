@@ -4,10 +4,18 @@ import { Route } from "react-router-dom";
 import { connect } from "react-redux";
 import SidebarNavComponent from "../components/sidebarNav";
 import { toggleSidebar } from "../../store/actions/sidebar";
+import {
+    openDirectory,
+    navigateBack,
+    changePath,
+    clearPath
+} from "../../store/actions/navigation";
 
 class App extends React.Component {
     constructor(props) {
         super(props);
+
+        this.RTC = null;
 
         this.toggleSidebar = this.toggleSidebar.bind(this);
     }
@@ -18,7 +26,7 @@ class App extends React.Component {
 
     render() {
         const menuColor = (this.props.client.token) ?
-            (this.props.provider.token) ? "green" : "red" :
+            (this.props.provider.token && !this.props.dimmer.error.show) ? "green" : "red" :
             "blue";
         return <Grid style={{ height: '100%' }}>
                 <Grid.Column >
@@ -32,13 +40,14 @@ class App extends React.Component {
                             <Icon name="list layout" />
                             DataStreamer
                         </Menu.Item>
-                        <Menu.Item as={Breadcrumb}>
-                            <Breadcrumb.Section link>Home</Breadcrumb.Section>
-                            <Breadcrumb.Divider />
-                            <Breadcrumb.Section link>Store</Breadcrumb.Section>
-                            <Breadcrumb.Divider />
-                            <Breadcrumb.Section active>T-Shirt</Breadcrumb.Section>
-                        </Menu.Item>
+                        <Menu.Item as={Breadcrumb}>{
+                            this.props.navigation.path.map((directory, i) => {
+                                return <div>
+                                    <Breadcrumb.Section link>Home</Breadcrumb.Section>
+                                    <Breadcrumb.Divider />
+                                </div>;
+                            })
+                        }</Menu.Item>
                     </Menu>
                     <Route path="/" component={SidebarNavComponent} />
                 </Grid.Column>
@@ -51,6 +60,8 @@ const AppContainer = connect(store => {
         client: store.client,
         provider: store.provider,
         sidebar: store.sidebar,
+        navigation: store.navigation,
+        dimmer: store.dimmer,
         router: store.router
     };
 })(App);

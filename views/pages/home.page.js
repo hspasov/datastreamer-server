@@ -5,31 +5,26 @@ import { Redirect } from "react-router";
 import { Accordion, Button, Dimmer, Header, Icon, Image, Item, Loader, Message, Segment } from "semantic-ui-react";
 import RTC from "../../rtc_connection/client";
 import path from "path";
+import { findFile } from "../../modules/files";
+import Thumbnail from "../components/thumbnail.component";
+import { toggleErrorMore, setError, removeError, setLoaderMessage } from "../../store/actions/dimmer";
 import {
-    add,
+    addFile,
     addDir,
     change,
     unlink,
+    setThumbnail,
     prepareDownload,
     finishDownload,
-    setThumbnail,
-    findFile
-} from "../../modules/files";
-import Thumbnail from "../components/thumbnail.component";
+    clearFiles,
+} from "../../store/actions/files";
 
 class Home extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
             isComponentUpdateAllowed: true,
-            isDimmerActive: true,
-            loaderMessage: "Connecting to provider...",
-            currentDirectory: null,
-            showError: false,
-            showErrorMessageMore: false,
-            errorMessage: "",
-            errorMessageMore: "",
-            files: []
+            currentDirectory: "",
         };
 
         this.downloadFile = this.downloadFile.bind(this);
@@ -40,6 +35,11 @@ class Home extends React.Component {
         this.replaceDefaultIcon = this.replaceDefaultIcon.bind(this);
         this.getThumbnail = this.getThumbnail.bind(this);
         this.RTC = new RTC(this.props.provider.token, this.onMessage, this.onChunk, this.errorHandler);
+    }
+
+    componentWillMount() {
+        this.props.dispatch(clearFiles());
+        this.props.dispatch(setLoaderMessage("Connecting to provider..."));
     }
 
     shouldComponentUpdate(nextProps, nextState) {
@@ -57,8 +57,8 @@ class Home extends React.Component {
         }
         this.setState({
             currentDirectory: name,
-            files: []
         });
+        this.props.dispatch(clearFiles());
         try {
             this.RTC.sendMessageChannel.send(JSON.stringify({
                 action: "openDirectory",
@@ -85,8 +85,8 @@ class Home extends React.Component {
                 this.setState({
                     isComponentUpdateAllowed: false,
                     currentDirectory: message.data.path,
-                    files: []
                 });
+                this.props.dispatch(clearFiles());
                 break;
             case "sendThumbnailSize":
                 this.RTC.fileSize = message.data;
@@ -95,29 +95,22 @@ class Home extends React.Component {
                 }));
                 break;
             case "add":
-                this.setState(prevState => ({
-                    files: add(prevState.files, message.data)
-                }));
+                this.props.dispatch(addFile(message.data));
                 this.replaceDefaultIcon(message.data);
                 break;
             case "addDir":
-                this.setState(prevState => ({
-                    files: addDir(prevState.files, message.data)
-                }));
+                this.props.dispatch(addDir(message.data));
                 break;
             case "change":
-                this.setState(prevState => ({
-                    files: change(prevState.files, message.data)
-                }));
+                this.props.dispatch(change(message.data));
                 break;
             case "unlink":
             case "unlinkDir":
-                this.setState(prevState => ({
-                    files: unlink(prevState.files, message.data)
-                }));
+                this.props.dispatch(unlink(message.data));
                 break;
             case "doneSending":
-                this.setState({ isDimmerActive: false, isComponentUpdateAllowed: true, showError: false });
+                this.props.dispatch(removeError());
+                this.setState({ isComponentUpdateAllowed: true });
                 break;
             case "connectSuccess":
                 console.log("Connect success!");
@@ -130,13 +123,11 @@ class Home extends React.Component {
         this.RTC.receivedBytes += chunk.byteLength;
         if (this.RTC.receivedBytes === this.RTC.fileSize) {
             console.log("end of file");
-            const file = findFile(this.state.files, this.RTC.downloads[0].path);
+            const file = findFile(this.props.files.files, this.RTC.downloads[0].path);
             const received = new Blob(this.RTC.receiveBuffer, { type: file.mime });
             switch(this.RTC.downloads[0].context) {
                 case "download":
-                    this.setState(prevState => ({
-                        files: finishDownload(this.state.files, file.path)
-                    }));
+                    this.props.dispatch(finishDownload(file));
                     FileSaver.saveAs(received, path.basename(file.path));
                     break;
 
@@ -144,10 +135,7 @@ class Home extends React.Component {
                     const imageURL = window.URL.createObjectURL(received);
                     console.log(imageURL);
                     console.log(file.path);
-                    console.log(setThumbnail(this.state.files, file.path, imageURL));
-                    this.setState(prevState => ({
-                        files: setThumbnail(this.state.files, file.path, imageURL)
-                    }));
+                    this.props.dispatch(setThumbnail(file.path, imageURL));
                     break;
             }
             this.RTC.receiveBuffer = [];
@@ -156,7 +144,7 @@ class Home extends React.Component {
             this.RTC.downloads.shift();
             if (this.RTC.downloads.length >= 1) {
                 const download = this.RTC.downloads[0];
-                const file = findFile(this.state.files, download.path);
+                const file = findFile(this.props.files.files, download.path);
                 console.log(`i'm actually here, length is ${this.RTC.downloads.length}`);
                 console.log(file);
                 this.downloadFile(file, download.context);
@@ -173,9 +161,7 @@ class Home extends React.Component {
             switch(context) {
                 case "download":
                     this.RTC.fileSize = file.size;
-                    this.setState(prevState => ({
-                        files: prepareDownload(prevState.files, file)
-                    }));
+                    this.props.dispatch(prepareDownload(file));
                     this.RTC.sendMessageChannel.send(JSON.stringify({
                         action: "downloadFile",
                         filePath: file.path
@@ -209,7 +195,8 @@ class Home extends React.Component {
         if (this.RTC.downloads.length === 1) {
             const download = this.RTC.downloads[0];
             console.log(download);
-            const file = findFile(this.state.files, download.path);
+            const file = findFile(this.props.files.files, download.path);
+            console.log(file);
             this.downloadFile(file, context);
         }
     }
@@ -228,41 +215,25 @@ class Home extends React.Component {
     }
 
     toggleErrorMessageMore() {
-        this.setState(prevState => ({
-            showErrorMessageMore: !(prevState.showErrorMessageMore)
-        }));
+        this.props.dispatch(toggleErrorMore());
     }
 
     errorHandler(error) {
         switch (error.type) {
             case "generic":
-                this.setState({
-                    errorMessage: "Something went wrong",
-                    errorMessageMore: error.message
-                });
+                this.props.dispatch(setError("Something went wrong.", error.message));
                 break;
             case "connection":
-                this.setState({
-                    errorMessage: "Connection failure",
-                    errorMessageMore: error.message
-                });
+                this.props.dispatch(setError("Connection failure.", error.message));
                 break;
             case "invalidToken":
-                this.setState({
-                    errorMessage: "Authentication failed",
-                    errorMessageMore: error.message
-                });
+                this.props.dispatch(setError("Authentication failed.", error.message));
                 break;
             case "sessionExpired":
-                this.setState({
-                    errorMessage: "Session expired",
-                    errorMessageMore: error.message
-                });
+                this.props.dispatch(setError("Session expired.", error.message));
                 break;
         }
         this.setState({
-            showError: true,
-            isDimmerActive: true,
             isComponentUpdateAllowed: true
         });
         console.log(error);
@@ -277,17 +248,17 @@ class Home extends React.Component {
         }
         return (
             <div>
-                <Dimmer active={this.state.isDimmerActive}>
-                    <Loader disabled={this.state.showError}>{this.state.loaderMessage}</Loader>
-                    <Message negative hidden={!this.state.showError}>
-                        <Message.Header>{this.state.errorMessage}</Message.Header>
+                <Dimmer active={this.props.dimmer.show}>
+                    <Loader disabled={this.props.dimmer.error.show}>{this.props.dimmer.loaderMessage}</Loader>
+                    <Message negative hidden={!this.props.dimmer.error.show}>
+                        <Message.Header>{this.props.dimmer.error.message}</Message.Header>
                         <Accordion>
                             <Accordion.Title onClick={this.toggleErrorMessageMore}>
                                 <Icon name="dropdown" />
                                 More information
                             </Accordion.Title>
-                            <Accordion.Content active={this.state.showErrorMessageMore}>
-                                <p>{this.state.errorMessageMore}</p>
+                            <Accordion.Content active={this.props.dimmer.error.more.show}>
+                                <p>{this.props.dimmer.error.more.message}</p>
                             </Accordion.Content>
                         </Accordion>
                     </Message>
@@ -300,13 +271,13 @@ class Home extends React.Component {
                     </Button>
                 }
                     <Item.Group divided>
-                    {this.state.files.map((file, i) => {
+                    {this.props.files.files.map((file, i) => {
                         return (
                             <Item key={file.path}>
                                 <Item.Content>
                                     <Thumbnail
                                         mime={file.mime}
-                                        thumbnail={file.thumbnail}
+                                        thumbnail={file.imageURL}
                                         onClick={this.addToDownloads.bind(this, file.path, "thumbnail")} />
                                     <Item.Header>{file.name}</Item.Header>
                                     <Item.Meta>Type: {file.type}</Item.Meta>
@@ -332,7 +303,9 @@ class Home extends React.Component {
 const HomePage = connect(store => {
     return {
         client: store.client,
-        provider: store.provider
+        provider: store.provider,
+        dimmer: store.dimmer,
+        files: store.files
     };
 })(Home);
 
