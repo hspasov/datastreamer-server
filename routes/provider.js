@@ -21,7 +21,8 @@ router.post("/login", (req, res, next) => {
             return err ?
                 next(err) :
                 res.status(200).json({
-                    token: provider.token
+                    token: provider.token,
+                    username: provider.username
                 });
         });
     })(req, res, next);
@@ -39,7 +40,8 @@ router.post("/register", (req, res, next) => {
             return err ?
                 next(err) :
                 res.status(201).json({
-                    token: provider.token
+                    token: provider.token,
+                    username: provider.username
                 });
         });
     })(req, res, next);

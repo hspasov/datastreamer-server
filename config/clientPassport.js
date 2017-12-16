@@ -70,7 +70,10 @@ passport.use(
                                 expiresIn: 60 * 60 // 1 hour
                             });
                         }).then(token => {
-                            return done(null, { token });
+                            return done(null, {
+                                token,
+                                username: newClient.username
+                            });
                         }).catch(error => {
                             return done(null, false, errorHandler(error));
                         });
@@ -111,7 +114,10 @@ passport.use(
                     expiresIn: 60 * 60 // 1 hour
                 });
             }).then(token => {
-                return done(null, { token });
+                return done(null, {
+                    token,
+                    username
+                });
             }).catch(error => {
                 return done(null, false, errorHandler(error));
             });
@@ -157,7 +163,10 @@ passport.use("client-connect", new CustomStrategy((req, done) => {
                     expiresIn: 60 * 60 // 1 hour
                 });
             }).then(token => {
-                return done(null, { token });
+                return done(null, {
+                    token,
+                    username: provider.username
+                });
             });
         });
     }).catch(error => {

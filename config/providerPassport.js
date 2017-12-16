@@ -59,7 +59,10 @@ passport.use(
                         expiresIn: 60 * 60 // 1 hour
                     });
                 }).then(token =>{
-                    return done(null, { token });
+                    return done(null, {
+                        token,
+                        username: provider.username
+                    });
                 }).catch(error => {
                     return done(null, false, errorHandler(error));
                 });
@@ -108,7 +111,10 @@ passport.use(
                                 expiresIn: 60 * 60 // 1 hour
                             });
                         }).then(token =>{
-                            return done(null, { token });
+                            return done(null, {
+                                token,
+                                username: newProvider.username
+                            });
                         }).catch(error => {
                             return done(null, false, errorHandler(error));
                         });

@@ -1,14 +1,16 @@
-const reducer = (state={token: ""}, action) => {
+const reducer = (state={token: "", username: ""}, action) => {
     switch (action.type) {
         case "CONNECT_CLIENT":
             return {
                 ...state,
-                token: action.payload.token
+                token: action.payload.token,
+                username: action.payload.username
             };
         case "DISCONNECT_CLIENT":
             return {
                 ...state,
-                token: ""
+                token: "",
+                username: ""
             }
     }
     return state;

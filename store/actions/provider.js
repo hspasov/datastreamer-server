@@ -1,7 +1,7 @@
-function connectClient(token) {
+function connectClient(connectionData) {
     return {
         type: "CONNECT_CLIENT",
-        payload: token
+        payload: connectionData
     };
 }
 

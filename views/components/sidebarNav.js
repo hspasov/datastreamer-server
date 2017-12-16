@@ -43,7 +43,7 @@ class SidebarNav extends React.Component {
         const client = (this.props.client.token) ?
             <div>
                 <Menu.Item><Header as="h4" color="grey">Your client</Header></Menu.Item>
-                <Menu.Item><Header as="h4" color="grey">test1</Header></Menu.Item>
+                <Menu.Item><Header as="h4" color="grey">{this.props.client.username}</Header></Menu.Item>
                 <Menu.Item onClick={this.logout}>Logout</Menu.Item>
                 <Menu.Item><Divider /></Menu.Item>
             </div> :
@@ -59,7 +59,7 @@ class SidebarNav extends React.Component {
             <Menu.Item>{
                 (this.props.provider.token) ?
                     <div>
-                        <Header as="h2" color="green">provider1</Header>
+                        <Header as="h2" color="green">{this.props.provider.username}</Header>
                         <Menu.Item onClick={this.disconnect}>Disconnect</Menu.Item>
                     </div> :
                     <Header as="h2" color="red">No provider</Header>

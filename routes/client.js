@@ -29,7 +29,8 @@ router.post("/login", (req, res, next) => {
         req.login(client, err => {
             return err ?
                 next(err) : res.status(200).send({
-                    token: client.token
+                    token: client.token,
+                    username: client.username
                 });
         });
     })(req, res, next);
@@ -47,7 +48,8 @@ router.post("/register", (req, res, next) => {
         req.login(client, err => {
             return err ?
                 next(err) : res.status(201).send({
-                    token: client.token
+                    token: client.token,
+                    username: client.username
                 });
         });
     })(req, res, next);
@@ -64,7 +66,8 @@ router.post("/connect", (req, res, next) => {
         req.login(connection, err => {
             return err ?
                 next(err) : res.status(200).send({
-                    token: connection.token
+                    token: connection.token,
+                    username: connection.username
                 });
         });
     })(req, res, next);
