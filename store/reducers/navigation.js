@@ -3,15 +3,12 @@ const reducer = (state = { path: [] }, action) => {
         case "OPEN_DIR":
             return {
                 ...state,
-                path: [
-                    ...path,
-                    action.payload
-                ]
+                path: state.path.concat([action.payload])
             };
         case "NAV_BACK":
             return {
                 ...state,
-                path: path.slice(0, action.payload - 1)
+                path: state.path.slice(0, action.payload)
             };
         case "CHANGE_PATH":
             return {

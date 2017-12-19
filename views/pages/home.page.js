@@ -5,6 +5,7 @@ import { Redirect } from "react-router";
 import { Accordion, Breadcrumb, Button, Dimmer, Divider, Header, Icon, Image, Item, Loader, Menu, Message, Segment } from "semantic-ui-react";
 import RTC from "../../rtc_connection/client";
 import path from "path";
+import uniqid from "uniqid";
 import { findFile } from "../../modules/files";
 import Thumbnail from "../components/thumbnail.component";
 import { toggleErrorMore, setError, removeError, setLoaderMessage } from "../../store/actions/dimmer";
@@ -19,13 +20,18 @@ import {
     clearFiles,
 } from "../../store/actions/files";
 import { toggleSidebar } from "../../store/actions/sidebar";
+import {
+    openDirectory,
+    navigateBack,
+    changePath,
+    clearPath
+} from "../../store/actions/navigation";
 
 class Home extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            isComponentUpdateAllowed: true,
-            currentDirectory: "",
+            isComponentUpdateAllowed: true
         };
 
         this.downloadFile = this.downloadFile.bind(this);
@@ -36,11 +42,13 @@ class Home extends React.Component {
         this.replaceDefaultIcon = this.replaceDefaultIcon.bind(this);
         this.getThumbnail = this.getThumbnail.bind(this);
         this.toggleSidebar = this.toggleSidebar.bind(this);
+        this.executeNavigate = this.executeNavigate.bind(this);
         this.RTC = new RTC(this.props.provider.token, this.onMessage, this.onChunk, this.errorHandler);
     }
 
     componentWillMount() {
         this.props.dispatch(clearFiles());
+        this.props.dispatch(clearPath());
         this.props.dispatch(setLoaderMessage("Connecting to provider..."));
     }
 
@@ -52,19 +60,38 @@ class Home extends React.Component {
         this.RTC.socket.disconnect();
     }
 
-    openDirectory(name) {
-        if (name === this.state.currentDirectory) {
+    resolveNavigate(uid) {
+        const parentDirectories = this.props.navigation.path.length;
+        const elementIndex = this.props.navigation.path.findIndex(e => e.uid === uid);
+        this.resolveNavigateBack(parentDirectories - elementIndex);
+    }
+
+    resolveNavigateBack(steps) {
+        const parentDirectories = this.props.navigation.path.length;
+        if (parentDirectories === 0) {
             console.log("You are already in root directory!");
             return;
         }
-        this.setState({
-            currentDirectory: name,
-        });
+        this.props.dispatch(navigateBack(parentDirectories - steps));
+        const directoryName = path.join(...this.props.navigation.path.slice(0, parentDirectories - steps).map(dir => dir.name));
+        this.executeNavigate(directoryName);
+    }
+
+    navigate(directoryPath) {
+        const directoryName = path.basename(directoryPath);
+        this.props.dispatch(openDirectory({
+            name: directoryName,
+            uid: uniqid()
+        }));
+        this.executeNavigate(directoryName);
+    }
+
+    executeNavigate(directoryPath) {
         this.props.dispatch(clearFiles());
         try {
             this.RTC.sendMessageChannel.send(JSON.stringify({
                 action: "openDirectory",
-                selectedDirectory: name
+                selectedDirectory: directoryPath
             }));
         } catch (error) {
             if (!this.RTC.sendMessageChannel) {
@@ -147,7 +174,7 @@ class Home extends React.Component {
             if (this.RTC.downloads.length >= 1) {
                 const download = this.RTC.downloads[0];
                 const file = findFile(this.props.files.files, download.path);
-                console.log(`i'm actually here, length is ${this.RTC.downloads.length}`);
+                console.log(`files to download: ${this.RTC.downloads.length}`);
                 console.log(file);
                 this.downloadFile(file, download.context);
             } else {
@@ -264,14 +291,20 @@ class Home extends React.Component {
                 <Menu color={menuColor} inverted fluid size="massive" fixed="top">
                     {logo}
                     <Menu.Item as={Breadcrumb}>
-                        <Breadcrumb.Section link>{this.props.provider.username}</Breadcrumb.Section>
-                        {this.props.navigation.path.map((directory, i) => {
-                            return <div>
-                                <Breadcrumb.Divider />
-                                <Breadcrumb.Section link>{directory}</Breadcrumb.Section>
+                        <Breadcrumb.Section link><p>{this.props.provider.username}</p></Breadcrumb.Section>
+                    {this.props.navigation.path.map((dir, i) => {
+                        console.log(i);
+                        return <div key={dir.uid}>
+                                <Breadcrumb.Divider/>
+                                <Breadcrumb.Section link onClick={this.resolveNavigateBack.bind(this, dir.uid)}><p>{dir.name}</p></Breadcrumb.Section>
                             </div>;
                         })
-                        }</Menu.Item>
+                    }</Menu.Item>
+                <Menu.Item as="a" position="right"
+                    disabled={this.props.navigation.path.length === 0}
+                    onClick={this.resolveNavigateBack.bind(this, 1)}>
+                    Go back
+                    </Menu.Item>
             </Menu>
             <Segment disabled={!this.state.isComponentUpdateAllowed} padded attached="top">
                 <Dimmer active={this.props.dimmer.show} page>
@@ -289,13 +322,6 @@ class Home extends React.Component {
                         </Accordion>
                     </Message>
                 </Dimmer>
-                    {this.state.currentDirectory &&
-                    <Button
-                        disabled={path.dirname(this.state.currentDirectory) === this.state.currentDirectory}
-                        onClick={this.openDirectory.bind(this, path.dirname(this.state.currentDirectory))}>
-                        Go back
-                    </Button>
-                }
                     <Item.Group divided>
                     {this.props.files.files.map((file, i) => {
                         return (
@@ -313,7 +339,7 @@ class Home extends React.Component {
                                     <Item.Meta>Execute access: {file.access.execute.toString()}</Item.Meta>
                                     {
                                         (file.type == "directory") ?
-                                            <Button onClick={this.openDirectory.bind(this, file.path)}>Open directory</Button> :
+                                            <Button onClick={this.navigate.bind(this, file.path)}>Open directory</Button> :
                                             <Button onClick={this.addToDownloads.bind(this, file.path, "download")}>Download file</Button>
                                     }
                                 </Item.Content>

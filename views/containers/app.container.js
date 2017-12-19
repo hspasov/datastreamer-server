@@ -104,15 +104,6 @@ class App extends React.Component {
 
         const topMenu = <Menu color={menuColor} inverted fluid size="massive" fixed="top">
             {logo}
-            <Menu.Item as={Breadcrumb}>
-                <Breadcrumb.Section link>{this.props.provider.username}</Breadcrumb.Section>
-                {this.props.navigation.path.map((directory, i) => {
-                    return <div>
-                        <Breadcrumb.Divider />
-                        <Breadcrumb.Section link>{directory}</Breadcrumb.Section>
-                    </div>;
-                })
-                }</Menu.Item>
         </Menu>
 
         return <Grid columns={1} style={{ height: '100%' }}>
