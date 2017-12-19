@@ -1,5 +1,5 @@
 const fs = require("fs");
-const path = require("path");
+const path = require("path").posix;
 const jwt = require("jsonwebtoken");
 const redisClient = require("redis").createClient({ detect_buffers: true });
 

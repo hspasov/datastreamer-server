@@ -1,4 +1,4 @@
-const path = require("path");
+const path = require("path").posix;
 const express = require("express");
 const clientPassport = require("../config/clientPassport");
 const invalidateToken = require("../actions/streamSession").invalidateToken;

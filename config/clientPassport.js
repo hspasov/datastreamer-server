@@ -1,5 +1,5 @@
 const fs = require("fs");
-const path = require("path");
+const path = require("path").posix;
 const passport = require("passport");
 const config = require("./config");
 const Client = require("../models/client");

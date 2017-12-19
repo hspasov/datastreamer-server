@@ -6,6 +6,7 @@ import { push } from "react-router-redux";
 import { Helmet } from "react-helmet";
 import { logoutClient } from "../../store/actions/client";
 import { disconnectClient } from "../../store/actions/provider";
+import { toggleSidebar } from "../../store/actions/sidebar";
 import disconnect from "../../modules/disconnect";
 import HomePage from "../pages/home.page";
 import LoginPage from "../pages/login.page";
@@ -19,6 +20,7 @@ class SidebarNav extends React.Component {
 
         this.disconnect = disconnect.bind(this);
         this.logout = this.logout.bind(this);
+        this.toggleSidebar = this.toggleSidebar.bind(this);
     }
 
     logout() {
@@ -37,6 +39,10 @@ class SidebarNav extends React.Component {
         }).catch(error => {
             console.log(error);
         });
+    }
+
+    toggleSidebar() {
+        this.props.dispatch(toggleSidebar());
     }
 
     render() {
@@ -73,15 +79,22 @@ class SidebarNav extends React.Component {
             <Menu.Item><Divider /></Menu.Item>
         </div>;
 
-        return (
-            <Sidebar.Pushable as={Segment} attached>
-                <Sidebar as={Menu} animation="slide along" width="wide" size="massive" visible={this.props.sidebar.visible} icon="labeled" vertical inverted borderless>
-                    {/* <Menu.Item as={Link} to="/home">Home</Menu.Item> */}
+        const menu = <Menu icon="labeled" vertical inverted borderless fixed="left" size="massive">
+                <Menu.Item onClick={this.toggleSidebar} as='a' header active={this.props.sidebar.visible}>
+                    <Grid><Grid.Row centered>
+                        <Icon name="list layout" />
+                        DataStreamer
+                        </Grid.Row></Grid>
+                </Menu.Item>;
                     {client}
-                    {this.props.client.token && connection}
-                    {this.props.client.token && availableProviders}
-                </Sidebar>
-                <Sidebar.Pusher>
+                {this.props.client.token && connection}
+                {this.props.client.token && availableProviders}
+            </Menu>;
+
+        return (
+            <Grid columns={1}>
+                {this.props.sidebar.visible && menu}
+                <Grid.Column>
                     <div id="page">
                         <Helmet>
                             <style>{`
@@ -98,8 +111,8 @@ class SidebarNav extends React.Component {
                             <Route path="/connect" component={ConnectPage} />
                         </Switch>
                     </div>
-                </Sidebar.Pusher>
-            </Sidebar.Pushable>
+                </Grid.Column>
+                </Grid>
         );
     }
 }
@@ -108,7 +121,8 @@ const SidebarNavComponent = connect(store => {
     return {
         client: store.client,
         provider: store.provider,
-        sidebar: store.sidebar
+        sidebar: store.sidebar,
+        router: store.router
     };
 })(SidebarNav);
 

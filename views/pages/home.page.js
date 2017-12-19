@@ -2,7 +2,7 @@ import React from "react";
 import FileSaver from "file-saver";
 import { connect } from "react-redux";
 import { Redirect } from "react-router";
-import { Accordion, Button, Dimmer, Header, Icon, Image, Item, Loader, Message, Segment } from "semantic-ui-react";
+import { Accordion, Breadcrumb, Button, Dimmer, Divider, Header, Icon, Image, Item, Loader, Menu, Message, Segment } from "semantic-ui-react";
 import RTC from "../../rtc_connection/client";
 import path from "path";
 import { findFile } from "../../modules/files";
@@ -18,6 +18,7 @@ import {
     finishDownload,
     clearFiles,
 } from "../../store/actions/files";
+import { toggleSidebar } from "../../store/actions/sidebar";
 
 class Home extends React.Component {
     constructor(props) {
@@ -34,6 +35,7 @@ class Home extends React.Component {
         this.toggleErrorMessageMore = this.toggleErrorMessageMore.bind(this);
         this.replaceDefaultIcon = this.replaceDefaultIcon.bind(this);
         this.getThumbnail = this.getThumbnail.bind(this);
+        this.toggleSidebar = this.toggleSidebar.bind(this);
         this.RTC = new RTC(this.props.provider.token, this.onMessage, this.onChunk, this.errorHandler);
     }
 
@@ -239,6 +241,10 @@ class Home extends React.Component {
         console.log(error);
     }
 
+    toggleSidebar() {
+        this.props.dispatch(toggleSidebar());
+    }
+
     render() {
         if (!this.props.client.token) {
             return <Redirect to="/login"></Redirect>;
@@ -246,8 +252,30 @@ class Home extends React.Component {
         if (!this.props.provider.token) {
             return <Redirect to="/connect"></Redirect>;
         }
+
+        const menuColor = (this.props.client.token) ?
+            (this.props.provider.token && !this.props.dimmer.error.show) ? "green" : "red" :
+            "blue";
+
+        const logo = <Menu.Item onClick={this.toggleSidebar} as='a' header active={this.props.sidebar.visible}>
+                <Icon name="list layout" />
+                DataStreamer
+            </Menu.Item>;
+
         return (
             <div>
+                <Menu color={menuColor} inverted fluid size="massive" fixed="top">
+                    {logo}
+                    <Menu.Item as={Breadcrumb}>
+                        <Breadcrumb.Section link>{this.props.provider.username}</Breadcrumb.Section>
+                        {this.props.navigation.path.map((directory, i) => {
+                            return <div>
+                                <Breadcrumb.Divider />
+                                <Breadcrumb.Section link>{directory}</Breadcrumb.Section>
+                            </div>;
+                        })
+                        }</Menu.Item>
+                </Menu>
                 <Dimmer active={this.props.dimmer.show}>
                     <Loader disabled={this.props.dimmer.error.show}>{this.props.dimmer.loaderMessage}</Loader>
                     <Message negative hidden={!this.props.dimmer.error.show}>
@@ -305,6 +333,8 @@ const HomePage = connect(store => {
         client: store.client,
         provider: store.provider,
         dimmer: store.dimmer,
+        sidebar: store.sidebar,
+        navigation: store.navigation,
         files: store.files
     };
 })(Home);
