@@ -80,7 +80,8 @@ class Login extends React.Component {
     }
 
     render() {
-        return <Grid textAlign="center" style={{ height: "100%" }} verticalAlign="middle">
+        return <Segment>
+        <Grid textAlign="center" style={{ height: "100%" }} verticalAlign="middle">
             <Grid.Column style={{ maxWidth: 450 }} >
                 <Header as="h2" color="black" textAlign="center">
                     Log-in to your account
@@ -111,7 +112,8 @@ class Login extends React.Component {
                     Don't have an account? <Link to="/register">Register</Link>
                 </Message>
             </Grid.Column>
-        </Grid>;
+            </Grid>
+        </Segment>;
     }
 }
 

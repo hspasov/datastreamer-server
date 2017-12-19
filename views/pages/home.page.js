@@ -253,17 +253,14 @@ class Home extends React.Component {
             return <Redirect to="/connect"></Redirect>;
         }
 
-        const menuColor = (this.props.client.token) ?
-            (this.props.provider.token && !this.props.dimmer.error.show) ? "green" : "red" :
-            "blue";
+        const menuColor = (this.props.provider.token && !this.props.dimmer.error.show) ? "green" : "red";
 
         const logo = <Menu.Item onClick={this.toggleSidebar} as='a' header active={this.props.sidebar.visible}>
                 <Icon name="list layout" />
                 DataStreamer
             </Menu.Item>;
 
-        return (
-            <div>
+        return <div>
                 <Menu color={menuColor} inverted fluid size="massive" fixed="top">
                     {logo}
                     <Menu.Item as={Breadcrumb}>
@@ -275,8 +272,9 @@ class Home extends React.Component {
                             </div>;
                         })
                         }</Menu.Item>
-                </Menu>
-                <Dimmer active={this.props.dimmer.show}>
+            </Menu>
+            <Segment disabled={!this.state.isComponentUpdateAllowed} padded attached="top">
+                <Dimmer active={this.props.dimmer.show} page>
                     <Loader disabled={this.props.dimmer.error.show}>{this.props.dimmer.loaderMessage}</Loader>
                     <Message negative hidden={!this.props.dimmer.error.show}>
                         <Message.Header>{this.props.dimmer.error.message}</Message.Header>
@@ -323,8 +321,8 @@ class Home extends React.Component {
                             )
                         })}
                 </Item.Group>
-            </div>
-        );
+            </Segment>
+        </div>;
     }
 }
 
