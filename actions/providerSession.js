@@ -12,108 +12,97 @@ const errorActions = require("../modules/errorActions");
 const errorHandler = errorActions.errorHandler;
 const validationError = errorActions.validationError;
 
-function createNewProviderSession(socketId, providerName) {
-    return new Promise((resolve, reject) => {
-        redisClient.multi()
+async function createNewProviderSession(socketId, providerName) {
+    try {
+        const response = await redisClient.multi()
             .smembers(`${providerName}:clientSocketIds`)
             .sadd("providers", providerName)
             .set(`${socketId}:providerName`, providerName)
             .set(`${providerName}:socketId`, socketId)
             .set(`${providerName}:created`, new Date().getTime())
-            .execAsync().then(response => {
-                log.info("New provider session successfully created...");
-                log.verbose(`Redis response: ${response}`);
-                resolve({
-                    type: "provider",
-                    clientSocketIds: response[0],
-                    socketId,
-                    providerName
-                });
-            }).catch(error => {
-                log.error("There was an error creating the provider session");
-                reject(errorHandler(error));
-            });
-    });
+            .execAsync();
+        log.info("New provider session successfully created...");
+        log.verbose(`Redis response: ${response}`);
+        return {
+            type: "provider",
+            clientSocketIds: response[0],
+            socketId,
+            providerName
+        };
+    } catch (error) {
+        log.error("There was an error creating the provider session");
+        throw error;
+    }
 }
 
-function findProviderSocketIdByProviderName(providerName) {
-    return new Promise((resolve, reject) => {
-        redisClient.getAsync(`${providerName}:socketId`).then(socketId => {
-            resolve(socketId);
-        }).catch(error => {
-            reject(errorHandler(error));
-        });
-    });
+async function findProviderSocketIdByProviderName(providerName) {
+    try {
+        return await redisClient.getAsync(`${providerName}:socketId`);
+    } catch (error) {
+        // todo: error
+        throw error;
+    }
 }
 
-function findProviderSocketIdByClientSocketId(clientSocketId) {
-    return new Promise((resolve, reject) => {
-        redisClient.getAsync(`${clientSocketId}:providerName`).then(providerName => {
-            return findProviderSocketIdByProviderName(providerName);
-        }).then(providerSocketId => {
-            resolve(providerSocketId);
-        }).catch(error => {
-            reject(errorHandler(error));
-        });
-    });
+async function findProviderSocketIdByClientSocketId(clientSocketId) {
+    try {
+        const providerName = await redisClient.getAsync(`${clientSocketId}:providerName`);
+        return await findProviderSocketIdByProviderName(providerName);
+    } catch (error) {
+        // todo: error
+        throw error;
+    }
 }
 
-function findProviderNameBySocketId(socketId) {
-    return new Promise((resolve, reject) => {
-        redisClient.getAsync(`${socketId}:providerName`).then(providerName => {
-            resolve(providerName);
-        }).catch(error => {
-            reject(errorHandler(error));
-        });
-    });
+async function findProviderNameBySocketId(socketId) {
+    try {
+        return await redisClient.getAsync(`${socketId}:providerName`);
+    } catch (error) {
+        // todo: error
+        throw error;
+    }
 }
 
-function findClientSessionsByProviderName(providerName) {
-    return new Promise((resolve, reject) => {
-        redisClient.smembersAsync(`${providerName}:clientSocketIds`).then(clientSessions => {
-            resolve(clientSessions);
-        }).catch(error => {
-            reject(errorHandler(error));
-        });
-    });
+async function findClientSessionsByProviderName(providerName) {
+    try {
+        return await redisClient.smembersAsync(`${providerName}:clientSocketIds`);
+    } catch (error) {
+        // todo: error
+        throw error;
+    }
 }
 
-function findClientSessionsByProviderSocketId(socketId) {
-    return new Promise((resolve, reject) => {
-        findProviderNameBySocketId(socketId).then(providerName => {
-            return findClientSessionsByProviderName(providerName);
-        }).then(clientSessions => {
-            resolve(clientSessions);
-        }).catch(error => {
-            reject(errorHandler(error));
-        });
-    });
+async function findClientSessionsByProviderSocketId(socketId) {
+    try {
+        const providerName = await findProviderNameBySocketId(socketId);
+        return await findClientSessionsByProviderName(providerName);
+    } catch (error) {
+        // todo: error
+        throw error;
+    }
 }
 
-function deleteProviderSession(socketId) {
-    return new Promise((resolve, reject) => {
-        findProviderNameBySocketId(socketId).then(providerName => {
-            redisClient.multi()
-                .get(`${providerName}:socketId`)
-                .smembers(`${providerName}:clientSocketIds`)
-                .srem("providers", providerName)
-                .del(`${socketId}:providerName`)
-                .del(`${providerName}:socketId`)
-                .del(`${providerName}:created`)
-                .execAsync().then(response => {
-                    log.verbose(`execAsync at deleteProviderSession: ${response}`);
-                    resolve({
-                        socketId: response[0],
-                        providerName,
-                        clientSocketIds: response[1]
-                    });
-                }).catch(error => {
-                    reject(errorHandler(error));
-                });
-        }).catch(error => {
-            reject(errorHandler(error));
-        });
-    });
+async function deleteProviderSession(socketId) {
+    try {
+        const providerName = await findProviderNameBySocketId(socketId);
+        const response = await redisClient.multi()
+            .get(`${providerName}:socketId`)
+            .smembers(`${providerName}:clientSocketIds`)
+            .srem("providers", providerName)
+            .del(`${socketId}:providerName`)
+            .del(`${providerName}:socketId`)
+            .del(`${providerName}:created`)
+            .execAsync();
+        log.verbose(`execAsync at deleteProviderSession: ${response}`);
+        return {
+            socketId: response[0],
+            providerName,
+            clientSocketIds: response[1]
+        };
+    } catch (error) {
+        // todo: error
+        throw error;
+    }
 }
 
 module.exports = {

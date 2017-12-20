@@ -25,127 +25,112 @@ const createNewClientSession = clientSessionActions.createNewClientSession;
 const findClientSession = clientSessionActions.findClientSession;
 const deleteClientSession = clientSessionActions.deleteClientSession;
 
-function createNewStreamSession(socketId, token) {
-    return new Promise((resolve, reject) => {
+async function createNewStreamSession(socketId, token) {
+    try {
         log.verbose(`Request for new stream session. Checking validity of token "${token}"`);
-        isInvalidated(token).then(isInvalidated => {
-            if (isInvalidated) {
-                reject("Authentication failed. Token has been invalidated.");
-            } else {
-                return fs.readFileAsync(path.join(__dirname, "../config/pubkey.pem"));
-            }
-        }).then(certificate => {
-            return jwt.verifyAsync(token, certificate, {
-                issuer: "datastreamer-server",
-                algorithm: ["RS256"]
-            });
-        }).then(decoded => {
-            if (decoded.sub === "provider") {
-                return createNewProviderSession(socketId, decoded.username);
-            } else if (decoded.sub == "clientConnection") {
-                return createNewClientSession(socketId, decoded.provider);
-            } else {
-                reject(`Error: Invalid argument "subject": must be "provider" or "clientConnection", but was ${decoded.subject}.`);
-            }
-        }).then(sessionInfo => {
-            resolve(sessionInfo);
-        }).catch(error => {
-            log.error("While creating stream session:");
-            log.error(error.name);
-            log.error(error.message);
-            reject(error);
-        });
-    });
-}
-
-function deleteStreamSession(socketId) {
-    return new Promise((resolve, reject) => {
-        findClientSession(socketId).then(clientSession => {
-            if (!clientSession) {
-                findProviderNameBySocketId(socketId).then(providerName => {
-                    if (!providerName) {
-                        reject("On deleting stream session: Not found in database!");
-                    } else {
-                        deleteProviderSession(socketId).then(providerSession => {
-                            resolve({
-                                type: "provider",
-                                socketId: providerSession.socketId,
-                                providerName: providerSession.providerName,
-                                clientSocketIds: providerSession.clientSocketIds
-                            });
-                        });
-                    }
-                });
-            } else {
-                deleteClientSession(socketId).then(clientSession => {
-                    resolve({
-                        type: "client",
-                        socketId: clientSession.socketId,
-                        providerName: clientSession.providerName
-                    });
-                });
-            }
-        }).catch(error => {
-            reject(error);
-        });
-    });
-}
-
-function invalidateToken(token) {
-    return new Promise((resolve, reject) => {
-        if (!token) {
-            resolve(false);
-            return;
-        } else {
-            log.verbose(`Invalidising token ${token}`);
+        const isInvalidated = await checkIfInvalidated(token);
+        if (isInvalidated) {
+            throw "Authentication failed. Token has been invalidated.";
         }
-        fs.readFileAsync(path.join(__dirname, "../config/pubkey.pem")).then(certificate => {
-            return jwt.verifyAsync(token, certificate, {
-                issuer: "datastreamer-server",
-                algorithm: ["RS256"]
-            });
-        }).then(decoded => {
-            return redisClient.timeAsync().then(response => {
-                const time = new Date();
-                time.setSeconds(response[0] - 60 * 60);
-                return redisClient.multi()
-                    .zremrangebyscore("invalidatedTokens", 0, time.getSeconds())
-                    .zadd("invalidatedTokens", response[0], token)
-                    .execAsync();
-            });
-        }).then(redisResponse => {
-            log.verbose(redisResponse);
-            resolve(true);
-        }).catch(error => {
-            log.error("While invalidating token:");
-            log.error(error.name);
-            log.error(error.message);
-            reject(error);
-        })
-    });
+        const certificate = await fs.readFileAsync(path.join(__dirname, "../config/pubkey.pem"));
+        const decoded = await jwt.verifyAsync(token, certificate, {
+            issuer: "datastreamer-server",
+            algorithm: ["RS256"]
+        });
+        let sessionInfo;
+        switch (decoded.sub) {
+            case "provider":
+                sessionInfo = await createNewProviderSession(socketId, decoded.username);
+                break;
+            case "clientConnection":
+                sessionInfo = await createNewClientSession(socketId, decoded.provider);
+                break;
+            default:
+                throw `Error: Invalid argument "subject": must be "provider" or "clientConnection", but was ${decoded.sub}.`;
+        }
+        return sessionInfo;
+    } catch (error) {
+        log.error("While creating stream session:");
+        log.error(error.name);
+        log.error(error.message);
+        throw error;
+    }
 }
 
-function isInvalidated(token) {
-    return new Promise((resolve, reject) => {
-        redisClient.timeAsync().then(response => {
-            const time = new Date();
-            time.setSeconds(response[0] - 60 * 60);
-            return redisClient.multi()
-                .zrank("invalidatedTokens", token)
-                .zremrangebyscore("invalidatedTokens", 0, time.getSeconds())
-                .execAsync();
-        }).then(response => {
-            log.verbose(`Redis check for invalidated token. Response: ${response}`);
-            resolve(response[0] !== null);
-        }).catch(error => {
-            reject(error);
-        })
-    });
+async function deleteStreamSession(socketId) {
+    try {
+        const clientSession = await findClientSession(socketId);
+        if (!clientSession) {
+            const providerName = await findProviderNameBySocketId(socketId);
+            if (!providerName) {
+                throw "On deleting stream session: Not found in database!";
+            } else {
+                const providerSession = await deleteProviderSession(socketId);
+                return {
+                    type: "provider",
+                    socketId: providerSession.socketId,
+                    providerName: providerSession.providerName,
+                    clientSocketIds: providerSession.clientSocketIds
+                };
+            }
+        } else {
+            const clientSession = await deleteClientSession(socketId);
+            return {
+                type: "client",
+                socketId: clientSession.socketId,
+                providerName: clientSession.providerName
+            };
+        }
+    } catch (error) {
+        // todo: error
+        throw error;
+    }
+}
+
+async function invalidateToken(token) {
+    try {
+        if (!token) throw false;
+        log.verbose(`Invalidising token ${token}`);
+        const certificate = await fs.readFileAsync(path.join(__dirname, "../config/pubkey.pem"));
+        const decoded = await jwt.verifyAsync(token, certificate, {
+            issuer: "datastreamer-server",
+            algorithm: ["RS256"]
+        });
+        const redisTime = await redisClient.timeAsync();
+        const time = new Date();
+        time.setSeconds(redisTime[0] - 60 * 60);
+        const response = await redisClient.multi()
+            .zremrangebyscore("invalidatedTokens", 0, time.getSeconds())
+            .zadd("invalidatedTokens", redisTime[0], token)
+            .execAsync();
+        log.verbose(response);
+        return true;
+    } catch (error) {
+        log.error("While invalidating token:");
+        throw error;
+    }
+}
+
+async function checkIfInvalidated(token) {
+    try {
+        const redisTime = await redisClient.timeAsync();
+        const time = new Date();
+        time.setSeconds(redisTime[0] - 60 * 60);
+        const response = await redisClient.multi()
+            .zrank("invalidatedTokens", token)
+            .zremrangebyscore("invalidatedTokens", 0, time.getSeconds())
+            .execAsync();
+        log.verbose(`Redis check for invalidated token. Response: ${response}`);
+        return response[0] !== null;
+    } catch (error) {
+        // todo: error
+        throw error;
+    }
 }
 
 module.exports = {
     createNewStreamSession,
     deleteStreamSession,
     invalidateToken,
-    isInvalidated
+    checkIfInvalidated
 };

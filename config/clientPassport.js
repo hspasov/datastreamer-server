@@ -18,7 +18,7 @@ const log = {
 const host = config.host;
 const LocalStrategy = require("passport-local").Strategy;
 const CustomStrategy = require("passport-custom");
-const isInvalidated = require("../actions/streamSession").isInvalidated;
+const checkIfInvalidated = require("../actions/streamSession").checkIfInvalidated;
 
 passport.serializeUser((client, done) => {
     log.verbose(`Serializing user: ${client}`);
@@ -126,7 +126,7 @@ passport.use(
 );
 
 passport.use("client-connect", new CustomStrategy((req, done) => {
-    isInvalidated(req.body.token).then(isInvalidated => {
+    checkIfInvalidated(req.body.token).then(isInvalidated => {
         if (isInvalidated) {
             throw "Authentication failed. Token has been invalidated.";
         } else {
