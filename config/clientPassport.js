@@ -2,8 +2,7 @@ const fs = require("fs");
 const path = require("path").posix;
 const passport = require("passport");
 const config = require("./config");
-const Client = require("../models/client");
-const Provider = require("../models/provider");
+const db = require("../db");
 const errorActions = require("../modules/errorActions");
 const jwt = require("jsonwebtoken");
 
@@ -26,9 +25,10 @@ passport.serializeUser((client, done) => {
 });
 
 passport.deserializeUser((id, done) => {
-    Client.findById(id, (error, client) => {
-        return error ?
-            log.error(error.message) : done(null, client);
+    db.query("SELECT 1 FROM Clients WHERE Id = $1", [id]).then(client => {
+        done(null, client);
+    }).catch(error => {
+        log.error(error);
     });
 });
 
@@ -40,45 +40,35 @@ passport.use(
         passReqToCallback: true
     },
         (req, username, password, done) => {
-            Client.findOne({ username }, (error, client) => {
-                if (error) {
-                    return errorHandler(error);
-                } else if (client) {
-                    return done(null, false, { errorMsg: "username already exists" });
-                } else {
-                    let newClient = new Client();
-                    newClient.username = username;
-                    newClient.password = newClient.generateHash(password);
-                    newClient.save(error => {
-                        if (error) {
-                            log.error(error);
-                            if (error.message === "Client validation failed") {
-                                log.error(error.message);
-                                return done(null, false, { errorMsg: "Please fill all fields" });
-                            }
-                            return errorHandler(error);
-                        }
-                        log.info("New client successfully created...");
-                        log.info(`username: ${username}`);
-                        fs.readFileAsync(path.join(__dirname, "./privkey.pem")).then(certificate => {
-                            return jwt.signAsync({
-                                username: newClient.username
-                            }, certificate, {
-                                issuer: "datastreamer-server",
-                                subject: "client",
-                                algorithm: "RS256",
-                                expiresIn: 60 * 60 // 1 hour
-                            });
-                        }).then(token => {
-                            return done(null, {
-                                token,
-                                username: newClient.username
-                            });
-                        }).catch(error => {
-                            return done(null, false, errorHandler(error));
-                        });
-                    });
+            let dbUsername;
+            db.query("SELECT 1 FROM Clients WHERE Username = $1;", [username]).then(response => {
+                if (response.rows.length > 0) {
+                    throw "username already exists";
                 }
+                return db.query("INSERT INTO Clients (Username, Password) VALUES ($1, crypt($2, gen_salt('bf', 8))) RETURNING *;", [username, password]);
+            }).then(response => {
+                console.log(response);
+                dbUsername = response.rows[0].username;
+                log.info("New client successfully created...");
+                log.info(`username: ${dbUsername}`);
+                return fs.readFileAsync(path.join(__dirname, "./privkey.pem"));
+            }).then(certificate => {
+                return jwt.signAsync({
+                    username: dbUsername
+                }, certificate, {
+                        issuer: "datastreamer-server",
+                        subject: "client",
+                        algorithm: "RS256",
+                        expiresIn: 60 * 60 // 1 hour
+                    });
+            }).then(token => {
+                done(null, {
+                    token,
+                    username: dbUsername
+                });
+            }).catch(error => {
+                console.log(error);
+                done(null, false, { errorMsg: "username already exists" });
             });
         }
     )
@@ -91,41 +81,39 @@ passport.use(
         passwordField: "password",
         passReqToCallback: true
     }, (req, username, password, done) => {
-        Client.findOne({ username }, (error, client) => {
-            if (error) {
-                return errorHandler(error);
+        let dbUsername;
+        db.query("SELECT Username FROM Clients WHERE Username = $1 AND Password = crypt($2, Password);", [username, password]).then(response => {
+            console.log(response.rows);
+            if (response.rows.length <= 0) {
+                throw "Client does not exist";
             }
-            if (!client) {
-                return done(null, false, {
-                    errorMsg: "Client does not exist, please" +
-                    " <a class=\"errorMsg\" href=\"/signup\">signup</a>"
-                });
-            }
-            if (!client.validPassword(password)) {
-                return done(null, false, { errorMsg: "Invalid password try again" });
-            }
-            fs.readFileAsync(path.join(__dirname, "./privkey.pem")).then(certificate => {
-                return jwt.signAsync({
-                    username: client.username
-                }, certificate, {
+            dbUsername = response.rows[0].username;
+            return fs.readFileAsync(path.join(__dirname, "./privkey.pem"));
+        }).then(certificate => {
+            return jwt.signAsync({
+                username: dbUsername
+            }, certificate, {
                     issuer: "datastreamer-server",
                     subject: "client",
                     algorithm: "RS256",
                     expiresIn: 60 * 60 // 1 hour
                 });
-            }).then(token => {
-                return done(null, {
-                    token,
-                    username
-                });
-            }).catch(error => {
-                return done(null, false, errorHandler(error));
+        }).then(token => {
+            done(null, {
+                token,
+                username: dbUsername
+            });
+        }).catch(error => {
+            console.log(error);
+            done(null, false, {
+                errorMsg: error
             });
         });
     })
 );
 
 passport.use("client-connect", new CustomStrategy((req, done) => {
+    let dbUsername, jwtDecoded;
     checkIfInvalidated(req.body.token).then(isInvalidated => {
         if (isInvalidated) {
             throw "Authentication failed. Token has been invalidated.";
@@ -139,41 +127,35 @@ passport.use("client-connect", new CustomStrategy((req, done) => {
             algorithm: "RS256"
         });
     }).then(decoded => {
-        Provider.findOne({ username: req.body.username }, (error, provider) => {
-            if (error) {
-                return done(null, false, errorHandler(error));
-            }
-            if (!provider) {
-                return done(null, false, {
-                    errorMsg: "Provider does not exist, please" +
-                    " <a class=\"errorMsg\" href=\"/signup\">signup</a>"
-                });
-            }
-            if (!provider.validPassword(req.body.password)) {
-                return done(null, false, { errorMsg: "Invalid password try again" });
-            }
-            fs.readFileAsync(path.join(__dirname, "./privkey.pem")).then(privateKey => {
-                return jwt.signAsync({
-                    client: decoded.username,
-                    provider: provider.username
-                }, privateKey, {
-                    issuer: "datastreamer-server",
-                    subject: "clientConnection",
-                    algorithm: "RS256",
-                    expiresIn: 60 * 60 // 1 hour
-                });
-            }).then(token => {
-                return done(null, {
-                    token,
-                    username: provider.username
-                });
+        jwtDecoded = decoded;
+        return db.query("SELECT Username FROM Providers WHERE Username = $1 AND Password = crypt($2, Password);", [req.body.username, req.body.password]);
+    }).then(response => {
+        console.log(response.rows);
+        if (response.rows.length <= 0) {
+            throw "Provider does not exist";
+        }
+        dbUsername = response.rows[0].username;
+        return fs.readFileAsync(path.join(__dirname, "./privkey.pem"));
+    }).then(privateKey =>{
+        return jwt.signAsync({
+            client: jwtDecoded.username,
+            provider: dbUsername
+        }, privateKey, {
+                issuer: "datastreamer-server",
+                subject: "clientConnection",
+                algorithm: "RS256",
+                expiresIn: 60 * 60 // 1 hour
             });
+    }).then(token => {
+        done(null, {
+            token,
+            username: dbUsername
         });
     }).catch(error => {
         log.error("While connecting:");
         log.error(error.name);
         log.error(error.message);
-        return done(null, false, errorHandler(error));
+        done(null, false, errorHandler(error));
     });
 }));
 

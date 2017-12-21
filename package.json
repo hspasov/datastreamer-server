@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node ./bin/www",
+    "createDB": "node ./scripts/createDB.js",
     "watch": "webpack",
     "debug": "DEBUG=datastreamer-server:info* node ./bin/www",
     "debug-verbose": "DEBUG=datastreamer-server:* node ./bin/www"
@@ -12,7 +13,6 @@
     "bcrypt-nodejs": "0.0.3",
     "bluebird": "^3.5.1",
     "body-parser": "~1.17.1",
-    "connect-mongo": "^2.0.0",
     "connect-redis": "^3.3.2",
     "cookie-parser": "~1.4.3",
     "debug": "~2.6.3",
@@ -22,17 +22,17 @@
     "file-saver": "^1.3.3",
     "form-urlencoded": "^2.0.4",
     "jsonwebtoken": "^8.1.0",
-    "mongoose": "^4.11.10",
     "morgan": "~1.8.1",
     "passport": "^0.4.0",
     "passport-custom": "^1.0.5",
     "passport-local": "^1.0.0",
+    "pg": "^7.4.0",
     "react": "^15.6.1",
     "react-dom": "^15.6.1",
     "react-helmet": "^5.2.0",
     "react-redux": "^5.0.6",
     "react-router-dom": "^4.2.2",
-    "react-router-redux": "^5.0.0-alpha.8",
+    "react-router-redux": "^5.0.0-alpha.9",
     "redis": "^2.8.0",
     "redux": "^3.7.2",
     "semantic-ui-css": "^2.2.12",
@@ -42,7 +42,7 @@
     "socket.io": "^2.0.3",
     "socket.io-client": "^2.0.3",
     "socket.io-redis": "^5.2.0",
-    "style-loader": "^0.19.0",
+    "style-loader": "^0.19.1",
     "uniqid": "^4.1.1",
     "url-loader": "^0.6.2"
   },
@@ -53,7 +53,7 @@
     "babel-preset-env": "^1.6.1",
     "babel-preset-react": "^6.24.1",
     "css-loader": "^0.28.7",
-    "webpack": "^3.8.1",
-    "webpack-dev-server": "^2.9.4"
+    "webpack": "^3.10.0",
+    "webpack-dev-server": "^2.9.7"
   }
 }

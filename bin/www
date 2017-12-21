@@ -10,12 +10,10 @@ const path = require("path").posix;
 const app = require("../app");
 const infoLog = require("debug")("datastreamer-server:info");
 const https = require("https");
-const mongoose = require("mongoose");
 const bluebird = require("bluebird");
 const redis = require("redis");
 const redisClient = redis.createClient({ detect_buffers: true });
 const redisSocketIoAdapter = require("socket.io-redis");
-const config = require("../config/config");
 
 /**
  * Get port from environment and store in Express.
@@ -23,28 +21,6 @@ const config = require("../config/config");
 
 const port = normalizePort(process.env.PORT || "3000");
 app.set("port", port);
-
-/*
- * Connect to mongo
- */
-
-mongoose.Promise = global.Promise;
-mongoose.connect(config.dbURL, {
-    useMongoClient: true
-});
-const db = mongoose.connection;
-
-db.on("error", function (error) {
-    infoLog(`There was a db connection error: ${error.message}.`);
-});
-
-db.once("conected", function () {
-    infoLog(`DB connected to ${config.dbURL}`);
-});
-
-db.once("disconnected", function () {
-    infoLog(`DB disconnecred from ${config.dbURL}`);
-});
 
 redisClient.on("error", error => {
     infoLog(`Redis client error: ${error}`);

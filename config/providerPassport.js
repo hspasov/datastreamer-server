@@ -3,7 +3,7 @@ const path = require("path").posix;
 const jwt = require("jsonwebtoken");
 const passport = require("passport");
 const config = require("./config");
-const Provider = require("../models/provider");
+const db = require("../db");
 const errorActions = require("../modules/errorActions");
 
 const errorHandler = errorActions.errorHandler;
@@ -22,10 +22,11 @@ passport.serializeUser((provider, done) => {
 });
 
 passport.deserializeUser((id, done) => {
-    Provider.findById(id, (error, provider) => {
-        return error ?
-            log.error(error.message) : done(null, provider);
-    })
+    db.query("SELECT 1 FROM Providers WHERE Id = $1;", [id]).then(provider => {
+        done(null, provider);
+    }).catch(error => {
+        log.error(error);
+    });
 });
 
 passport.use(
@@ -36,36 +37,30 @@ passport.use(
         passReqToCallback: true
     },
         (req, username, password, done) => {
-            Provider.findOne({ username }, (error, provider) => {
-                if (error) {
-                    return errorHandler(error);
+            let dbUsername;
+            db.query("SELECT Username FROM Providers WHERE Username = $1 AND Password = crypt($2, Password);", [username, password]).then(response => {
+                console.log(response.rows);
+                if (response.rows.length <= 0) {
+                    throw "Provider does not exist";
                 }
-                if (!provider) {
-                    return done(null, false, {
-                        errorMsg: "Provider does not exist, please" +
-                        " <a class=\"errorMsg\" href=\"/signup\">signup</a>"
-                    });
-                }
-                if (!provider.validPassword(password)) {
-                    return done(null, false, { errorMsg: "Invalid password try again" });
-                }
-                fs.readFileAsync(path.join(__dirname, "./privkey.pem")).then(certificate => {
-                    return jwt.signAsync({
-                        username: provider.username
-                    }, certificate, {
+                dbUsername = response.rows[0].username;
+                return fs.readFileAsync(path.join(__dirname, "./privkey.pem"));
+            }).then(certificate => {
+                return jwt.signAsync({
+                    username: dbUsername
+                }, certificate, {
                         issuer: "datastreamer-server",
                         subject: "provider",
                         algorithm: "RS256",
                         expiresIn: 60 * 60 // 1 hour
                     });
-                }).then(token =>{
-                    return done(null, {
-                        token,
-                        username: provider.username
-                    });
-                }).catch(error => {
-                    return done(null, false, errorHandler(error));
+            }).then(token => {
+                done(null, {
+                    token,
+                    username: dbUsername
                 });
+            }).catch(error => {
+                done(null, false, errorHandler(error));
             });
         }
     )
@@ -79,47 +74,34 @@ passport.use(
         passReqToCallback: true
     },
         (req, username, password, done) => {
-            Provider.findOne({ username }, (error, provider) => {
-                if (error) {
-                    return errorHandler(error);
+            let dbUsername;
+            db.query("SELECT 1 FROM Providers WHERE Username = $1;", [username]).then(response => {
+                console.log(response.rows);
+                if (response.rows.length > 0) {
+                    throw "username already exists";
                 }
-                if (provider) {
-                    return done(null, false, { errorMsg: "username already exists" });
-                }
-                else {
-                    let newProvider = new Provider();
-                    newProvider.username = username;
-                    newProvider.password = newProvider.generateHash(password);
-                    newProvider.save(error => {
-                        if (error) {
-                            log.error(error);
-                            if (error.message == "Provider validation failed") {
-                                log.error(error.message);
-                                return done(null, false, { errorMsg: "Please fill all fields" });
-                            }
-                            return errorHandler(error);
-                        }
-                        log.info("New provider successfully created...");
-                        log.info(`username: ${username}`);
-                        fs.readFileAsync(path.join(__dirname, "./privkey.pem")).then(certificate => {
-                            return jwt.signAsync({
-                                username: newProvider.username
-                            }, certificate, {
-                                issuer: "datastreamer-server",
-                                subject: "provider",
-                                algorithm: "RS256",
-                                expiresIn: 60 * 60 // 1 hour
-                            });
-                        }).then(token =>{
-                            return done(null, {
-                                token,
-                                username: newProvider.username
-                            });
-                        }).catch(error => {
-                            return done(null, false, errorHandler(error));
-                        });
+                return db.query("INSERT INTO Providers (Username, Password, Readable, Writable) VALUES ($1, crypt($2, gen_salt('bf', 8)), FALSE, FALSE) RETURNING *;", [username, password]);
+            }).then(response => {
+                dbUsername = response.rows[0].username;
+                log.info("New provider successfully created...");
+                log.info(`username: ${dbUsername}`);
+                return fs.readFileAsync(path.join(__dirname, "./privkey.pem"));
+            }).then(certificate => {
+                return jwt.signAsync({
+                    username: dbUsername
+                }, certificate, {
+                        issuer: "datastreamer-server",
+                        subject: "provider",
+                        algorithm: "RS256",
+                        expiresIn: 60 * 60 // 1 hour
                     });
-                }
+            }).then(token => {
+                done(null, {
+                    token,
+                    username: dbUsername
+                });
+            }).catch(error => {
+                done(null, false, errorHandler(error));
             });
         }
     )
