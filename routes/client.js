@@ -67,7 +67,8 @@ router.post("/connect", (req, res, next) => {
             return err ?
                 next(err) : res.status(200).send({
                     token: connection.token,
-                    username: connection.username
+                    username: connection.username,
+                    accessRules: connection.accessRules
                 });
         });
     })(req, res, next);

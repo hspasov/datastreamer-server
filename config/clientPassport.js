@@ -113,7 +113,7 @@ passport.use(
 );
 
 passport.use("client-connect", new CustomStrategy((req, done) => {
-    let dbUsername, jwtDecoded;
+    let dbUsername, accessRules, jwtDecoded;
     checkIfInvalidated(req.body.token).then(isInvalidated => {
         if (isInvalidated) {
             throw "Authentication failed. Token has been invalidated.";
@@ -128,18 +128,50 @@ passport.use("client-connect", new CustomStrategy((req, done) => {
         });
     }).then(decoded => {
         jwtDecoded = decoded;
-        return db.query("SELECT Username FROM Providers WHERE Username = $1 AND Password = crypt($2, Password);", [req.body.username, req.body.password]);
+        return db.query(`SELECT Username, Readable, Writable
+            FROM Providers
+            WHERE Username = $1 AND Password = crypt($2, Password);`, [req.body.username, req.body.password]);
     }).then(response => {
         console.log(response.rows);
         if (response.rows.length <= 0) {
             throw "Provider does not exist";
         }
         dbUsername = response.rows[0].username;
+        const readAccess = response.rows[0].readable;
+        const writeAccess = response.rows[0].writable;
+        if (readAccess === false && writeAccess === false) {
+            accessRules = "N";
+        } else if (readAccess === true && writeAccess === false) {
+            accessRules = "R";
+        } else if (readAccess === true && writeAccess === true) {
+            accessRules = "RW";
+        }
+        console.log(accessRules);
+        return db.query(`SELECT Providers.Username, ClientAccessRules.Readable, ClientAccessRules.Writable
+            FROM ClientAccessRules INNER JOIN Providers
+            ON ClientAccessRules.ProviderId = Providers.Id
+            INNER JOIN Clients ON ClientAccessRules.ClientId = Clients.Id
+            WHERE Providers.Username = $1 AND Clients.Username = $2;`, [req.body.username, jwtDecoded.username]);
+    }).then(response => {
+        console.log(response.rows);
+        if (response.rows.length > 0) {
+            const readAccess = response.rows[0].readable;
+            const writeAccess = response.rows[0].writable;
+            if (readAccess === false && writeAccess === false) {
+                accessRules = "N";
+            } else if (readAccess === true && writeAccess === false) {
+                accessRules = "R";
+            } else if (readAccess === true && writeAccess === true) {
+                accessRules = "RW";
+            }
+            console.log(accessRules);
+        }
         return fs.readFileAsync(path.join(__dirname, "./privkey.pem"));
     }).then(privateKey =>{
         return jwt.signAsync({
             client: jwtDecoded.username,
-            provider: dbUsername
+            provider: dbUsername,
+            accessRules
         }, privateKey, {
                 issuer: "datastreamer-server",
                 subject: "clientConnection",
@@ -149,7 +181,8 @@ passport.use("client-connect", new CustomStrategy((req, done) => {
     }).then(token => {
         done(null, {
             token,
-            username: dbUsername
+            username: dbUsername,
+            accessRules
         });
     }).catch(error => {
         log.error("While connecting:");

@@ -100,6 +100,10 @@ function Socket(RTC, token, errorHandler) {
         }
     });
 
+    this.socket.on("requestToken", () => {
+        this.socket.emit("provideToken", token);
+    });
+
     console.log("connecting to provider");
 }
 

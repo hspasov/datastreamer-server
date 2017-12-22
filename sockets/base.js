@@ -1,3 +1,6 @@
+const fs = require("fs");
+const path = require("path");
+const jwt = require("jsonwebtoken");
 const debug = require("debug");
 const log = {
     info: debug("datastreamer-server:info"),
@@ -25,7 +28,7 @@ const base = io => {
         if (socket.handshake.query) {
             createNewStreamSession(
                 socket.id,
-                socket.handshake.query["token"]
+                socket.handshake.query.token
             ).then(sessionInfo => {
                 log.info(`${socket.id} connected`);
                 log.verbose(sessionInfo);
@@ -33,7 +36,7 @@ const base = io => {
                 if (sessionInfo.type === "clientConnection") {
                     if (sessionInfo.provider.isConnected) {
                         io.to(socket.id).emit("connectToProviderSuccess");
-                        io.to(sessionInfo.provider.socketId).emit("subscribedClient", socket.id);
+                        io.to(sessionInfo.provider.socketId).emit("subscribedClient", socket.id, sessionInfo.client.username, sessionInfo.accessRules);
                     } else {
                         log.verbose(`Client "${socket.id}" could not connect to provider "${sessionInfo.providerName}". Provider not connected.`);
                         io.to(socket.id).emit("connectToProviderFail", "ProviderNotConnectedError");
@@ -54,11 +57,11 @@ const base = io => {
             deleteStreamSession(socket.id).then(sessionInfo => {
                 log.info(`${socket.id} disconnected`);
                 log.info(`${Object.keys(io.sockets.sockets).length} sockets left.`);
-                if (sessionInfo.type == "provider") {
+                if (sessionInfo.type === "provider") {
                     sessionInfo.clientSocketIds.forEach(client => {
                         io.to(client).emit("connectToProviderFail", "ProviderNotConnectedError");
                     });
-                } else if (sessionInfo.type == "client") {
+                } else if (sessionInfo.type === "client") {
                     findProviderSocketIdByProviderName(sessionInfo.providerName).then(socketId => {
                         if (socketId) {
                             io.to(socketId).emit("unsubscribedClient", socket.id);
@@ -129,9 +132,26 @@ const base = io => {
         socket.on("connectToClients", () => {
             findClientSessionsByProviderSocketId(socket.id).then(clientSessions => {
                 clientSessions.forEach(client => {
-                    io.to(socket.id).emit("subscribedClient", client);
-                    io.to(client).emit("connectToProviderSuccess");
+                    io.to(client).emit("requestToken");
                 });
+            }).catch(error => {
+                log.error(error);
+            });
+        });
+
+        socket.on("provideToken", token => {
+            let providerSocketId;
+            findProviderSocketIdByClientSocketId(socket.id).then(socketId => {
+                providerSocketId = socketId;
+                return fs.readFileAsync(path.join(__dirname, "../config/pubkey.pem"));
+            }).then(certificate => {
+                return jwt.verifyAsync(token, certificate, {
+                    issuer: "datastreamer-server",
+                    algorithm: ["RS256"]
+                });
+            }).then(decoded => {
+                io.to(providerSocketId).emit("subscribedClient", socket.id, decoded.client, decoded.accessRules);
+                io.to(socket.id).emit("connectToProviderSuccess");
             }).catch(error => {
                 log.error(error);
             });

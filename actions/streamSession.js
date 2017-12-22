@@ -41,14 +41,17 @@ async function createNewStreamSession(socketId, token) {
         switch (decoded.sub) {
             case "provider":
                 sessionInfo = await createNewProviderSession(socketId, decoded.username);
-                break;
+                return sessionInfo;
             case "clientConnection":
                 sessionInfo = await createNewClientSession(socketId, decoded.provider);
-                break;
+                return {
+                    ...sessionInfo,
+                    client: { username: decoded.client },
+                    accessRules: decoded.accessRules
+                };
             default:
                 throw `Error: Invalid argument "subject": must be "provider" or "clientConnection", but was ${decoded.sub}.`;
         }
-        return sessionInfo;
     } catch (error) {
         log.error("While creating stream session:");
         log.error(error.name);
