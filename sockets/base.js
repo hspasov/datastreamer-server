@@ -36,7 +36,7 @@ const base = io => {
                 if (sessionInfo.type === "clientConnection") {
                     if (sessionInfo.provider.isConnected) {
                         io.to(socket.id).emit("connectToProviderSuccess");
-                        io.to(sessionInfo.provider.socketId).emit("subscribedClient", socket.id, sessionInfo.client.username, sessionInfo.accessRules);
+                        io.to(sessionInfo.provider.socketId).emit("subscribedClient", socket.id, socket.handshake.query.token, sessionInfo.client.username, sessionInfo.accessRules);
                     } else {
                         log.verbose(`Client "${socket.id}" could not connect to provider "${sessionInfo.providerName}". Provider not connected.`);
                         io.to(socket.id).emit("connectToProviderFail", "ProviderNotConnectedError");
@@ -150,7 +150,7 @@ const base = io => {
                     algorithm: ["RS256"]
                 });
             }).then(decoded => {
-                io.to(providerSocketId).emit("subscribedClient", socket.id, decoded.client, decoded.accessRules);
+                io.to(providerSocketId).emit("subscribedClient", socket.id, token, decoded.client, decoded.accessRules);
                 io.to(socket.id).emit("connectToProviderSuccess");
             }).catch(error => {
                 log.error(error);

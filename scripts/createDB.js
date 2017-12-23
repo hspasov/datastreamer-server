@@ -45,6 +45,7 @@ pool.query("DROP DATABASE IF EXISTS datastreamer;").then(() => {
         Id SERIAL PRIMARY KEY NOT NULL,
         Username VARCHAR(60) NOT NULL,
         Password TEXT NOT NULL,
+        ClientConnectPassword TEXT NOT NULL,
         Readable BOOLEAN NOT NULL,
         Writable BOOLEAN NOT NULL
     )`);

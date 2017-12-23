@@ -1,6 +1,9 @@
 const path = require("path").posix;
 const express = require("express");
-const clientPassport = require("../config/clientPassport");
+const client = require("../db/client");
+const register = client.register;
+const login = client.login;
+const connect = client.connect;
 const invalidateToken = require("../actions/streamSession").invalidateToken;
 const router = express.Router();
 
@@ -11,67 +14,49 @@ const log = {
     verbose: debug("datastreamer-server:verbose")
 };
 
-router.use(clientPassport.initialize());
-router.use(clientPassport.session());
-
 router.route(["/login", "/register", "/home", "/connect", "/",]).get((req, res) => {
     res.sendFile(path.join(__dirname, "../views/index.html"));
 });
 
 router.post("/login", (req, res, next) => {
-    clientPassport.authenticate("client-login", { session: false }, (err, client) => {
-        if (err) {
-            return next(err); // will generate a 500 error
-        }
-        if (!client) {
-            return res.status(409).send({ message: "fail" });
-        }
-        req.login(client, err => {
-            return err ?
-                next(err) : res.status(200).send({
-                    token: client.token,
-                    username: client.username
-                });
+    // todo: handle errors
+    login(req.body.username, req.body.password).then(response => {
+        res.status(200).send({
+            token: response.token,
+            username: response.username
         });
-    })(req, res, next);
+    }).catch(error => {
+        log.error(error);
+        res.status(409).send({ message: "fail" });
+    });
 });
 
 
 router.post("/register", (req, res, next) => {
-    clientPassport.authenticate("client-register", { session: false }, (err, client) => {
-        if (err) {
-            return next(err); // will generate a 500 error
-        }
-        if (!client) {
-            return res.status(409).send({message: "fail"});
-        }
-        req.login(client, err => {
-            return err ?
-                next(err) : res.status(201).send({
-                    token: client.token,
-                    username: client.username
-                });
+    // todo: handle errors
+    register(req.body.username, req.body.password).then(response => {
+        res.status(201).send({
+            token: response.token,
+            username: response.username
         });
-    })(req, res, next);
+    }).catch(error => {
+        log.error(error);
+        res.status(409).send({ message: "fail" });
+    });
 });
 
 router.post("/connect", (req, res, next) => {
-    clientPassport.authenticate("client-connect", { session: false }, (err, connection) => {
-        if (err) {
-            return next(err); // will generate a 500 error
-        }
-        if (!connection) {
-            return res.status(409).send({ message: "fail" });
-        }
-        req.login(connection, err => {
-            return err ?
-                next(err) : res.status(200).send({
-                    token: connection.token,
-                    username: connection.username,
-                    accessRules: connection.accessRules
-                });
+    // todo: handle errors
+    connect(req.body.token, req.body.username, req.body.password).then(response => {
+        res.status(200).send({
+            token: response.token,
+            username: response.username,
+            accessRules: response.accessRules
         });
-    })(req, res, next);
+    }).catch(error => {
+        log.error(error);
+        res.status(409).send({ message: "fail" });
+    });
 });
 
 router.post("/disconnect", (req, res, next) => {
