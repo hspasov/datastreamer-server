@@ -1,5 +1,5 @@
 var express = require("express");
-const provider = require("../db/provider");
+const provider = require("../db/postgres/provider");
 const register = provider.register;
 const login = provider.login;
 var router = express.Router();

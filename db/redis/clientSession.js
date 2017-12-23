@@ -7,11 +7,6 @@ const log = {
     verbose: debug("datastreamer-server:verbose")
 };
 
-const errorActions = require("../modules/errorActions");
-
-const errorHandler = errorActions.errorHandler;
-const validationError = errorActions.validationError;
-
 async function createNewClientSession(socketId, providerName) {
     try {
         const response = await redisClient.multi()
@@ -66,7 +61,7 @@ async function deleteClientSession(socketId) {
 }
 
 module.exports = {
-    createNewClientSession: createNewClientSession,
-    findClientSession: findClientSession,
-    deleteClientSession: deleteClientSession
+    createNewClientSession,
+    findClientSession,
+    deleteClientSession
 };

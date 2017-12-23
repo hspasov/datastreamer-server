@@ -1,6 +1,5 @@
-const fs = require("fs");
-const path = require("path");
-const jwt = require("jsonwebtoken");
+const tokenActions = require("../modules/tokenActions");
+const verifyToken = tokenActions.verifyToken;
 const debug = require("debug");
 const log = {
     info: debug("datastreamer-server:info"),
@@ -8,9 +7,9 @@ const log = {
     verbose: debug("datastreamer-server:verbose")
 };
 
-const providerSessionActions = require("../actions/providerSession");
-const clientSessionActions = require("../actions/clientSession");
-const streamSessionActions = require("../actions/streamSession");
+const providerSessionActions = require("../db/redis/providerSession");
+const clientSessionActions = require("../db/redis/clientSession");
+const streamSessionActions = require("../db/redis/streamSession");
 
 const findProviderSocketIdByProviderName = providerSessionActions.findProviderSocketIdByProviderName;
 const findProviderSocketIdByClientSocketId = providerSessionActions.findProviderSocketIdByClientSocketId;
@@ -21,7 +20,7 @@ const findClientSession = clientSessionActions.findClientSession;
 const createNewStreamSession = streamSessionActions.createNewStreamSession;
 const deleteStreamSession = streamSessionActions.deleteStreamSession;
 
-const base = io => {
+const socketServer = io => {
     log.verbose("Initialising sockets");
     io.on("connection", socket => {
         log.verbose("A new socket connection.");
@@ -143,12 +142,7 @@ const base = io => {
             let providerSocketId;
             findProviderSocketIdByClientSocketId(socket.id).then(socketId => {
                 providerSocketId = socketId;
-                return fs.readFileAsync(path.join(__dirname, "../config/pubkey.pem"));
-            }).then(certificate => {
-                return jwt.verifyAsync(token, certificate, {
-                    issuer: "datastreamer-server",
-                    algorithm: ["RS256"]
-                });
+                return verifyToken(token);
             }).then(decoded => {
                 io.to(providerSocketId).emit("subscribedClient", socket.id, token, decoded.client, decoded.accessRules);
                 io.to(socket.id).emit("connectToProviderSuccess");
@@ -159,4 +153,4 @@ const base = io => {
     });
 };
 
-module.exports = base;
+module.exports = socketServer;

@@ -1,6 +1,6 @@
-const fs = require("fs");
-const path = require("path").posix;
-const jwt = require("jsonwebtoken");
+const tokenActions = require("../../modules/tokenActions");
+const verifyToken = tokenActions.verifyToken;
+
 const redisClient = require("redis").createClient({ detect_buffers: true });
 
 const debug = require("debug");
@@ -12,10 +12,6 @@ const log = {
 
 const providerSessionActions = require("./providerSession");
 const clientSessionActions = require("./clientSession");
-const errorActions = require("../modules/errorActions");
-
-const errorHandler = errorActions.errorHandler;
-const validationError = errorActions.validationError;
 
 const createNewProviderSession = providerSessionActions.createNewProviderSession;
 const deleteProviderSession = providerSessionActions.deleteProviderSession;
@@ -32,11 +28,7 @@ async function createNewStreamSession(socketId, token) {
         if (isInvalidated) {
             throw "Authentication failed. Token has been invalidated.";
         }
-        const certificate = await fs.readFileAsync(path.join(__dirname, "../config/pubkey.pem"));
-        const decoded = await jwt.verifyAsync(token, certificate, {
-            issuer: "datastreamer-server",
-            algorithm: ["RS256"]
-        });
+        const decoded = await verifyToken(token);
         let sessionInfo;
         switch (decoded.sub) {
             case "provider":
@@ -93,12 +85,8 @@ async function deleteStreamSession(socketId) {
 async function invalidateToken(token) {
     try {
         if (!token) throw false;
-        log.verbose(`Invalidising token ${token}`);
-        const certificate = await fs.readFileAsync(path.join(__dirname, "../config/pubkey.pem"));
-        const decoded = await jwt.verifyAsync(token, certificate, {
-            issuer: "datastreamer-server",
-            algorithm: ["RS256"]
-        });
+        log.verbose(`Invalidating token ${token}`);
+        const decoded = await verifyToken(token);
         const redisTime = await redisClient.timeAsync();
         const time = new Date();
         time.setSeconds(redisTime[0] - 60 * 60);

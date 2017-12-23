@@ -1,6 +1,7 @@
-const fs = require("fs");
-const path = require("path").posix;
-const jwt = require("jsonwebtoken");
+const tokenActions = require("../modules/tokenActions");
+const signClientToken = tokenActions.signClientToken;
+const verifyClientToken = tokenActions.verifyClientToken;
+const signConnectionToken = tokenActions.signConnectionToken;
 const db = require("./index");
 const debug = require("debug");
 const log = {
@@ -8,7 +9,7 @@ const log = {
     error: debug("datastreamer-server:info:ERROR"),
     verbose: debug("datastreamer-server:verbose")
 };
-const checkIfInvalidated = require("../actions/streamSession").checkIfInvalidated;
+const checkIfInvalidated = require("../redis/streamSession").checkIfInvalidated;
 
 async function register(username, password) {
     const response = await db.query("SELECT 1 FROM Clients WHERE Username = $1;", [username]);
@@ -19,15 +20,7 @@ async function register(username, password) {
     console.log(insertResponse);
     log.info("New client successfully created...");
     log.info(`username: ${insertResponse.rows[0].username}`);
-    const certificate = await fs.readFileAsync(path.join(__dirname, "../config/privkey.pem"));
-    const token = await jwt.signAsync({
-        username: insertResponse.rows[0].username
-    }, certificate, {
-            issuer: "datastreamer-server",
-            subject: "client",
-            algorithm: "RS256",
-            expiresIn: 60 * 60 // 1 hour
-        });
+    const token = await signClientToken(insertResponse.rows[0].username);
     return {
         token,
         username: insertResponse.rows[0].username
@@ -40,15 +33,7 @@ async function login(username, password) {
     if (response.rows.length <= 0) {
         throw "Client does not exist";
     }
-    const certificate = await fs.readFileAsync(path.join(__dirname, "../config/privkey.pem"));
-    const token = await jwt.signAsync({
-        username: response.rows[0].username
-    }, certificate, {
-            issuer: "datastreamer-server",
-            subject: "client",
-            algorithm: "RS256",
-            expiresIn: 60 * 60 // 1 hour
-        });
+    const token = await signClientToken(response.rows[0].username);
     return {
         token,
         username: response.rows[0].username
@@ -60,12 +45,7 @@ async function connect(token, username, password) {
     if (isInvalidated) {
         throw "Authentication failed. Token has been invalidated.";
     }
-    const publicKey = await fs.readFileAsync(path.join(__dirname, "../config/pubkey.pem"));
-    const decoded = await jwt.verifyAsync(token, publicKey, {
-        issuer: "datastreamer-server",
-        subject: "client",
-        algorithm: "RS256"
-    });
+    const decoded = await verifyClientToken(token);
     const providerCheck = await db.query(`SELECT Username, Readable, Writable
             FROM Providers
             WHERE Username = $1 AND
@@ -105,17 +85,7 @@ async function connect(token, username, password) {
         }
         console.log(accessRules);
     }
-    const privateKey = await fs.readFileAsync(path.join(__dirname, "../config/privkey.pem"));
-    const connectToken = await jwt.signAsync({
-        client: decoded.username,
-        provider: providerCheck.rows[0].username,
-        accessRules
-    }, privateKey, {
-            issuer: "datastreamer-server",
-            subject: "clientConnection",
-            algorithm: "RS256",
-            expiresIn: 60 * 60 // 1 hour
-        });
+    const connectToken = await signConnectionToken(decoded.username, providerCheck.rows[0].username, accessRules);
     return {
         token: connectToken,
         username: providerCheck.rows[0].username,

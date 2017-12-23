@@ -7,11 +7,6 @@ const log = {
 
 const redisClient = require("redis").createClient({ detect_buffers: true });
 
-const errorActions = require("../modules/errorActions");
-
-const errorHandler = errorActions.errorHandler;
-const validationError = errorActions.validationError;
-
 async function createNewProviderSession(socketId, providerName) {
     try {
         const response = await redisClient.multi()
@@ -106,10 +101,10 @@ async function deleteProviderSession(socketId) {
 }
 
 module.exports = {
-    createNewProviderSession: createNewProviderSession,
-    findProviderSocketIdByProviderName: findProviderSocketIdByProviderName,
-    findProviderSocketIdByClientSocketId: findProviderSocketIdByClientSocketId,
-    findProviderNameBySocketId: findProviderNameBySocketId,
-    findClientSessionsByProviderSocketId: findClientSessionsByProviderSocketId,
-    deleteProviderSession: deleteProviderSession
+    createNewProviderSession,
+    findProviderSocketIdByProviderName,
+    findProviderSocketIdByClientSocketId,
+    findProviderNameBySocketId,
+    findClientSessionsByProviderSocketId,
+    deleteProviderSession
 };

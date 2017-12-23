@@ -52,7 +52,7 @@ server.on("listening", () => onListening(server));
 
 const io = require("socket.io").listen(server);
 io.adapter(redisSocketIoAdapter({ host: "localhost", port: 6379 }));
-require("../sockets/base")(io);
+require("../sockets/server")(io);
 
 /**
  * Normalize a port into a number, string, or false.

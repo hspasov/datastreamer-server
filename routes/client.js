@@ -1,10 +1,10 @@
 const path = require("path").posix;
 const express = require("express");
-const client = require("../db/client");
+const client = require("../db/postgres/client");
 const register = client.register;
 const login = client.login;
 const connect = client.connect;
-const invalidateToken = require("../actions/streamSession").invalidateToken;
+const invalidateToken = require("../db/redis/streamSession").invalidateToken;
 const router = express.Router();
 
 const debug = require("debug");
