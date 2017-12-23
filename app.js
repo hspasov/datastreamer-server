@@ -6,6 +6,7 @@ const bodyParser = require("body-parser");
 const config = require("./config/config");
 const clientRoutes = require("./routes/client");
 const providerRoutes = require("./routes/provider");
+const clientAccessRulesRoutes = require("./routes/clientAccessRules");
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.use(express.static(path.join(__dirname, "public")));
 
 app.use("/", clientRoutes);
 app.use("/provider", providerRoutes);
+app.use("/access", clientAccessRulesRoutes);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

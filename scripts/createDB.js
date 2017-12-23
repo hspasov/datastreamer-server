@@ -52,11 +52,11 @@ pool.query("DROP DATABASE IF EXISTS datastreamer;").then(() => {
 }).then(() => {
     console.log("create providers success");
     return pool.query(`CREATE TABLE ClientAccessRules (
-        Id SERIAL PRIMARY KEY NOT NULL,
         ProviderId INTEGER NOT NULL REFERENCES Providers,
         ClientId INTEGER NOT NULL REFERENCES Clients,
         Readable BOOLEAN NOT NULL,
-        Writable BOOLEAN NOT NULL
+        Writable BOOLEAN NOT NULL,
+        PRIMARY KEY(ProviderId, ClientId)
     )`);
 }).then(() => {
     console.log("create client access rules success");
