@@ -74,7 +74,11 @@ class Connect extends React.Component {
             }
         }).then(json => {
             this.props.dispatch(connectClient(json));
-            this.props.history.push("/home");
+            // One dispatch SHOULD work, but
+            // it only changes the link in navbar
+            // Component rendering happens only on second dispatch
+            this.props.dispatch(push("/home"));
+            this.props.dispatch(push("/home"));
         }).catch(error => {
             this.setState({
                 hasFormErrors: true,

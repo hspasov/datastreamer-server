@@ -5,10 +5,14 @@ import reducer from "./reducers";
 import { loadState, saveState } from "./actions/localStorage.js";
 
 const persistedState = loadState();
-const store = createStore(reducer, persistedState, applyMiddleware(routerMiddleware(createHistory())));
+const history = createHistory();
+const store = createStore(reducer, persistedState, applyMiddleware(routerMiddleware(history)));
 
 store.subscribe(() => {
     saveState(store.getState());
 });
 
-export default store;
+export {
+    store,
+    history
+};

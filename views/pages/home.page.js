@@ -2,13 +2,20 @@ import React from "react";
 import FileSaver from "file-saver";
 import { connect } from "react-redux";
 import { Redirect } from "react-router";
-import { Accordion, Breadcrumb, Button, Dimmer, Divider, Header, Icon, Image, Item, Loader, Menu, Message, Segment } from "semantic-ui-react";
+import {
+    Breadcrumb, Button, Divider,
+    Header, Icon, Image, Item, Loader, Menu, Message,
+    Progress, Segment
+} from "semantic-ui-react";
 import RTC from "../../rtc_connection/client";
 import path from "path";
 import uniqid from "uniqid";
 import { findFile } from "../../modules/files";
 import Thumbnail from "../components/thumbnail.component";
-import { toggleErrorMore, setError, removeError, setLoaderMessage } from "../../store/actions/dimmer";
+import DimmerComponent from "../components/dimmer-component";
+import NavigationComponent from "../components/navigation-component";
+import File from "../components/file";
+import { toggleErrorMore, setError, removeError, setLoaderMessage, deactivateDimmer } from "../../store/actions/dimmer";
 import {
     addFile,
     addDir,
@@ -34,15 +41,15 @@ class Home extends React.Component {
             isComponentUpdateAllowed: true
         };
 
+        this.addToDownloads = this.addToDownloads.bind(this);
         this.downloadFile = this.downloadFile.bind(this);
         this.onMessage = this.onMessage.bind(this);
         this.onChunk = this.onChunk.bind(this);
         this.errorHandler = this.errorHandler.bind(this);
-        this.toggleErrorMessageMore = this.toggleErrorMessageMore.bind(this);
-        this.replaceDefaultIcon = this.replaceDefaultIcon.bind(this);
-        this.getThumbnail = this.getThumbnail.bind(this);
-        this.toggleSidebar = this.toggleSidebar.bind(this);
+        this.resolveNavigate = this.resolveNavigate.bind(this);
+        this.resolveNavigateBack = this.resolveNavigateBack.bind(this);
         this.executeNavigate = this.executeNavigate.bind(this);
+        this.navigate = this.navigate.bind(this);
         this.RTC = new RTC(this.props.provider.token, this.onMessage, this.onChunk, this.errorHandler);
     }
 
@@ -125,7 +132,6 @@ class Home extends React.Component {
                 break;
             case "add":
                 this.props.dispatch(addFile(message.data));
-                this.replaceDefaultIcon(message.data);
                 break;
             case "addDir":
                 this.props.dispatch(addDir(message.data));
@@ -230,23 +236,6 @@ class Home extends React.Component {
         }
     }
 
-    replaceDefaultIcon(file) {
-        switch (file.mime) {
-            case "image/jpeg":
-            case "image/png":
-                this.getThumbnail(file.path);
-                break;
-        }
-    }
-
-    getThumbnail(filePath) {
-        this.addToDownloads.bind(this)(filePath, "thumbnail");
-    }
-
-    toggleErrorMessageMore() {
-        this.props.dispatch(toggleErrorMore());
-    }
-
     errorHandler(error) {
         switch (error.type) {
             case "generic":
@@ -268,10 +257,6 @@ class Home extends React.Component {
         console.log(error);
     }
 
-    toggleSidebar() {
-        this.props.dispatch(toggleSidebar());
-    }
-
     render() {
         if (!this.props.client.token) {
             return <Redirect to="/login"></Redirect>;
@@ -282,70 +267,42 @@ class Home extends React.Component {
 
         const menuColor = (this.props.provider.token && !this.props.dimmer.error.show) ? "green" : "red";
 
-        const logo = <Menu.Item onClick={this.toggleSidebar} as='a' header active={this.props.sidebar.visible}>
-                <Icon name="list layout" />
-                DataStreamer
-            </Menu.Item>;
+        const logo = <Menu.Item onClick={() => this.props.dispatch(toggleSidebar())} as='a' header active={this.props.sidebar.visible}>
+            <Icon name="list layout" />
+            DataStreamer
+        </Menu.Item>;
+
+        const goBack = <Menu.Item as="a" position="right"
+            disabled={this.props.navigation.path.length === 0}
+            onClick={() => this.resolveNavigateBack(1)}>
+            Go back
+        </Menu.Item>
 
         return <div>
-                <Menu color={menuColor} inverted fluid size="massive" fixed="top">
-                    {logo}
-                    <Menu.Item as={Breadcrumb}>
-                        <Breadcrumb.Section link><p>{this.props.provider.username}</p></Breadcrumb.Section>
-                    {this.props.navigation.path.map((dir, i) => {
-                        console.log(i);
-                        return <div key={dir.uid}>
-                                <Breadcrumb.Divider/>
-                                <Breadcrumb.Section link onClick={this.resolveNavigateBack.bind(this, dir.uid)}><p>{dir.name}</p></Breadcrumb.Section>
-                            </div>;
-                        })
-                    }</Menu.Item>
-                <Menu.Item as="a" position="right"
-                    disabled={this.props.navigation.path.length === 0}
-                    onClick={this.resolveNavigateBack.bind(this, 1)}>
-                    Go back
-                    </Menu.Item>
+            <Menu color={menuColor} inverted fluid size="massive" fixed="top">
+                {logo}
+                <NavigationComponent navigateBack={(uid) => this.resolveNavigate(uid)}/>
+                {goBack}
             </Menu>
-            <Segment disabled={!this.state.isComponentUpdateAllowed} padded attached="top">
-                <Dimmer active={this.props.dimmer.show} page>
-                    <Loader disabled={this.props.dimmer.error.show}>{this.props.dimmer.loaderMessage}</Loader>
-                    <Message negative hidden={!this.props.dimmer.error.show}>
-                        <Message.Header>{this.props.dimmer.error.message}</Message.Header>
-                        <Accordion>
-                            <Accordion.Title onClick={this.toggleErrorMessageMore}>
-                                <Icon name="dropdown" />
-                                More information
-                            </Accordion.Title>
-                            <Accordion.Content active={this.props.dimmer.error.more.show}>
-                                <p>{this.props.dimmer.error.more.message}</p>
-                            </Accordion.Content>
-                        </Accordion>
-                    </Message>
-                </Dimmer>
-                    <Item.Group divided>
-                    {this.props.files.files.map((file, i) => {
-                        return (
-                            <Item key={file.path}>
-                                <Item.Content>
-                                    <Thumbnail
-                                        mime={file.mime}
-                                        thumbnail={file.imageURL}
-                                        onClick={this.addToDownloads.bind(this, file.path, "thumbnail")} />
-                                    <Item.Header>{file.name}</Item.Header>
-                                    <Item.Meta>Type: {file.type}</Item.Meta>
-                                    <Item.Meta>Size: {file.size}</Item.Meta>
-                                    <Item.Meta>Read access: {file.access.read.toString()}</Item.Meta>
-                                    <Item.Meta>Write access: {file.access.write.toString()}</Item.Meta>
-                                    <Item.Meta>Execute access: {file.access.execute.toString()}</Item.Meta>
-                                    {
-                                        (file.type == "directory") ?
-                                            <Button onClick={this.navigate.bind(this, file.path)}>Open directory</Button> :
-                                            <Button onClick={this.addToDownloads.bind(this, file.path, "download")}>Download file</Button>
-                                    }
-                                </Item.Content>
-                            </Item>
-                            )
-                        })}
+            <Segment padded attached="top">
+                <DimmerComponent/>
+                <Item.Group divided>
+                {this.props.files.files.map((file, i) => {
+                    return <File
+                        key={file.path}
+                        name={file.name}
+                        type={file.type}
+                        size={file.size}
+                        access={file.access}
+                        path={file.path}
+                        mime={file.mime}
+                        imageURL={file.imageURL}
+                        openDirectory={() => this.navigate(file.path)}
+                        getThumbnail={() => this.addToDownloads(file.path, "thumbnail")}
+                        downloadStatus={(file.type !== "directory")? file.download.status : null}
+                        addToDownloads={() => this.addToDownloads(file.path, "download")}
+                    />
+                    })}
                 </Item.Group>
             </Segment>
         </div>;

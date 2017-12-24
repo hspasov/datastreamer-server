@@ -70,7 +70,11 @@ class Login extends React.Component {
             }
         }).then(json => {
             this.props.dispatch(loginClient(json));
-            this.props.history.push("/connect");
+            // One dispatch SHOULD work, but
+            // it only changes the link in navbar
+            // Component rendering happens only on second dispatch
+            this.props.dispatch(push("/connect"));
+            this.props.dispatch(push("/connect"));
         }).catch(error => {
             this.setState({
                 hasFormErrors: true,

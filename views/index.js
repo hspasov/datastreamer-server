@@ -7,11 +7,11 @@ import AppContainer from "./containers/app.container";
 
 import "semantic-ui-css/semantic.min.css";
 
-import store from "../store/store";
+import { store, history } from "../store/store";
 
 ReactDOM.render(
     <Provider store={store}>
-        <ConnectedRouter history={createHistory()}>
+        <ConnectedRouter history={history}>
             <AppContainer />
         </ConnectedRouter>
     </Provider>,

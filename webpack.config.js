@@ -30,9 +30,6 @@ module.exports = {
             }
         ]
     },
-    plugins: [
-
-    ],
     watch: true,
     watchOptions: {
         ignored: /node_modules/
