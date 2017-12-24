@@ -8,12 +8,14 @@ const fs = require("fs");
 const jwt = require("jsonwebtoken");
 const path = require("path").posix;
 const app = require("../app");
-const infoLog = require("debug")("datastreamer-server:info");
+const log = require("../modules/log");
 const https = require("https");
 const bluebird = require("bluebird");
 const redis = require("redis");
 const redisClient = redis.createClient({ detect_buffers: true });
 const redisSocketIoAdapter = require("socket.io-redis");
+
+log.verbose("Warning: Verbose logging should never be used in production!");
 
 /**
  * Get port from environment and store in Express.
@@ -23,7 +25,7 @@ const port = normalizePort(process.env.PORT || "3000");
 app.set("port", port);
 
 redisClient.on("error", error => {
-    infoLog(`Redis client error: ${error}`);
+    log.info(`Redis client error: ${error}`);
 });
 
 /*
@@ -90,11 +92,11 @@ function onError(error) {
     // handle specific listen errors with friendly messages
     switch (error.code) {
     case "EACCES":
-        infoLog(`${bind} + requires elevated privileges`);
+        log.info(`${bind} + requires elevated privileges`);
         process.exit(1);
         break;
     case "EADDRINUSE":
-        infoLog(`${bind} is already in use`);
+        log.info(`${bind} is already in use`);
         process.exit(1);
         break;
     default:
@@ -111,5 +113,5 @@ function onListening(server) {
     const bind = typeof addr === "string"
         ? `pipe ${addr}`
         : `port ${addr.port}`;
-    infoLog(`Listening on ${bind}`);
+    log.info(`Listening on ${bind}`);
 }

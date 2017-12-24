@@ -1,11 +1,5 @@
 const redisClient = require("redis").createClient({ detect_buffers: true });
-
-const debug = require("debug");
-const log = {
-    info: debug("datastreamer-server:info"),
-    error: debug("datastreamer-server:info:ERROR"),
-    verbose: debug("datastreamer-server:verbose")
-};
+const log = require("../../modules/log");
 
 async function createNewClientSession(socketId, providerName) {
     try {

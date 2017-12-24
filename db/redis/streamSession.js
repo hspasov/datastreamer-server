@@ -1,25 +1,16 @@
-const tokenActions = require("../../modules/tokenActions");
-const verifyToken = tokenActions.verifyToken;
-
+const log = require("../../modules/log");
 const redisClient = require("redis").createClient({ detect_buffers: true });
-
-const debug = require("debug");
-const log = {
-    info: debug("datastreamer-server:info"),
-    error: debug("datastreamer-server:info:ERROR"),
-    verbose: debug("datastreamer-server:verbose")
-};
-
-const providerSessionActions = require("./providerSession");
-const clientSessionActions = require("./clientSession");
-
-const createNewProviderSession = providerSessionActions.createNewProviderSession;
-const deleteProviderSession = providerSessionActions.deleteProviderSession;
-const findProviderNameBySocketId = providerSessionActions.findProviderNameBySocketId;
-
-const createNewClientSession = clientSessionActions.createNewClientSession;
-const findClientSession = clientSessionActions.findClientSession;
-const deleteClientSession = clientSessionActions.deleteClientSession;
+const { verifyToken } = require("../../modules/tokenActions");
+const {
+    createNewProviderSession,
+    deleteProviderSession,
+    findProviderNameBySocketId
+} = require("./providerSession");
+const {
+    createNewClientSession,
+    findClientSession,
+    deleteClientSession
+} = require("./clientSession");
 
 async function createNewStreamSession(socketId, token) {
     try {

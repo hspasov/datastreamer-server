@@ -1,18 +1,19 @@
+const log = require("../modules/log");
 const express = require("express");
-const clientAccessRules = require("../db/postgres/clientAccessRules");
-const setClientRule = clientAccessRules.setClientRule;
-const setProviderDefaultRule = clientAccessRules.setProviderDefaultRule;
 const router = express.Router();
-
-const debug = require("debug");
-const log = {
-    info: debug("datastreamer-server:info"),
-    error: debug("datastreamer-server:info:ERROR"),
-    verbose: debug("datastreamer-server:verbose")
-};
+const {
+    setClientRule,
+    setProviderDefaultRule,
+    getProviderDefaultRule
+} = require("../db/postgres/clientAccessRules");
 
 router.post("/client", (req, res, next) => {
-    setClientRule(req.body.providerToken, req.body.connectionToken, req.body.readable, req.body.writable).then(newAccessRules => {
+    setClientRule(
+        req.body.providerToken,
+        req.body.connectionToken,
+        req.body.readable,
+        req.body.writable
+    ).then(newAccessRules => {
         res.status(200).send(newAccessRules);
     }).catch(error => {
         log.error(error);
@@ -21,12 +22,25 @@ router.post("/client", (req, res, next) => {
 });
 
 router.post("/provider", (req, res, next) => {
-    setProviderDefaultRule(req.body.token, req.body.readable, req.body.writable).then(newAccessRules => {
+    getProviderDefaultRule(req.body.token).then(result => {
+        res.status(200).send(result);
+    }).catch(error => {
+        log.error(error);
+        res.status(409).send({ message: "fail" });
+    });
+});
+
+router.post("/default", (req, res, next) => {
+    setProviderDefaultRule(
+        req.body.token,
+        req.body.readable,
+        req.body.writable
+    ).then(newAccessRules => {
         res.status(200).send(newAccessRules);
     }).catch(error => {
         log.error(error);
         res.status(409).send({ message: "fail" });
-    })
+    });
 });
 
 module.exports = router;

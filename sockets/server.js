@@ -1,24 +1,15 @@
-const tokenActions = require("../modules/tokenActions");
-const verifyToken = tokenActions.verifyToken;
-const debug = require("debug");
-const log = {
-    info: debug("datastreamer-server:info"),
-    error: debug("datastreamer-server:info:ERROR"),
-    verbose: debug("datastreamer-server:verbose")
-};
-
-const providerSessionActions = require("../db/redis/providerSession");
-const clientSessionActions = require("../db/redis/clientSession");
-const streamSessionActions = require("../db/redis/streamSession");
-
-const findProviderSocketIdByProviderName = providerSessionActions.findProviderSocketIdByProviderName;
-const findProviderSocketIdByClientSocketId = providerSessionActions.findProviderSocketIdByClientSocketId;
-const findClientSessionsByProviderSocketId = providerSessionActions.findClientSessionsByProviderSocketId;
-
-const findClientSession = clientSessionActions.findClientSession;
-
-const createNewStreamSession = streamSessionActions.createNewStreamSession;
-const deleteStreamSession = streamSessionActions.deleteStreamSession;
+const log = require("../modules/log");
+const { verifyToken } = require("../modules/tokenActions");
+const { findClientSession } = require("../db/redis/clientSession");
+const {
+    findProviderSocketIdByProviderName,
+    findProviderSocketIdByClientSocketId,
+    findClientSessionsByProviderSocketId
+} = require("../db/redis/providerSession");
+const {
+    createNewStreamSession,
+    deleteStreamSession
+} = require("../db/redis/streamSession");
 
 const socketServer = io => {
     log.verbose("Initialising sockets");

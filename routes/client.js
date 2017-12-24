@@ -1,18 +1,9 @@
+const log = require("../modules/log");
 const path = require("path").posix;
 const express = require("express");
-const client = require("../db/postgres/client");
-const register = client.register;
-const login = client.login;
-const connect = client.connect;
-const invalidateToken = require("../db/redis/streamSession").invalidateToken;
 const router = express.Router();
-
-const debug = require("debug");
-const log = {
-    info: debug("datastreamer-server:info"),
-    error: debug("datastreamer-server:info:ERROR"),
-    verbose: debug("datastreamer-server:verbose")
-};
+const { login, register, connect } = require("../db/postgres/client");
+const { invalidateToken } = require("../db/redis/streamSession");
 
 router.route(["/login", "/register", "/home", "/connect", "/",]).get((req, res) => {
     res.sendFile(path.join(__dirname, "../views/index.html"));

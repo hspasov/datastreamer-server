@@ -1,8 +1,7 @@
+const log = require("../modules/log");
 var express = require("express");
-const provider = require("../db/postgres/provider");
-const register = provider.register;
-const login = provider.login;
 var router = express.Router();
+const { login, register } = require("../db/postgres/provider");
 
 router.post("/login", (req, res, next) => {
     login(req.body.username, req.body.password).then(response => {
