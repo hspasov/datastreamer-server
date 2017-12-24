@@ -38,7 +38,8 @@ class Home extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            isComponentUpdateAllowed: true
+            isComponentUpdateAllowed: true,
+            downloadPercent: 0
         };
 
         this.addToDownloads = this.addToDownloads.bind(this);
@@ -70,10 +71,11 @@ class Home extends React.Component {
     resolveNavigate(uid) {
         const parentDirectories = this.props.navigation.path.length;
         const elementIndex = this.props.navigation.path.findIndex(e => e.uid === uid);
-        this.resolveNavigateBack(parentDirectories - elementIndex);
+        this.resolveNavigateBack(parentDirectories - elementIndex - 1);
     }
 
     resolveNavigateBack(steps) {
+        console.log(steps);
         const parentDirectories = this.props.navigation.path.length;
         if (parentDirectories === 0) {
             console.log("You are already in root directory!");
@@ -90,10 +92,11 @@ class Home extends React.Component {
             name: directoryName,
             uid: uniqid()
         }));
-        this.executeNavigate(directoryName);
+        this.executeNavigate(directoryPath);
     }
 
     executeNavigate(directoryPath) {
+        console.log("execute navigate:", directoryPath);
         this.props.dispatch(clearFiles());
         try {
             this.RTC.sendMessageChannel.send(JSON.stringify({
@@ -156,8 +159,17 @@ class Home extends React.Component {
     onChunk(chunk) {
         this.RTC.receiveBuffer.push(chunk);
         this.RTC.receivedBytes += chunk.byteLength;
-        if (this.RTC.receivedBytes === this.RTC.fileSize) {
+        const percent = (this.RTC.receivedBytes / this.RTC.fileSize) * 100;
+        if (percent - this.state.downloadPercent > 10) {
+            this.setState({
+                downloadPercent: percent
+            });
+        }
+        if (this.RTC.receivedBytes >= this.RTC.fileSize) {
             console.log("end of file");
+            this.setState({
+                downloadPercent: 0
+            });
             const file = findFile(this.props.files.files, this.RTC.downloads[0].path);
             const received = new Blob(this.RTC.receiveBuffer, { type: file.mime });
             switch(this.RTC.downloads[0].context) {
@@ -187,7 +199,7 @@ class Home extends React.Component {
                 console.log(`cant download more, length is ${this.RTC.downloads.length}`);
             }
         } else {
-            console.log(`${this.RTC.receivedBytes}/${this.RTC.fileSize}`);
+
         }
     }
 
@@ -299,8 +311,9 @@ class Home extends React.Component {
                         imageURL={file.imageURL}
                         openDirectory={() => this.navigate(file.path)}
                         getThumbnail={() => this.addToDownloads(file.path, "thumbnail")}
-                        downloadStatus={(file.type !== "directory")? file.download.status : null}
+                        downloadStatus={(file.type !== "directory") ? file.download.status : null}
                         addToDownloads={() => this.addToDownloads(file.path, "download")}
+                        downloadPercent={(this.RTC.downloads.length > 0 && this.RTC.downloads[0].path === file.path) ? this.state.downloadPercent : 0 }
                     />
                     })}
                 </Item.Group>

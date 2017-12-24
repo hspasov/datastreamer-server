@@ -75,9 +75,10 @@ async function deleteStreamSession(socketId) {
 
 async function invalidateToken(token) {
     try {
-        if (!token) throw false;
-        log.verbose(`Invalidating token ${token}`);
+        if (!token) return false;
+        log.verbose("Invalidating token");
         const decoded = await verifyToken(token);
+        if (!decoded) return false;
         const redisTime = await redisClient.timeAsync();
         const time = new Date();
         time.setSeconds(redisTime[0] - 60 * 60);
@@ -85,7 +86,6 @@ async function invalidateToken(token) {
             .zremrangebyscore("invalidatedTokens", 0, time.getSeconds())
             .zadd("invalidatedTokens", redisTime[0], token)
             .execAsync();
-        log.verbose(response);
         return true;
     } catch (error) {
         log.error("While invalidating token:");
@@ -102,10 +102,9 @@ async function checkIfInvalidated(token) {
             .zrank("invalidatedTokens", token)
             .zremrangebyscore("invalidatedTokens", 0, time.getSeconds())
             .execAsync();
-        log.verbose(`Redis check for invalidated token. Response: ${response}`);
         return response[0] !== null;
     } catch (error) {
-        // todo: error
+        log.error("Check if token invalidated failed:");
         throw error;
     }
 }

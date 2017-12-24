@@ -4,33 +4,47 @@ const { verifyProviderToken, verifyConnectionToken } = require("../../modules/to
 
 async function setClientRule(providerToken, connectionToken, readable, writable) {
     try {
-        await verifyProviderToken(providerToken);
-        const decoded = await verifyConnectionToken(connectionToken);
+        try {
+            await verifyProviderToken(providerToken);
+        } catch (error) {
+            return { success: false, reason: "providerToken" };
+        }
+        let decoded;
+        try {
+            decoded = await verifyConnectionToken(connectionToken);
+        } catch (error) {
+            return { success: false, reason: "connectionToken"};
+        }
         const response = await db.query(`INSERT INTO ClientAccessRules (
-        ProviderId, ClientId, Readable, Writable
-    ) VALUES (
-        (SELECT Id FROM Providers WHERE Username = $1),
-        (SELECT Id FROM Clients WHERE Username = $2),
-        $3, $4
-    )
-    ON CONFLICT (ProviderId, ClientId)
-    DO UPDATE SET
-    Readable = EXCLUDED.Readable,
-    Writable = EXCLUDED.Writable RETURNING *;`, [decoded.provider, decoded.client, readable, writable]);
+            ProviderId, ClientId, Readable, Writable
+        ) VALUES (
+            (SELECT Id FROM Providers WHERE Username = $1),
+            (SELECT Id FROM Clients WHERE Username = $2),
+            $3, $4
+        )
+        ON CONFLICT (ProviderId, ClientId)
+        DO UPDATE SET
+        Readable = EXCLUDED.Readable,
+        Writable = EXCLUDED.Writable RETURNING *;`, [decoded.provider, decoded.client, readable, writable]);
         return {
+            success: true,
             readable: response.rows[0].readable,
             writable: response.rows[0].writable
         };
     } catch (error) {
         log.error("In set client rule:");
-        log.error(error);
         throw error;
     }
 }
 
 async function removeClientRule(token) {
     try {
-        const decoded = await verifyConnectionToken(token);
+        let decoded;
+        try {
+            decoded = await verifyConnectionToken(token);
+        } catch (error) {
+            return { success: false };
+        }
         const response = await db.query(`DELETE FROM ClientAccessRules
     WHERE ProviderId = (SELECT Id FROM Providers WHERE Username = $1)
     AND ClientId = (SELECT Id FROM Clients WHERE Username = $2);`, [decoded.provider, decoded.client]);
@@ -38,42 +52,57 @@ async function removeClientRule(token) {
         return;
     } catch (error) {
         log.error("In remove client rule:");
-        log.error(error);
         throw error;
     }
 }
 
 async function setProviderDefaultRule(token, readable, writable) {
     try {
-        const decoded = await verifyProviderToken(token);
+        let decoded;
+        try {
+            decoded = await verifyProviderToken(token);
+        } catch (error) {
+            return { success: false, reason: "token" };
+        }
         const response = await db.query(`UPDATE Providers
-    SET Readable = $2,
-    Writable = $3
-    WHERE Username = $1 RETURNING *`, [decoded.username, readable, writable]);
+            SET Readable = $2,
+            Writable = $3
+            WHERE Username = $1 RETURNING *`, [decoded.username, readable, writable]);
+        if (response.rows.length <= 0) {
+            return { success: false, reason: "credentials" };
+        }
         return {
+            success: true,
             readable: response.rows[0].readable,
             writable: response.rows[0].writable
         };
     } catch (error) {
         log.error("In set default rule for a provider:");
-        log.error(error);
         throw error;
     }
 }
 
 async function getProviderDefaultRule(token) {
     try {
-        const decoded = await verifyProviderToken(token);
+        let decoded;
+        try {
+            decoded = await verifyProviderToken(token);
+        } catch (error) {
+            return { success: false, reason: "token" };
+        }
         const response = await db.query(`SELECT Readable, Writable
         FROM Providers
         WHERE Username = $1`, [decoded.username]);
+        if (response.rows.length <= 0) {
+            return { success: false, reason: "credentials" };
+        }
         return {
+            success: true,
             readable: response.rows[0].readable,
             writable: response.rows[0].writable
         };
     } catch (error) {
         log.error("In get default rule for a provider:");
-        log.error(error);
         throw error;
     }
 }

@@ -52,7 +52,6 @@ async function signClientToken(username) {
         });
     } catch (error) {
         log.error("In sign client token:");
-        log.error(error);
         throw error;
     }
 }
@@ -67,7 +66,6 @@ async function verifyClientToken(token) {
         });
     } catch (error) {
         log.error("In verify a client token:");
-        log.error(error);
         throw error;
     }
 }
@@ -106,10 +104,14 @@ async function verifyConnectionToken(token) {
 async function verifyToken(token) {
     try {
         const publicKey = await fs.readFileAsync(path.join(__dirname, "../config/pubkey.pem"));
-        return await jwt.verifyAsync(token, publicKey, { issuer, algorithm });
+        try {
+            return await jwt.verifyAsync(token, publicKey, { issuer, algorithm });
+        } catch (error) {
+            log.verbose(error);
+            return null;
+        }
     } catch (error) {
         log.error("In verify token:");
-        log.error(error);
         throw error;
     }
 }

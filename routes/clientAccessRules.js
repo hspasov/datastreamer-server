@@ -13,20 +13,36 @@ router.post("/client", (req, res, next) => {
         req.body.connectionToken,
         req.body.readable,
         req.body.writable
-    ).then(newAccessRules => {
-        res.status(200).send(newAccessRules);
+    ).then(response => {
+        if (response.success) {
+            res.status(200).send({
+                readable: response.readable,
+                writable: response.writable
+            });
+        } else {
+            res.status(401).send({ reason: response.reason });
+        }
     }).catch(error => {
         log.error(error);
-        res.status(409).send({ message: "fail" });
+        res.status(500).end();
     });
 });
 
 router.post("/provider", (req, res, next) => {
-    getProviderDefaultRule(req.body.token).then(result => {
-        res.status(200).send(result);
+    getProviderDefaultRule(req.body.token).then(response => {
+        if (response.success) {
+            res.status(200).send({
+                readable: response.readable,
+                writable: response.writable
+            });
+        } else if (response.reason === "credentials") {
+            res.status(404).end();
+        } else if (response.reason === "token") {
+            res.status(401).end();
+        }
     }).catch(error => {
         log.error(error);
-        res.status(409).send({ message: "fail" });
+        res.status(500).end();
     });
 });
 
@@ -35,11 +51,20 @@ router.post("/default", (req, res, next) => {
         req.body.token,
         req.body.readable,
         req.body.writable
-    ).then(newAccessRules => {
-        res.status(200).send(newAccessRules);
+    ).then(response => {
+        if (response.success) {
+            res.status(200).send({
+                readable: response.readable,
+                writable: response.writable
+            });
+        } else if (response.reason === "credentials") {
+            res.status(404).end();
+        } else if (response.reason === "token") {
+            res.status(401).end();
+        }
     }).catch(error => {
         log.error(error);
-        res.status(409).send({ message: "fail" });
+        res.status(500).end();
     });
 });
 

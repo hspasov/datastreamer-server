@@ -10,69 +10,85 @@ router.route(["/login", "/register", "/home", "/connect", "/",]).get((req, res) 
 });
 
 router.post("/login", (req, res, next) => {
-    // todo: handle errors
     login(req.body.username, req.body.password).then(response => {
-        res.status(200).send({
-            token: response.token,
-            username: response.username
-        });
+        if (response.success) {
+            res.status(200).send({
+                token: response.token,
+                username: response.username
+            });
+        } else {
+            res.status(404).end();
+        }
     }).catch(error => {
         log.error(error);
-        res.status(409).send({ message: "fail" });
+        res.status(500).end();
     });
 });
 
 
 router.post("/register", (req, res, next) => {
-    // todo: handle errors
     register(req.body.username, req.body.password).then(response => {
-        res.status(201).send({
-            token: response.token,
-            username: response.username
-        });
+        if (response.success) {
+            res.status(201).send({
+                token: response.token,
+                username: response.username
+            });
+        } else {
+            res.status(412).end();
+        }
     }).catch(error => {
         log.error(error);
-        res.status(409).send({ message: "fail" });
+        res.status(500).end();
     });
 });
 
 router.post("/connect", (req, res, next) => {
-    // todo: handle errors
     connect(req.body.token, req.body.username, req.body.password).then(response => {
-        res.status(200).send({
-            token: response.token,
-            username: response.username,
-            accessRules: response.accessRules
-        });
+        if (response.success) {
+            res.status(200).send({
+                token: response.token,
+                username: response.username,
+                accessRules: response.accessRules
+            });
+        } else if (response.reason === "token") {
+            res.status(401).end();
+        } else if (response.reason === "credentials") {
+            res.status(404).end();
+        }
     }).catch(error => {
         log.error(error);
-        res.status(409).send({ message: "fail" });
+        res.status(500).end();
     });
 });
 
 router.post("/disconnect", (req, res, next) => {
-    invalidateToken(req.body.connectionToken).then(() => {
+    invalidateToken(req.body.connectionToken).then(success => {
+        if (!success) {
+            log.info("Could not invalidate token.");
+            log.verbose(req.body.connectionToken);
+        }
         res.status(200).send();
     }).catch(error => {
         log.error(error);
-        res.status(400).end();
+        res.status(500).end();
     });
 });
 
 router.post("/logout", (req, res, next) => {
     invalidateToken(req.body.clientToken).then(success => {
         if (!success) {
-            throw `Can't invalidate session. Invalid client token "${req.body.clientToken}" was sent.`;
+            log.info("Could not invalidate token.");
+            log.verbose(req.body.clientToken);
         }
         return invalidateToken(req.body.connectionToken);
     }).then(success => {
         if (!success) {
-            log.info("Client was not connected to provider when requested to log out.");
+            log.verbose("Client was not connected to provider when requested to log out.");
         }
         res.status(200).send();
     }).catch(error => {
         log.error(error);
-        res.status(400).end();
+        res.status(500).end();
     });
 });
 
