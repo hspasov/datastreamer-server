@@ -28,7 +28,7 @@ async function findProviderSocketIdByProviderName(providerName) {
     try {
         return await redisClient.getAsync(`${providerName}:socketId`);
     } catch (error) {
-        // todo: error
+        log.error("In find provider socketId by provider name:");
         throw error;
     }
 }
@@ -38,7 +38,7 @@ async function findProviderSocketIdByClientSocketId(clientSocketId) {
         const providerName = await redisClient.getAsync(`${clientSocketId}:providerName`);
         return await findProviderSocketIdByProviderName(providerName);
     } catch (error) {
-        // todo: error
+        log.error("In find provider socketId by client socketId:");
         throw error;
     }
 }
@@ -47,7 +47,7 @@ async function findProviderNameBySocketId(socketId) {
     try {
         return await redisClient.getAsync(`${socketId}:providerName`);
     } catch (error) {
-        // todo: error
+        log.error("In find provider name by socketId:");
         throw error;
     }
 }
@@ -56,7 +56,7 @@ async function findClientSessionsByProviderName(providerName) {
     try {
         return await redisClient.smembersAsync(`${providerName}:clientSocketIds`);
     } catch (error) {
-        // todo: error
+        log.error("In find client session by provider name:");
         throw error;
     }
 }
@@ -66,7 +66,7 @@ async function findClientSessionsByProviderSocketId(socketId) {
         const providerName = await findProviderNameBySocketId(socketId);
         return await findClientSessionsByProviderName(providerName);
     } catch (error) {
-        // todo: error
+        log.error("In find client sessions by provider socketId");
         throw error;
     }
 }
@@ -89,7 +89,7 @@ async function deleteProviderSession(socketId) {
             clientSocketIds: response[1]
         };
     } catch (error) {
-        // todo: error
+        log.error("In delete provider session:");
         throw error;
     }
 }

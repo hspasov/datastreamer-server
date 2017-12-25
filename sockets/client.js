@@ -9,6 +9,47 @@ function Socket(RTC, token, errorHandler) {
 
     this.errorHandler = errorHandler;
 
+    // this.socket.on("connect", () => {
+    //     pageAccessor(function () {
+    //         this.statusHandler({ event: "connect" });
+    //     });
+    // });
+
+    this.socket.on("connect_error", error => {
+        this.errorHandler({
+            type: "connection",
+            message: "Connection to server failed."
+        });
+    });
+
+    this.socket.on("connect_timeout", timeout => {
+        this.errorHandler({
+            type: "connection",
+            message: "Connection to server failed."
+        });
+    });
+
+    this.socket.on("error", error => {
+        this.errorHandler({
+            type: "generic",
+            message: error
+        });
+    });
+
+    this.socket.on("disconnect", reason => {
+        this.errorHandler({
+            type: "connection",
+            message: "Connection to server failed."
+        });
+    });
+
+    this.socket.on("reconnect_failed", () => {
+        this.errorHandler({
+            type: "connection",
+            message: "Connection to server failed."
+        });
+    });
+
     this.socket.on("connectToProviderSuccess", () => {
         console.log("Successfully connected");
     });

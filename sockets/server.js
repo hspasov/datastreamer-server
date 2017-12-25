@@ -34,12 +34,10 @@ const socketServer = io => {
                 }
             }).catch(error => {
                 log.error(error);
-                log.error(error.name);
                 io.to(socket.id).emit("connectToProviderFail", error.name);
                 socket.disconnect(true);
             });
         } else {
-            log.error("no handshake query for", socket.id);
             socket.disconnect(true);
         }
 
@@ -58,12 +56,15 @@ const socketServer = io => {
                         }
                     }).catch(error => {
                         log.error(error);
+                        socket.disconnect(true);
                     });
                 } else {
                     log.error("ERROR: Invalid session type", sessionInfo.type);
+                    socket.disconnect(true);
                 }
             }).catch(error => {
                 log.error(error);
+                socket.disconnect(true);
             });
         });
 
@@ -80,6 +81,7 @@ const socketServer = io => {
                 }
             }).catch(error => {
                 log.error(error);
+                socket.disconnect(true);
             });
         });
 
@@ -96,6 +98,7 @@ const socketServer = io => {
                 }
             }).catch(error => {
                 log.error(error);
+                socket.disconnect(true);
             });
         });
 
@@ -109,12 +112,13 @@ const socketServer = io => {
             } else {
                 findProviderSocketIdByClientSocketId(socket.id).then(socketId => {
                     if (!socketId) {
-                        log.info("todo");
+                        io.to(socket.id).emit("connectToProviderFail", "ProviderNotConnectedError");
                     } else {
                         io.to(socketId).emit("receiveICECandidate", socket.id, candidate);
                     }
                 }).catch(error => {
                     log.error(error);
+                    socket.disconnect(true);
                 });
             }
         });
@@ -126,6 +130,7 @@ const socketServer = io => {
                 });
             }).catch(error => {
                 log.error(error);
+                socket.disconnect(true);
             });
         });
 
@@ -135,10 +140,15 @@ const socketServer = io => {
                 providerSocketId = socketId;
                 return verifyToken(token);
             }).then(decoded => {
-                io.to(providerSocketId).emit("subscribedClient", socket.id, token, decoded.client, decoded.accessRules);
-                io.to(socket.id).emit("connectToProviderSuccess");
+                if (!decoded) {
+                    io.to(socket.id).emit("connectToProviderFail", "TokenExpiredError");
+                } else {
+                    io.to(providerSocketId).emit("subscribedClient", socket.id, token, decoded.client, decoded.accessRules);
+                    io.to(socket.id).emit("connectToProviderSuccess");
+                }
             }).catch(error => {
                 log.error(error);
+                socket.disconnect(true);
             });
         });
     });
