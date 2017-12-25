@@ -7,9 +7,12 @@ class FormSubmitError extends React.Component {
 
         this.errorTypes = {
             "empty": "One or more fields were left empty",
+            "token": "Session expired, please authenticate again",
             "validation": "Invalid username or password",
             "match": "Passwords don't match",
-            "connect": "Can't connect to server"
+            "exists": "Username already taken",
+            "connect": "Can't connect to server",
+            "error": "Unknown error"
         };
     }
 

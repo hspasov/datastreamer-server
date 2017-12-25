@@ -28,7 +28,7 @@ const socketServer = io => {
                         io.to(socket.id).emit("connectToProviderSuccess");
                         io.to(sessionInfo.provider.socketId).emit("subscribedClient", socket.id, socket.handshake.query.token, sessionInfo.client.username, sessionInfo.accessRules);
                     } else {
-                        log.verbose(`Client "${socket.id}" could not connect to provider "${sessionInfo.providerName}". Provider not connected.`);
+                        log.verbose(`Client "${socket.id}" could not connect to provider "${sessionInfo.provider.providerName}". Provider not connected.`);
                         io.to(socket.id).emit("connectToProviderFail", "ProviderNotConnectedError");
                     }
                 }

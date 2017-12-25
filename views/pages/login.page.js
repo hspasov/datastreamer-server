@@ -63,10 +63,7 @@ class Login extends React.Component {
             if (response.status == 200) {
                 return response.json();
             } else {
-                this.setState({
-                    hasFormErrors: true,
-                    formErrors: ["validation"]
-                });
+                throw response.status;
             }
         }).then(json => {
             this.props.dispatch(loginClient(json));
@@ -75,11 +72,23 @@ class Login extends React.Component {
             // Component rendering happens only on second dispatch
             this.props.dispatch(push("/connect"));
             this.props.dispatch(push("/connect"));
-        }).catch(error => {
-            this.setState({
-                hasFormErrors: true,
-                formErrors: ["connect"]
-            });
+        }).catch(errorCode => {
+            if (errorCode === 404) {
+                this.setState({
+                    hasFormErrors: true,
+                    formErrors: ["validation"]
+                });
+            } else if (errorCode === 500) {
+                this.setState({
+                    hasFormErrors: true,
+                    formErrors: ["error"]
+                });
+            } else {
+                this.setState({
+                    hasFormErrors: true,
+                    formErrors: ["connect"]
+                });
+            }
         });
     }
 

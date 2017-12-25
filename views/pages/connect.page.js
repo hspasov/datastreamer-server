@@ -66,11 +66,7 @@ class Connect extends React.Component {
             if (response.status == 200) {
                 return response.json();
             } else {
-                this.setState({
-                    hasFormErrors: true,
-                    formErrors: ["validation"]
-                });
-                throw `Authentication failed\n${response}`;
+                throw response.status;
             }
         }).then(json => {
             this.props.dispatch(connectClient(json));
@@ -79,11 +75,28 @@ class Connect extends React.Component {
             // Component rendering happens only on second dispatch
             this.props.dispatch(push("/home"));
             this.props.dispatch(push("/home"));
-        }).catch(error => {
-            this.setState({
-                hasFormErrors: true,
-                formErrors: ["connect"]
-            });
+        }).catch(errorCode => {
+            if (errorCode === 401) {
+                this.setState({
+                    hasFormErrors: true,
+                    formErrors: ["token"]
+                });
+            } else if (errorCode === 404) {
+                this.setState({
+                    hasFormErrors: true,
+                    formErrors: ["validation"]
+                });
+            } else if (errorCode === 500) {
+                this.setState({
+                    hasFormErrors: true,
+                    formErrors: ["error"]
+                });
+            } else {
+                this.setState({
+                    hasFormErrors: true,
+                    formErrors: ["connect"]
+                });
+            }
         });
     }
 

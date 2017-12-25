@@ -76,7 +76,7 @@ class Register extends React.Component {
             if (response.status == 201) {
                 return response.json();
             } else {
-                throw `Authentication failed\n${response}`;
+                return response.status;
             }
         }).then(json => {
             this.props.dispatch(loginClient(json));
@@ -86,10 +86,22 @@ class Register extends React.Component {
             this.props.dispatch(push("/connect"));
             this.props.dispatch(push("/connect"));
         }).catch(error => {
-            this.setState({
-                hasFormErrors: true,
-                formErrors: ["connect"]
-            });
+            if (response.status === 412) {
+                this.setState({
+                    hasFormErrors: true,
+                    formErrors: ["exists"]
+                });
+            } else if (response.status === 500) {
+                this.setState({
+                    hasFormErrors: true,
+                    formErrors: ["error"]
+                });
+            } else {
+                this.setState({
+                    hasFormErrors: true,
+                    formErrors: ["connect"]
+                });
+            }
         });
     }
 

@@ -35,9 +35,7 @@ router.post("/provider", (req, res, next) => {
                 readable: response.readable,
                 writable: response.writable
             });
-        } else if (response.reason === "credentials") {
-            res.status(404).end();
-        } else if (response.reason === "token") {
+        } else {
             res.status(401).end();
         }
     }).catch(error => {
@@ -57,9 +55,7 @@ router.post("/default", (req, res, next) => {
                 readable: response.readable,
                 writable: response.writable
             });
-        } else if (response.reason === "credentials") {
-            res.status(404).end();
-        } else if (response.reason === "token") {
+        } else {
             res.status(401).end();
         }
     }).catch(error => {

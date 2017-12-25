@@ -62,14 +62,14 @@ async function setProviderDefaultRule(token, readable, writable) {
         try {
             decoded = await verifyProviderToken(token);
         } catch (error) {
-            return { success: false, reason: "token" };
+            return { success: false };
         }
         const response = await db.query(`UPDATE Providers
             SET Readable = $2,
             Writable = $3
             WHERE Username = $1 RETURNING *`, [decoded.username, readable, writable]);
         if (response.rows.length <= 0) {
-            return { success: false, reason: "credentials" };
+            return { success: false };
         }
         return {
             success: true,
@@ -88,13 +88,13 @@ async function getProviderDefaultRule(token) {
         try {
             decoded = await verifyProviderToken(token);
         } catch (error) {
-            return { success: false, reason: "token" };
+            return { success: false };
         }
         const response = await db.query(`SELECT Readable, Writable
         FROM Providers
         WHERE Username = $1`, [decoded.username]);
         if (response.rows.length <= 0) {
-            return { success: false, reason: "credentials" };
+            return { success: false };
         }
         return {
             success: true,
