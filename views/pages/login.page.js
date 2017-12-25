@@ -73,22 +73,21 @@ class Login extends React.Component {
             this.props.dispatch(push("/connect"));
             this.props.dispatch(push("/connect"));
         }).catch(errorCode => {
-            if (errorCode === 404) {
-                this.setState({
-                    hasFormErrors: true,
-                    formErrors: ["validation"]
-                });
-            } else if (errorCode === 500) {
-                this.setState({
-                    hasFormErrors: true,
-                    formErrors: ["error"]
-                });
-            } else {
-                this.setState({
-                    hasFormErrors: true,
-                    formErrors: ["connect"]
-                });
+            let formErrors;
+            switch (errorCode) {
+                case 404:
+                    formErrors = ["verification"];
+                    break;
+                case 500:
+                    formErrors = ["error"];
+                    break;
+                default:
+                    formErrors = ["connect"];
             }
+            this.setState({
+                hasFormErrors: true,
+                formErrors
+            });
         });
     }
 

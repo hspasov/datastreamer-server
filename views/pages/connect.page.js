@@ -76,27 +76,24 @@ class Connect extends React.Component {
             this.props.dispatch(push("/home"));
             this.props.dispatch(push("/home"));
         }).catch(errorCode => {
-            if (errorCode === 401) {
-                this.setState({
-                    hasFormErrors: true,
-                    formErrors: ["token"]
-                });
-            } else if (errorCode === 404) {
-                this.setState({
-                    hasFormErrors: true,
-                    formErrors: ["validation"]
-                });
-            } else if (errorCode === 500) {
-                this.setState({
-                    hasFormErrors: true,
-                    formErrors: ["error"]
-                });
-            } else {
-                this.setState({
-                    hasFormErrors: true,
-                    formErrors: ["connect"]
-                });
+            let formErrors;
+            switch (errorCode) {
+                case 401:
+                    formErrors = ["token"];
+                    break;
+                case 404:
+                    formErrors = ["verification"];
+                    break;
+                case 500:
+                    formErrors = ["error"];
+                    break;
+                default:
+                    formErrors = ["connect"];
             }
+            this.setState({
+                hasFormErrors: true,
+                formErrors
+            });
         });
     }
 
