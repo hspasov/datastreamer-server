@@ -54,18 +54,12 @@ function Socket(RTC, token, errorHandler) {
         console.log("Successfully connected");
     });
 
-    this.socket.on("connectToProviderFail", error => {
+    this.socket.on("connectFail", error => {
         switch (error) {
             case "TokenExpiredError":
                 this.errorHandler({
                     type: "sessionExpired",
                     message: "Session has expired. Please authenticate again!"
-                });
-                break;
-            case "JsonWebTokenError":
-                this.errorHandler({
-                    type: "invalidToken",
-                    message: "Authentication failed. Server received an invalid token."
                 });
                 break;
             case "ProviderNotConnectedError":

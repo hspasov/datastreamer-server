@@ -80,7 +80,8 @@ router.post("/connect", [
                 res.status(200).send({
                     token: response.token,
                     username: response.username,
-                    accessRules: response.accessRules
+                    readable: response.readable,
+                    writable: response.writable
                 });
             } else if (response.reason === "token") {
                 res.status(401).end();

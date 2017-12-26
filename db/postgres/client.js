@@ -5,21 +5,20 @@ const { checkIfInvalidated } = require("../redis/streamSession");
 
 async function register(username, password) {
     try {
-        const response = await db.query("SELECT 1 FROM Clients WHERE Username = $1;", [username]);
-        if (response.rows.length > 0) {
+        const response = await db.query("SELECT create_client($1, $2);", [username, password]);
+        const result = response.rows[0].create_client;
+        if (!result) {
             return { success: false };
+        } else {
+            log.info("New client successfully created...");
+            log.verbose(`Username: ${result.username}`);
+            const token = await signClientToken(result.username);
+            return {
+                success: true,
+                token,
+                username: result.username
+            };
         }
-        const insertResponse = await db.query(`INSERT INTO Clients (Username, Password)
-            VALUES ($1, crypt($2, gen_salt('bf', 8)))
-             RETURNING *;`, [username, password]);
-        log.info("New client successfully created...");
-        log.verbose(`Username: ${insertResponse.rows[0].username}`);
-        const token = await signClientToken(insertResponse.rows[0].username);
-        return {
-            success: true,
-            token,
-            username: insertResponse.rows[0].username
-        };
     } catch (error) {
         log.error("In register client:");
         throw error;
@@ -28,7 +27,9 @@ async function register(username, password) {
 
 async function login(username, password) {
     try {
-        const response = await db.query("SELECT Username FROM Clients WHERE Username = $1 AND Password = crypt($2, Password);", [username, password]);
+        const response = await db.query(`SELECT Username FROM Clients
+            WHERE Username = $1 AND
+            Password = crypt($2, Password);`, [username, password]);
         if (response.rows.length <= 0) {
             log.info("Unsuccessfull client attempt to login.");
             log.verbose("Username provided:", username);
@@ -60,46 +61,22 @@ async function connect(token, username, password) {
             log.verbose(error);
             return { success: false, reason: "token" };
         }
-        const providerCheck = await db.query(`SELECT Username, Readable, Writable
-            FROM Providers
-            WHERE Username = $1 AND
-            ClientConnectPassword = crypt($2, ClientConnectPassword);`,
-            [username, password]);
-        if (providerCheck.rows.length <= 0) {
+        const response = await db.query(`SELECT get_access_rules($1, $2, $3);`, [username, decoded.username, password]);
+        if (!response.rows[0].get_access_rules) {
+            return { success: false, reason: "credentials" };
+        } else if (!response.rows[0].get_access_rules.readable) {
             return { success: false, reason: "credentials" };
         }
-        let accessRules = "N";
-        const readAccess = providerCheck.rows[0].readable;
-        const writeAccess = providerCheck.rows[0].writable;
-        if (readAccess && !writeAccess) {
-            accessRules = "R";
-        } else if (readAccess && writeAccess) {
-            accessRules = "RW";
-        }
-        const clientAccessCheck = await db.query(`SELECT Providers.Username, ClientAccessRules.Readable, ClientAccessRules.Writable
-            FROM ClientAccessRules INNER JOIN Providers
-            ON ClientAccessRules.ProviderId = Providers.Id
-            INNER JOIN Clients ON ClientAccessRules.ClientId = Clients.Id
-            WHERE Providers.Username = $1 AND Clients.Username = $2;`,
-            [username, decoded.username]);
-        if (clientAccessCheck.rows.length > 0) {
-            const readAccess = clientAccessCheck.rows[0].readable;
-            const writeAccess = clientAccessCheck.rows[0].writable;
-            if (readAccess && !writeAccess) {
-                accessRules = "R";
-            } else if (readAccess && writeAccess) {
-                accessRules = "RW";
-            }
-        }
-        if (accessRules === "N") {
-            return { success: false, reason: "credentials" };
-        }
-        const connectToken = await signConnectionToken(decoded.username, providerCheck.rows[0].username, accessRules);
+        const provider = response.rows[0].get_access_rules.username;
+        const readable = response.rows[0].get_access_rules.readable;
+        const writable = response.rows[0].get_access_rules.writable
+        const connectToken = await signConnectionToken(decoded.username, provider, readable, writable);
         return {
             success: true,
             token: connectToken,
-            username: providerCheck.rows[0].username,
-            accessRules
+            username: provider,
+            readable,
+            writable
         };
     } catch (error) {
         log.error("In client connect to provider:");

@@ -15,6 +15,7 @@
     "body-parser": "~1.17.1",
     "connect-redis": "^3.3.2",
     "cookie-parser": "~1.4.3",
+    "ddos": "^0.1.25",
     "debug": "~2.6.3",
     "express": "~4.15.2",
     "express-react-views": "^0.10.2",

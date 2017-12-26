@@ -17,9 +17,12 @@ async function createNewStreamSession(socketId, token) {
         log.verbose(`Request for new stream session. Checking validity of token "${token}"`);
         const isInvalidated = await checkIfInvalidated(token);
         if (isInvalidated) {
-            throw "Authentication failed. Token has been invalidated.";
+            return null;
         }
         const decoded = await verifyToken(token);
+        if (!decoded) {
+            return null;
+        }
         let sessionInfo;
         switch (decoded.sub) {
             case "provider":
@@ -30,15 +33,14 @@ async function createNewStreamSession(socketId, token) {
                 return {
                     ...sessionInfo,
                     client: { username: decoded.client },
-                    accessRules: decoded.accessRules
+                    readable: decoded.readable,
+                    writable: decoded.writable
                 };
             default:
-                throw `Error: Invalid argument "subject": must be "provider" or "clientConnection", but was ${decoded.sub}.`;
+                return null;
         }
     } catch (error) {
         log.error("While creating stream session:");
-        log.error(error.name);
-        log.error(error.message);
         throw error;
     }
 }

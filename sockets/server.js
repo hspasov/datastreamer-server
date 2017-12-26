@@ -20,21 +20,32 @@ const socketServer = io => {
                 socket.id,
                 socket.handshake.query.token
             ).then(sessionInfo => {
+                if (!sessionInfo) {
+                    io.to(socket.id).emit("connectFail", "TokenExpiredError");
+                }
                 log.info(`${socket.id} connected`);
                 log.verbose(sessionInfo);
                 log.verbose(Object.keys(io.sockets.sockets).length);
                 if (sessionInfo.type === "clientConnection") {
                     if (sessionInfo.provider.isConnected) {
                         io.to(socket.id).emit("connectToProviderSuccess");
-                        io.to(sessionInfo.provider.socketId).emit("subscribedClient", socket.id, socket.handshake.query.token, sessionInfo.client.username, sessionInfo.accessRules);
+                        io.to(sessionInfo.provider.socketId)
+                            .emit(
+                            "subscribedClient",
+                            socket.id,
+                            socket.handshake.query.token,
+                            sessionInfo.client.username, {
+                                readable: sessionInfo.readable,
+                                writable: sessionInfo.writable
+                            });
                     } else {
                         log.verbose(`Client "${socket.id}" could not connect to provider "${sessionInfo.provider.providerName}". Provider not connected.`);
-                        io.to(socket.id).emit("connectToProviderFail", "ProviderNotConnectedError");
+                        io.to(socket.id).emit("connectFail", "ProviderNotConnectedError");
                     }
                 }
             }).catch(error => {
                 log.error(error);
-                io.to(socket.id).emit("connectToProviderFail", error.name);
+                io.to(socket.id).emit("connectFail", error.name);
                 socket.disconnect(true);
             });
         } else {
@@ -47,7 +58,7 @@ const socketServer = io => {
                 log.info(`${Object.keys(io.sockets.sockets).length} sockets left.`);
                 if (sessionInfo.type === "provider") {
                     sessionInfo.clientSocketIds.forEach(client => {
-                        io.to(client).emit("connectToProviderFail", "ProviderNotConnectedError");
+                        io.to(client).emit("connectFail", "ProviderNotConnectedError");
                     });
                 } else if (sessionInfo.type === "client") {
                     findProviderSocketIdByProviderName(sessionInfo.providerName).then(socketId => {
@@ -75,7 +86,7 @@ const socketServer = io => {
         socket.on("resetProviderConnection", () => {
             findProviderSocketIdByClientSocketId(socket.id).then(socketId => {
                 if (!socketId) {
-                    io.to(socket.id).emit("connectToProviderFail", "ProviderNotConnectedError");
+                    io.to(socket.id).emit("connectFail", "ProviderNotConnectedError");
                 } else {
                     io.to(socketId).emit("resetConnection", socket.id);
                 }
@@ -92,7 +103,7 @@ const socketServer = io => {
         socket.on("offerP2PConnection", description => {
             findProviderSocketIdByClientSocketId(socket.id).then(socketId => {
                 if (!socketId) {
-                    io.to(socket.id).emit("connectToProviderFail", "ProviderNotConnectedError");
+                    io.to(socket.id).emit("connectFail", "ProviderNotConnectedError");
                 } else {
                     io.to(socketId).emit("initConnection", socket.id, description);
                 }
@@ -112,7 +123,7 @@ const socketServer = io => {
             } else {
                 findProviderSocketIdByClientSocketId(socket.id).then(socketId => {
                     if (!socketId) {
-                        io.to(socket.id).emit("connectToProviderFail", "ProviderNotConnectedError");
+                        io.to(socket.id).emit("connectFail", "ProviderNotConnectedError");
                     } else {
                         io.to(socketId).emit("receiveICECandidate", socket.id, candidate);
                     }
@@ -141,9 +152,13 @@ const socketServer = io => {
                 return verifyToken(token);
             }).then(decoded => {
                 if (!decoded) {
-                    io.to(socket.id).emit("connectToProviderFail", "TokenExpiredError");
+                    io.to(socket.id).emit("connectFail", "TokenExpiredError");
                 } else {
-                    io.to(providerSocketId).emit("subscribedClient", socket.id, token, decoded.client, decoded.accessRules);
+                    io.to(providerSocketId)
+                        .emit("subscribedClient", socket.id, token, decoded.client, {
+                            readable: decoded.readable,
+                            writable: decoded.writable
+                        });
                     io.to(socket.id).emit("connectToProviderSuccess");
                 }
             }).catch(error => {

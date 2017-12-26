@@ -25,7 +25,9 @@ router.post("/login", [
             if (response.success) {
                 res.status(200).json({
                     token: response.token,
-                    username: response.username
+                    username: response.username,
+                    readable: response.readable,
+                    writable: response.writable
                 });
             } else {
                 res.status(404).end();
@@ -49,7 +51,9 @@ router.post("/register", [
             if (response.success) {
                 res.status(201).json({
                     token: response.token,
-                    username: response.username
+                    username: response.username,
+                    readable: response.readable,
+                    writable: response.writable
                 });
             } else {
                 res.status(412).end();

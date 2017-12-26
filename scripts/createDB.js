@@ -60,6 +60,76 @@ pool.query("DROP DATABASE IF EXISTS datastreamer;").then(() => {
     )`);
 }).then(() => {
     console.log("create client access rules success");
+    return pool.query(`CREATE OR REPLACE FUNCTION get_access_rules(provider_username varchar,
+        client_username varchar, client_connect_password varchar)
+        RETURNS json AS $$
+        DECLARE
+            default_rules RECORD;
+            client_rules RECORD;
+        BEGIN
+            SELECT INTO default_rules Username, Readable, Writable
+            FROM Providers WHERE Username = provider_username AND
+            ClientConnectPassword = crypt(client_connect_password, ClientConnectPassword);
+            IF FOUND THEN
+                SELECT INTO client_rules Providers.Username, ClientAccessRules.Readable, ClientAccessRules.Writable
+                FROM ClientAccessRules INNER JOIN Providers
+                ON ClientAccessRules.ProviderId = Providers.Id
+                INNER JOIN Clients ON ClientAccessRules.ClientId = Clients.Id
+                WHERE Providers.Username = provider_username AND Clients.Username = client_username;
+                IF FOUND THEN
+                    RETURN row_to_json(client_rules);
+                ELSE
+                    RETURN row_to_json(default_rules);
+                END IF;
+            ELSE
+                RETURN NULL;
+            END IF;
+        END;$$ LANGUAGE plpgsql;`);
+}).then(() => {
+    console.log("create function get_access_rules success");
+    return pool.query(`CREATE OR REPLACE FUNCTION create_provider(provider_username varchar,
+        provider_password varchar, client_connect_password varchar)
+        RETURNS json AS $$
+        DECLARE
+            provider RECORD;
+        BEGIN
+            SELECT INTO provider * FROM Providers
+            WHERE Providers.Username = provider_username;
+            IF FOUND THEN
+                RETURN NULL;
+            ELSE
+                INSERT INTO Providers (
+                    Username, Password, ClientConnectPassword, Readable, Writable)
+                VALUES (
+                    provider_username,
+                    crypt(provider_password, gen_salt('bf', 8)),
+                    crypt(client_connect_password, gen_salt('bf', 8)),
+                    FALSE,
+                    FALSE
+                ) RETURNING Username, Readable, Writable INTO provider;
+                RETURN row_to_json(provider);
+            END IF;
+        END;$$ LANGUAGE plpgsql;`);
+}).then(() => {
+    console.log("create function create_provider success");
+    return pool.query(`CREATE OR REPLACE FUNCTION create_client(client_username varchar, client_password varchar)
+        RETURNS json AS $$
+        DECLARE
+            client RECORD;
+        BEGIN
+            SELECT INTO client * FROM Clients
+            WHERE Username = client_username;
+            IF FOUND THEN
+                RETURN NULL;
+            ELSE
+                INSERT INTO Clients (Username, Password)
+                VALUES (client_username, crypt(client_password, gen_salt('bf', 8)))
+                RETURNING Clients.Username INTO client;
+                RETURN row_to_json(client);
+            END IF;
+        END;$$ LANGUAGE plpgsql;`);
+}).then(() => {
+    console.log("create function create_client success");
     pool.end();
 }).catch(error => {
     console.log(error);

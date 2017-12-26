@@ -70,10 +70,10 @@ async function verifyClientToken(token) {
     }
 }
 
-async function signConnectionToken(client, provider, accessRules) {
+async function signConnectionToken(client, provider, readable, writable) {
     try {
         const privateKey = await fs.readFileAsync(path.join(__dirname, "../config/privkey.pem"));
-        return await jwt.signAsync({ client, provider, accessRules }, privateKey, {
+        return await jwt.signAsync({ client, provider, readable, writable }, privateKey, {
             issuer,
             subject: connectionTokenSubject,
             algorithm,
