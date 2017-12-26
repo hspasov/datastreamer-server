@@ -52,8 +52,8 @@ pool.query("DROP DATABASE IF EXISTS datastreamer;").then(() => {
 }).then(() => {
     console.log("create providers success");
     return pool.query(`CREATE TABLE ClientAccessRules (
-        ProviderId INTEGER NOT NULL REFERENCES Providers,
-        ClientId INTEGER NOT NULL REFERENCES Clients,
+        ProviderId INTEGER NOT NULL REFERENCES Providers ON DELETE CASCADE,
+        ClientId INTEGER NOT NULL REFERENCES Clients ON DELETE CASCADE,
         Readable BOOLEAN NOT NULL,
         Writable BOOLEAN NOT NULL,
         PRIMARY KEY(ProviderId, ClientId)
@@ -130,6 +130,82 @@ pool.query("DROP DATABASE IF EXISTS datastreamer;").then(() => {
         END;$$ LANGUAGE plpgsql;`);
 }).then(() => {
     console.log("create function create_client success");
+    return pool.query(`CREATE OR REPLACE FUNCTION change_client_password(client_username varchar,
+        old_password varchar, new_password varchar)
+        RETURNS BOOLEAN AS $$
+        DECLARE
+            client_id INTEGER;
+        BEGIN
+            SELECT INTO client_id Id FROM Clients
+            WHERE Username = client_username
+            AND Password = crypt(old_password, Password);
+            IF FOUND THEN
+                UPDATE Clients
+                SET Password = crypt(new_password, gen_salt('bf', 8))
+                WHERE Id = client_id;
+                RETURN TRUE;
+            ELSE
+                RETURN FALSE;
+            END IF;
+        END;$$ LANGUAGE plpgsql;`);
+}).then(() => {
+    console.log("create function change_client_password success");
+    return pool.query(`CREATE OR REPLACE FUNCTION change_provider_password(provider_username varchar,
+        old_password varchar, new_password varchar)
+        RETURNS BOOLEAN AS $$
+        DECLARE
+            provider_id INTEGER;
+        BEGIN
+            SELECT INTO provider_id Id FROM Providers
+            WHERE Username = provider_username
+            AND Password = crypt(old_password, Password);
+            IF FOUND THEN
+                UPDATE Providers
+                SET Password = crypt(new_password, gen_salt('bf', 8))
+                WHERE Id = provider_id;
+                RETURN TRUE;
+            ELSE
+                RETURN FALSE;
+            END IF;
+        END;$$ LANGUAGE plpgsql;`);
+}).then(() => {
+    console.log("create function change_provider_password success");
+    return pool.query(`CREATE OR REPLACE FUNCTION delete_client(client_username varchar,
+        client_password varchar)
+        RETURNS BOOLEAN AS $$
+        DECLARE
+            client_id INTEGER;
+        BEGIN
+            SELECT INTO client_id Id FROM Clients
+            WHERE Username = client_username
+            AND Password = crypt(client_password, Password);
+            IF FOUND THEN
+                DELETE FROM Clients WHERE Id = client_id;
+                RETURN TRUE;
+            ELSE
+                RETURN FALSE;
+            END IF;
+        END;$$ LANGUAGE plpgsql;`);
+}).then(() => {
+    console.log("create function delete_client success");
+    return pool.query(`CREATE OR REPLACE FUNCTION delete_provider(provider_username varchar,
+        provider_password varchar)
+        RETURNS BOOLEAN AS $$
+        DECLARE
+            provider_id INTEGER;
+        BEGIN
+            SELECT INTO provider_id Id FROM Providers
+            WHERE Username = provider_username
+            AND Password = crypt(provider_password, Password);
+            IF FOUND THEN
+                DELETE FROM Providers WHERE Id = provider_id;
+                RETURN TRUE;
+            ELSE
+                RETURN FALSE;
+            END IF;
+        END;$$ LANGUAGE plpgsql;`);
+}).then(() => {
+    console.log("create function delete_provider success");
     pool.end();
 }).catch(error => {
     console.log(error);

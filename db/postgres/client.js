@@ -1,7 +1,7 @@
 const log = require("../../modules/log");
 const db = require("./index");
 const { signClientToken, verifyClientToken, signConnectionToken } = require("../../modules/tokenActions");
-const { checkIfInvalidated } = require("../redis/streamSession");
+const { checkIfInvalidated, invalidateToken } = require("../redis/streamSession");
 
 async function register(username, password) {
     try {
@@ -84,8 +84,64 @@ async function connect(token, username, password) {
     }
 }
 
+async function changePassword(token, oldPassword, newPassword) {
+    try {
+        const isInvalidated = await checkIfInvalidated(token);
+        if (isInvalidated) {
+            return { success: false, reason: "token" };
+        }
+        let decoded;
+        try {
+            decoded = await verifyClientToken(token);
+        } catch (error) {
+            log.info("In change password request could not verify client token.");
+            log.verbose(error);
+            return { success: false, reason: "token" };
+        }
+        const response = await db.query(`SELECT change_client_password($1, $2, $3);`,
+            [decoded.username, oldPassword, newPassword]);
+        if (!response.rows[0].change_client_password) {
+            return { success: false, reason: "credentials" };
+        }
+        await invalidateToken(token);
+        const newToken = await signClientToken(decoded.username);
+        return { success: true, token: newToken };
+    } catch (error) {
+        log.error("In change client password:");
+        throw error;
+    }
+}
+
+async function deleteAccount(token, password) {
+    try {
+        const isInvalidated = await checkIfInvalidated(token);
+        if (isInvalidated) {
+            return { success: false, reason: "token" };
+        }
+        let decoded;
+        try {
+            decoded = await verifyClientToken(token);
+        } catch (error) {
+            log.info("In delete request could not verify client token.");
+            log.verbose(error);
+            return { success: false, reason: "token" };
+        }
+        const response = await db.query(`SELECT delete_client($1, $2);`, [decoded.username, password]);
+        if (!response.rows[0].delete_client) {
+            return { success: false, reason: "credentials" };
+        }
+        await invalidateToken(token);
+        return { success: true };
+    } catch (error) {
+        log.error("In delete client:");
+        throw error;
+    }
+}
+
 module.exports = {
     register,
     login,
-    connect
+    connect,
+    changePassword,
+    deleteAccount
 };

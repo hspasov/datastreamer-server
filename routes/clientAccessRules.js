@@ -4,8 +4,7 @@ const router = express.Router();
 const { body, validationResult } = require("express-validator/check");
 const {
     setClientRule,
-    setProviderDefaultRule,
-    getProviderDefaultRule
+    setProviderDefaultRule
 } = require("../db/postgres/clientAccessRules");
 
 router.post("/client", [
@@ -30,28 +29,6 @@ router.post("/client", [
                 });
             } else {
                 res.status(401).send({ reason: response.reason });
-            }
-        }).catch(error => {
-            log.error(error);
-            res.status(500).end();
-        });
-    }
-});
-
-router.post("/provider", [
-    body("token").exists()
-], (req, res, next) => {
-    if (!validationResult(req).isEmpty()) {
-        res.status(400).end();
-    } else {
-        getProviderDefaultRule(req.body.token).then(response => {
-            if (response.success) {
-                res.status(200).send({
-                    readable: response.readable,
-                    writable: response.writable
-                });
-            } else {
-                res.status(401).end();
             }
         }).catch(error => {
             log.error(error);

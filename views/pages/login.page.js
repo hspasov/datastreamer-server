@@ -14,10 +14,9 @@ class Login extends React.Component {
         this.state = {
             username: "",
             password: "",
-            formRaised: false,
             hasFormErrors: false,
             formErrors: []
-        }
+        };
 
         this.handleUsernameChange = this.handleUsernameChange.bind(this);
         this.handlePasswordChange = this.handlePasswordChange.bind(this);
@@ -60,7 +59,7 @@ class Login extends React.Component {
             headers: { "Content-Type": "application/x-www-form-urlencoded", },
             body: formurlencoded(formData)
         }).then(response => {
-            if (response.status == 200) {
+            if (response.status === 200) {
                 return response.json();
             } else {
                 throw response.status;

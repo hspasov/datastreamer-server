@@ -1,7 +1,7 @@
 const log = require("../../modules/log");
 const db = require("./index");
-const { signProviderToken } = require("../../modules/tokenActions");
-const { checkIfInvalidated } = require("../redis/streamSession");
+const { signProviderToken, verifyProviderToken } = require("../../modules/tokenActions");
+const { checkIfInvalidated, invalidateToken } = require("../redis/streamSession");
 
 async function register(username, password, clientConnectPassword) {
     try {
@@ -54,7 +54,63 @@ async function login(username, password) {
     }
 }
 
+async function changePassword(token, oldPassword, newPassword) {
+    try {
+        const isInvalidated = await checkIfInvalidated(token);
+        if (isInvalidated) {
+            return { success: false, reason: "token" };
+        }
+        let decoded;
+        try {
+            decoded = await verifyProviderToken(token);
+        } catch (error) {
+            log.info("In change password request could not verify provider token.");
+            log.verbose(error);
+            return { success: false, reason: "token" };
+        }
+        const response = await db.query(`SELECT change_provider_password($1, $2, $3);`,
+            [decoded.username, oldPassword, newPassword]);
+        if (!response.rows[0].change_provider_password) {
+            return { success: false, reason: "credentials" };
+        }
+        await invalidateToken(token);
+        const newToken = await signProviderToken(decoded.username);
+        return { success: true, token: newToken };
+    } catch (error) {
+        log.error("In change provider password:");
+        throw error;
+    }
+}
+
+async function deleteAccount(token, password) {
+    try {
+        const isInvalidated = await checkIfInvalidated(token);
+        if (isInvalidated) {
+            return { success: false, reason: "token" };
+        }
+        let decoded;
+        try {
+            decoded = await verifyProviderToken(token);
+        } catch (error) {
+            log.info("In delete request could not verify provider token.");
+            log.verbose(error);
+            return { success: false, reason: "token" };
+        }
+        const response = await db.query(`SELECT delete_provider($1, $2);`, [decoded.username, password]);
+        if (!response.rows[0].delete_provider) {
+            return { success: false, reason: "credentials" };
+        }
+        await invalidateToken(token);
+        return { success: true };
+    } catch (error) {
+        log.error("In delete provider:");
+        throw error;
+    }
+}
+
 module.exports = {
     register,
-    login
+    login,
+    changePassword,
+    deleteAccount
 };

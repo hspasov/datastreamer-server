@@ -82,34 +82,8 @@ async function setProviderDefaultRule(token, readable, writable) {
     }
 }
 
-async function getProviderDefaultRule(token) {
-    try {
-        let decoded;
-        try {
-            decoded = await verifyProviderToken(token);
-        } catch (error) {
-            return { success: false };
-        }
-        const response = await db.query(`SELECT Readable, Writable
-        FROM Providers
-        WHERE Username = $1`, [decoded.username]);
-        if (response.rows.length <= 0) {
-            return { success: false };
-        }
-        return {
-            success: true,
-            readable: response.rows[0].readable,
-            writable: response.rows[0].writable
-        };
-    } catch (error) {
-        log.error("In get default rule for a provider:");
-        throw error;
-    }
-}
-
 module.exports = {
     setClientRule,
     removeClientRule,
-    setProviderDefaultRule,
-    getProviderDefaultRule
+    setProviderDefaultRule
 };

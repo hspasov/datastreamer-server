@@ -11,6 +11,7 @@ import HomePage from "../pages/home.page";
 import LoginPage from "../pages/login.page";
 import RegisterPage from "../pages/register.page";
 import ConnectPage from "../pages/connect.page";
+import SettingsPage from "../pages/settings-page";
 import formurlencoded from "form-urlencoded";
 import {
     openDirectory,
@@ -40,7 +41,6 @@ class App extends React.Component {
         }).then(response => {
             this.props.dispatch(disconnectClient());
             this.props.dispatch(logoutClient());
-            this.props.dispatch(push("/login"));
         }).catch(error => {
             console.log(error);
         });
@@ -55,6 +55,7 @@ class App extends React.Component {
             <div>
                 <Menu.Item><Header as="h4" color="grey">Your client</Header></Menu.Item>
                 <Menu.Item><Header as="h4" color="grey">{this.props.client.username}</Header></Menu.Item>
+                <Menu.Item as={Link} to="/settings">Account settings</Menu.Item>
                 <Menu.Item onClick={this.logout}>Logout</Menu.Item>
                 <Menu.Item><Divider /></Menu.Item>
             </div> :
@@ -116,6 +117,7 @@ class App extends React.Component {
                     <Route path="/login" component={LoginPage} />
                     <Route path="/register" component={RegisterPage} />
                     <Route path="/connect" component={ConnectPage} />
+                    <Route path="/settings" component={SettingsPage} />
                 </Switch>
             </Grid.Column>
         </Grid>;
