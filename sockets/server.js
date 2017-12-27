@@ -22,25 +22,26 @@ const socketServer = io => {
             ).then(sessionInfo => {
                 if (!sessionInfo) {
                     io.to(socket.id).emit("connectFail", "TokenExpiredError");
-                }
-                log.info(`${socket.id} connected`);
-                log.verbose(sessionInfo);
-                log.verbose(Object.keys(io.sockets.sockets).length);
-                if (sessionInfo.type === "clientConnection") {
-                    if (sessionInfo.provider.isConnected) {
-                        io.to(socket.id).emit("connectToProviderSuccess");
-                        io.to(sessionInfo.provider.socketId)
-                            .emit(
-                            "subscribedClient",
-                            socket.id,
-                            socket.handshake.query.token,
-                            sessionInfo.client.username, {
-                                readable: sessionInfo.readable,
-                                writable: sessionInfo.writable
-                            });
-                    } else {
-                        log.verbose(`Client "${socket.id}" could not connect to provider "${sessionInfo.provider.providerName}". Provider not connected.`);
-                        io.to(socket.id).emit("connectFail", "ProviderNotConnectedError");
+                } else {
+                    log.info(`${socket.id} connected`);
+                    log.verbose(sessionInfo);
+                    log.verbose(Object.keys(io.sockets.sockets).length);
+                    if (sessionInfo.type === "clientConnection") {
+                        if (sessionInfo.provider.isConnected) {
+                            io.to(socket.id).emit("connectToProviderSuccess");
+                            io.to(sessionInfo.provider.socketId)
+                                .emit(
+                                "subscribedClient",
+                                socket.id,
+                                socket.handshake.query.token,
+                                sessionInfo.client.username, {
+                                    readable: sessionInfo.readable,
+                                    writable: sessionInfo.writable
+                                });
+                        } else {
+                            log.verbose(`Client "${socket.id}" could not connect to provider "${sessionInfo.provider.providerName}". Provider not connected.`);
+                            io.to(socket.id).emit("connectFail", "ProviderNotConnectedError");
+                        }
                     }
                 }
             }).catch(error => {

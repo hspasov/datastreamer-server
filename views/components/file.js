@@ -22,6 +22,7 @@ class File extends React.Component {
                     </Button>
                 }
                 <Item.Meta>Type: {this.props.type}</Item.Meta>
+                <Item.Meta>Mime: {this.props.mime}</Item.Meta>
                 <Item.Meta>Size: {this.props.size}</Item.Meta>
                 <Item.Meta>Read access: {this.props.access.read.toString()}</Item.Meta>
                 <Item.Meta>Write access: {this.props.access.write.toString()}</Item.Meta>

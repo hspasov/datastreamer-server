@@ -30,23 +30,32 @@ async function register(username, password, clientConnectPassword) {
 
 async function login(username, password) {
     try {
-        const response = await db.query(`SELECT Username, Readable, Writable
-            FROM Providers
-            WHERE Username = $1 AND
-            Password = crypt($2, Password);`, [username, password]);
+        const response = await db.query(`SELECT * FROM Providers
+            WHERE Username = $1
+            AND Password = crypt($2, Password);`, [username, password]);
         if (response.rows.length <= 0) {
             log.info("Unsuccessfull provider attempt to login.");
             log.verbose("Username provided:", username);
             return { success: false };
         }
         const result = response.rows[0];
+        const banned = await db.query(`SELECT
+                Clients.Username AS Username,
+                ClientAccessRules.Readable AS Readable,
+                ClientAccessRules.Writable AS Writable
+                FROM ClientAccessRules INNER JOIN Clients
+                ON ClientAccessRules.ClientId = Clients.Id
+                WHERE ClientAccessRules.ProviderId = $1 AND
+                ClientAccessRules.Readable = FALSE;`, [result.id]);
+        console.log(banned.rows);
         const token = await signProviderToken(result.username);
         return {
             success: true,
             token,
             username: result.username,
             readable: result.readable,
-            writable: result.writable
+            writable: result.writable,
+            banned: banned.rows
         };
     } catch (error) {
         log.error("In login a provider:");
