@@ -102,34 +102,36 @@ class Connect extends React.Component {
             return <Redirect to="/login"></Redirect>;
         }
 
-        return <Grid textAlign="center" style={{ height: "100%" }} verticalAlign="middle">
-            <Grid.Column style={{ maxWidth: 450 }} >
-                <Header as="h2" color="black" textAlign="center">
-                    Connect to provider
-                </Header>
-                <Form size="massive">
-                    <Segment>
-                        <Form.Input
-                            fluid
-                            icon="user"
-                            iconPosition="left"
-                            placeholder="Provider name"
-                            required
-                            onChange={this.handleUsernameChange} />
-                        <Form.Input
-                            fluid
-                            icon="lock"
-                            iconPosition="left"
-                            placeholder="Password"
-                            type="password"
-                            required
-                            onChange={this.handlePasswordChange} />
-                        <Button color="black" fluid size="large" onClick={this.handleSubmit}>Connect</Button>
-                        <FormSubmitError visible={this.state.hasFormErrors} errors={this.state.formErrors}/>
-                    </Segment>
-                </Form>
-            </Grid.Column>
-        </Grid>;
+        return <Segment style={{height: "100%"}} padded="very" attached="top">
+            <Grid textAlign="center" style={{ height: "100%" }} verticalAlign="middle">
+                <Grid.Column style={{ maxWidth: 450 }} >
+                    <Header as="h2" color="black" textAlign="center">
+                        Connect to provider
+                    </Header>
+                    <Form size="massive">
+                        <Segment>
+                            <Form.Input
+                                fluid
+                                icon="user"
+                                iconPosition="left"
+                                placeholder="Provider name"
+                                required
+                                onChange={this.handleUsernameChange} />
+                            <Form.Input
+                                fluid
+                                icon="lock"
+                                iconPosition="left"
+                                placeholder="Password"
+                                type="password"
+                                required
+                                onChange={this.handlePasswordChange} />
+                            <Button color="black" fluid size="large" onClick={this.handleSubmit}>Connect</Button>
+                            <FormSubmitError visible={this.state.hasFormErrors} errors={this.state.formErrors}/>
+                        </Segment>
+                    </Form>
+                </Grid.Column>
+            </Grid>
+        </Segment>;
     }
 }
 

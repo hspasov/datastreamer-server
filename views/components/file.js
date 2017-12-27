@@ -1,8 +1,24 @@
 import React from "react";
-import { Button, Item, Progress } from "semantic-ui-react";
+import { Accordion, Button, Header, Icon, Item, Popup, Progress } from "semantic-ui-react";
 import Thumbnail from "../components/thumbnail.component";
 
 class File extends React.Component {
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            showMore: false
+        };
+
+        this.toggleMore = this.toggleMore.bind(this);
+    }
+
+    toggleMore() {
+        this.setState(prevState =>  ({
+            showMore: !prevState.showMore
+        }));
+    }
+
     render() {
         return <Item>
             <Item.Content>
@@ -10,29 +26,47 @@ class File extends React.Component {
                     mime={this.props.mime}
                     thumbnail={this.props.imageURL}
                     onClick={() => this.props.getThumbnail()} />
-                <Item.Header>{this.props.name}</Item.Header>
                 {(this.props.type === "directory") ?
-                    <Button floated="right" onClick={() => this.props.openDirectory()}>Open directory</Button> :
-                    <Button
-                        floated="right"
-                        disabled={this.props.downloadStatus === "initialized"}
-                        loading={this.props.downloadStatus === "initialized"}
-                        onClick={() => this.props.addToDownloads()}>
-                        Download file
-                    </Button>
+                    <Item.Header size="huge" as="a" onClick={() => this.props.openDirectory()}>{this.props.name}</Item.Header> :
+                    <Item.Header size="huge">{this.props.name}</Item.Header>
                 }
+                <Button floated="right" onClick={() => this.toggleMore()}><Icon size="huge" name="list layout" /></Button>
                 {(this.props.mime === "image/png" || this.props.mime === "image/jpeg") &&
                     <Button onClick={() => this.props.openImage()}>View image</Button>
                 }
                 {(/^text\//.test(this.props.mime)) &&
                     <Button onClick={() => this.props.openText()}>View text file</Button>
                 }
-                <Item.Meta>Type: {this.props.type}</Item.Meta>
-                <Item.Meta>Mime: {this.props.mime}</Item.Meta>
-                <Item.Meta>Size: {this.props.size}</Item.Meta>
-                <Item.Meta>Read access: {this.props.access.read.toString()}</Item.Meta>
-                <Item.Meta>Write access: {this.props.access.write.toString()}</Item.Meta>
-                <Item.Meta>Execute access: {this.props.access.execute.toString()}</Item.Meta>
+                <div>{this.props.type !== "directory" &&
+                    <Button
+                        disabled={this.props.downloadStatus === "initialized"}
+                        loading={this.props.downloadStatus === "initialized"}
+                        onClick={() => this.props.addToDownloads()}>
+                        Download file
+                    </Button>
+                }</div>
+                {this.state.showMore &&
+                    <div>
+                        <Item.Meta>Type: {this.props.type}</Item.Meta>
+                        <Item.Meta>Mime: {this.props.mime}</Item.Meta>
+                        <Item.Meta>Size: {this.props.size}</Item.Meta>
+                        <Header>Permissions:
+                                <p>
+                                {this.props.access.read && <Popup
+                                    trigger={<Icon name="eye" size="big" />}
+                                    content="Read access"
+                                />}
+                                {this.props.access.write && <Popup
+                                    trigger={<Icon name="write" size="big" />}
+                                    content="Write access"
+                                />}
+                                {this.props.access.execute && <Popup
+                                    trigger={<Icon name="external" size="big" />}
+                                    content="Execute access"
+                                />}
+                            </p>
+                        </Header>
+                    </div>}
                 <div>
                     {this.props.downloadPercent > 0 && <Progress percent={this.props.downloadPercent} indicating />}
                 </div>

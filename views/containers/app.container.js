@@ -86,7 +86,7 @@ class App extends React.Component {
         </div>;
 
         const sideMenu = <Menu icon="labeled" vertical inverted borderless fixed="left" style={{ width: "250px" }}>
-            <Menu.Item onClick={this.toggleSidebar} as='a' header active={this.props.sidebar.visible}>
+            <Menu.Item style={{width: "250px"}} onClick={this.toggleSidebar} as="a" header active={this.props.sidebar.visible}>
                 <Grid><Grid.Row centered>
                     <Icon name="list layout" />
                     DataStreamer
@@ -108,19 +108,17 @@ class App extends React.Component {
             {logo}
         </Menu>
 
-        return <Grid columns={1} style={{ height: '100%' }}>
+        return <div style={this.props.sidebar.visible ? { height: "100%", marginLeft: "250px" } : { height: "100%" }}>
             {this.props.sidebar.visible && sideMenu}
-            <Grid.Column style={this.props.sidebar.visible ? { marginLeft: "250px" } : {}}>
-                {this.props.router.location.pathname !== "/home" && topMenu}
-                <Switch>
-                    <Route path="/home" component={HomePage} />
-                    <Route path="/login" component={LoginPage} />
-                    <Route path="/register" component={RegisterPage} />
-                    <Route path="/connect" component={ConnectPage} />
-                    <Route path="/settings" component={SettingsPage} />
-                </Switch>
-            </Grid.Column>
-        </Grid>;
+            {this.props.router.location.pathname !== "/home" && topMenu}
+            <Switch>
+                <Route path="/home" component={HomePage} />
+                <Route path="/login" component={LoginPage} />
+                <Route path="/register" component={RegisterPage} />
+                <Route path="/connect" component={ConnectPage} />
+                <Route path="/settings" component={SettingsPage} />
+            </Switch>
+        </div>;
     }
 }
 

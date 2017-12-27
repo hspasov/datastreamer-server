@@ -108,7 +108,7 @@ class Register extends React.Component {
     }
 
     render() {
-        return (
+        return <Segment padded="very" attached="top">
             <Grid textAlign="center" style={{ height: "100%" }} verticalAlign="middle">
                 <Grid.Column style={{ maxWidth: 450 }}>
                     <Header as="h2" color="black" textAlign="center">
@@ -150,7 +150,7 @@ class Register extends React.Component {
                     </Message>
                 </Grid.Column>
             </Grid>
-        )
+        </Segment>;
     }
 }
 

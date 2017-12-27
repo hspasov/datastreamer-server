@@ -3,9 +3,9 @@ import FileSaver from "file-saver";
 import { connect } from "react-redux";
 import { Redirect } from "react-router";
 import {
-    Breadcrumb, Button, Divider,
+    Breadcrumb, Button, Container, Divider,
     Header, Icon, Image, Item, Loader, Menu, Message,
-    Progress, Segment
+    Progress, Reveal, Search, Segment
 } from "semantic-ui-react";
 import RTC from "../../rtc_connection/client";
 import path from "path";
@@ -309,20 +309,20 @@ class Home extends React.Component {
         </Menu.Item>;
 
         const goBack = <Menu.Item as="a" position="right"
-            disabled={this.props.navigation.path.length === 0}
             onClick={() => this.resolveNavigateBack(1)}>
             Go back
         </Menu.Item>
 
-        const closeImage = <Menu.Item as="a" position="right"
-            onClick={() => this.props.dispatch(removeImage())}>
-            Close
-        </Menu.Item>
-
-        const closeText = <Menu.Item as="a" position="right"
-            onClick={() => this.props.dispatch(removeText())}>
-            Close
-        </Menu.Item>
+        const resolveBackButtonOnClick = () => {
+            if (this.props.imageViewer.show) {
+                return () => this.props.dispatch(removeImage());
+            } else if (this.props.textViewer.show) {
+                return () => this.props.dispatch(removeText());
+            } else {
+                return () => this.resolveNavigateBack(1);
+            }
+        }
+        const disabled = this.props.navigation.path.length === 0;
 
         const files = <Item.Group divided>
             {this.props.files.files.map((file, i) => {
@@ -350,18 +350,38 @@ class Home extends React.Component {
             <Image src={this.props.imageViewer.imageURL}/>
         </div>;
 
-        const textViewer = <div>
+        const textViewer = <Container>
             <p>{this.props.textViewer.text}</p>
-        </div>;
+        </Container>;
 
         return <div>
             <Menu color={menuColor} inverted fluid size="massive" fixed="top">
                 {logo}
-                <NavigationComponent navigateBack={(uid) => this.resolveNavigate(uid)}/>
-                {(this.props.imageViewer.show)? closeImage : (this.props.textViewer.show) ? closeText : goBack}
+                <NavigationComponent style={{ overflow: "scroll" }} navigateBack={(uid) => this.resolveNavigate(uid)} />
+                <Menu.Item fitted position="right">
+                    <Reveal animated="fade">
+                        <Reveal.Content visible>
+                            <p>
+                                Search
+                            </p>
+                        </Reveal.Content>
+                        <Reveal.Content visible={false}>
+                            <Search size="mini" />
+                        </Reveal.Content>
+                    </Reveal>
+                </Menu.Item>
+                <Menu.Item
+                    disabled={
+                        !this.props.imageViewer.show &&
+                        !this.props.textViewer.show &&
+                        this.props.navigation.path.length === 0
+                    }
+                    onClick={resolveBackButtonOnClick()}>
+                    Close
+                </Menu.Item>
             </Menu>
-            <Segment padded attached="top">
-                <DimmerComponent/>
+            <Segment padded="very" attached="top" color="grey">
+                <DimmerComponent />
                 {(this.props.imageViewer.show)? imageViewer : (this.props.textViewer.show) ? textViewer : files}
             </Segment>
         </div>;
@@ -377,7 +397,8 @@ const HomePage = connect(store => {
         navigation: store.navigation,
         files: store.files,
         imageViewer: store.imageViewer,
-        textViewer: store.textViewer
+        textViewer: store.textViewer,
+        fileProperties: store.fileProperties
     };
 })(Home);
 

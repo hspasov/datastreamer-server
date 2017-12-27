@@ -91,38 +91,38 @@ class Login extends React.Component {
     }
 
     render() {
-        return <Segment>
-        <Grid textAlign="center" style={{ height: "100%" }} verticalAlign="middle">
-            <Grid.Column style={{ maxWidth: 450 }} >
-                <Header as="h2" color="black" textAlign="center">
-                    Log-in to your account
-                </Header>
-                <Form size="massive">
-                <Segment>
-                        <Form.Input
-                            fluid
-                            icon="user"
-                            iconPosition="left"
-                            placeholder="Username"
-                            required
-                            error
-                            onChange={this.handleUsernameChange}/>
-                        <Form.Input
-                            fluid
-                            icon="lock"
-                            iconPosition="left"
-                            placeholder="Password"
-                            type="password"
-                            required
-                            onChange={this.handlePasswordChange}/>
-                        <Button color="black" fluid size="large" onClick={this.handleSubmit}>Login</Button>
-                        <FormSubmitError visible={this.state.hasFormErrors} errors={this.state.formErrors} />
-                    </Segment>
-                </Form>
-                <Message>
-                    Don't have an account? <Link to="/register">Register</Link>
-                </Message>
-            </Grid.Column>
+        return <Segment padded="very" attached="top">
+            <Grid textAlign="center" style={{ height: "100%" }} verticalAlign="middle">
+                <Grid.Column style={{ maxWidth: 450 }} >
+                    <Header as="h2" color="black" textAlign="center">
+                        Log-in to your account
+                    </Header>
+                    <Form size="massive">
+                    <Segment>
+                            <Form.Input
+                                fluid
+                                icon="user"
+                                iconPosition="left"
+                                placeholder="Username"
+                                required
+                                error
+                                onChange={this.handleUsernameChange}/>
+                            <Form.Input
+                                fluid
+                                icon="lock"
+                                iconPosition="left"
+                                placeholder="Password"
+                                type="password"
+                                required
+                                onChange={this.handlePasswordChange}/>
+                            <Button color="black" fluid size="large" onClick={this.handleSubmit}>Login</Button>
+                            <FormSubmitError visible={this.state.hasFormErrors} errors={this.state.formErrors} />
+                        </Segment>
+                    </Form>
+                    <Message>
+                        Don't have an account? <Link to="/register">Register</Link>
+                    </Message>
+                </Grid.Column>
             </Grid>
         </Segment>;
     }
