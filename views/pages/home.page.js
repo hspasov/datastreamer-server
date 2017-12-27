@@ -33,6 +33,8 @@ import {
     changePath,
     clearPath
 } from "../../store/actions/navigation";
+import { setImage, removeImage } from "../../store/actions/image-viewer";
+import { removeText, setText } from "../../store/actions/text-viewer";
 
 class Home extends React.Component {
     constructor(props) {
@@ -159,6 +161,7 @@ class Home extends React.Component {
     onChunk(chunk) {
         this.RTC.receiveBuffer.push(chunk);
         this.RTC.receivedBytes += chunk.byteLength;
+        console.log(chunk.byteLength);
         const percent = (this.RTC.receivedBytes / this.RTC.fileSize) * 100;
         if (percent - this.state.downloadPercent > 10) {
             this.setState({
@@ -177,12 +180,19 @@ class Home extends React.Component {
                     this.props.dispatch(finishDownload(file));
                     FileSaver.saveAs(received, path.basename(file.path));
                     break;
-
                 case "thumbnail":
-                    const imageURL = window.URL.createObjectURL(received);
-                    console.log(imageURL);
-                    console.log(file.path);
-                    this.props.dispatch(setThumbnail(file.path, imageURL));
+                    this.props.dispatch(setThumbnail(file.path, window.URL.createObjectURL(received)));
+                    break;
+                case "image":
+                    this.props.dispatch(setImage(window.URL.createObjectURL(received)));
+                    break;
+                case "text":
+                    let result = "";
+                    const decoder = new TextDecoder();
+                    for (let i = 0; i < this.RTC.receiveBuffer.length; i++) {
+                        result += decoder.decode(this.RTC.receiveBuffer[i]);
+                    }
+                    this.props.dispatch(setText(result));
                     break;
             }
             this.RTC.receiveBuffer = [];
@@ -217,6 +227,20 @@ class Home extends React.Component {
                 case "thumbnail":
                     this.RTC.sendMessageChannel.send(JSON.stringify({
                         action: "getThumbnail",
+                        filePath: file.path
+                    }));
+                    break;
+                case "image":
+                    this.RTC.fileSize = file.size;
+                    this.RTC.sendMessageChannel.send(JSON.stringify({
+                        action: "getImage",
+                        filePath: file.path
+                    }));
+                    break;
+                case "text":
+                    this.RTC.fileSize = file.size;
+                    this.RTC.sendMessageChannel.send(JSON.stringify({
+                        action: "getText",
                         filePath: file.path
                     }));
                     break;
@@ -290,33 +314,55 @@ class Home extends React.Component {
             Go back
         </Menu.Item>
 
+        const closeImage = <Menu.Item as="a" position="right"
+            onClick={() => this.props.dispatch(removeImage())}>
+            Close
+        </Menu.Item>
+
+        const closeText = <Menu.Item as="a" position="right"
+            onClick={() => this.props.dispatch(removeText())}>
+            Close
+        </Menu.Item>
+
+        const files = <Item.Group divided>
+            {this.props.files.files.map((file, i) => {
+                return <File
+                    key={file.path}
+                    name={file.name}
+                    type={file.type}
+                    size={file.size}
+                    access={file.access}
+                    path={file.path}
+                    mime={file.mime}
+                    imageURL={file.imageURL}
+                    openDirectory={() => this.navigate(file.path)}
+                    openImage={() => this.addToDownloads(file.path, "image")}
+                    openText={() => this.addToDownloads(file.path, "text")}
+                    getThumbnail={() => this.addToDownloads(file.path, "thumbnail")}
+                    downloadStatus={(file.type !== "directory") ? file.download.status : null}
+                    addToDownloads={() => this.addToDownloads(file.path, "download")}
+                    downloadPercent={(this.RTC.downloads.length > 0 && this.RTC.downloads[0].path === file.path) ? this.state.downloadPercent : 0}
+                />
+            })}
+        </Item.Group>;
+
+        const imageViewer = <div>
+            <Image src={this.props.imageViewer.imageURL}/>
+        </div>;
+
+        const textViewer = <div>
+            <p>{this.props.textViewer.text}</p>
+        </div>;
+
         return <div>
             <Menu color={menuColor} inverted fluid size="massive" fixed="top">
                 {logo}
                 <NavigationComponent navigateBack={(uid) => this.resolveNavigate(uid)}/>
-                {goBack}
+                {(this.props.imageViewer.show)? closeImage : (this.props.textViewer.show) ? closeText : goBack}
             </Menu>
             <Segment padded attached="top">
                 <DimmerComponent/>
-                <Item.Group divided>
-                {this.props.files.files.map((file, i) => {
-                    return <File
-                        key={file.path}
-                        name={file.name}
-                        type={file.type}
-                        size={file.size}
-                        access={file.access}
-                        path={file.path}
-                        mime={file.mime}
-                        imageURL={file.imageURL}
-                        openDirectory={() => this.navigate(file.path)}
-                        getThumbnail={() => this.addToDownloads(file.path, "thumbnail")}
-                        downloadStatus={(file.type !== "directory") ? file.download.status : null}
-                        addToDownloads={() => this.addToDownloads(file.path, "download")}
-                        downloadPercent={(this.RTC.downloads.length > 0 && this.RTC.downloads[0].path === file.path) ? this.state.downloadPercent : 0 }
-                    />
-                    })}
-                </Item.Group>
+                {(this.props.imageViewer.show)? imageViewer : (this.props.textViewer.show) ? textViewer : files}
             </Segment>
         </div>;
     }
@@ -329,7 +375,9 @@ const HomePage = connect(store => {
         dimmer: store.dimmer,
         sidebar: store.sidebar,
         navigation: store.navigation,
-        files: store.files
+        files: store.files,
+        imageViewer: store.imageViewer,
+        textViewer: store.textViewer
     };
 })(Home);
 

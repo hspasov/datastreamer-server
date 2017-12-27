@@ -11,7 +11,7 @@ class File extends React.Component {
                     thumbnail={this.props.imageURL}
                     onClick={() => this.props.getThumbnail()} />
                 <Item.Header>{this.props.name}</Item.Header>
-                {(this.props.type == "directory") ?
+                {(this.props.type === "directory") ?
                     <Button floated="right" onClick={() => this.props.openDirectory()}>Open directory</Button> :
                     <Button
                         floated="right"
@@ -20,6 +20,12 @@ class File extends React.Component {
                         onClick={() => this.props.addToDownloads()}>
                         Download file
                     </Button>
+                }
+                {(this.props.mime === "image/png" || this.props.mime === "image/jpeg") &&
+                    <Button onClick={() => this.props.openImage()}>View image</Button>
+                }
+                {(/^text\//.test(this.props.mime)) &&
+                    <Button onClick={() => this.props.openText()}>View text file</Button>
                 }
                 <Item.Meta>Type: {this.props.type}</Item.Meta>
                 <Item.Meta>Mime: {this.props.mime}</Item.Meta>

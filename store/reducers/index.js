@@ -7,6 +7,8 @@ import sidebar from "./sidebar";
 import navigation from "./navigation";
 import dimmer from "./dimmer";
 import files from "./files";
+import imageViewer from "./image-viewer";
+import textViewer from "./text-viewer";
 
 export default combineReducers({
     client,
@@ -15,5 +17,7 @@ export default combineReducers({
     navigation,
     dimmer,
     files,
+    imageViewer,
+    textViewer,
     router: routerReducer
 });
