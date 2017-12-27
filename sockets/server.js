@@ -21,17 +21,17 @@ const socketServer = io => {
                 socket.handshake.query.token
             ).then(sessionInfo => {
                 if (!sessionInfo) {
-                    io.to(socket.id).emit("connectFail", "TokenExpiredError");
+                    io.to(socket.id).emit("connect_reject", "TokenExpiredError");
                 } else {
                     log.info(`${socket.id} connected`);
                     log.verbose(sessionInfo);
                     log.verbose(Object.keys(io.sockets.sockets).length);
                     if (sessionInfo.type === "clientConnection") {
                         if (sessionInfo.provider.isConnected) {
-                            io.to(socket.id).emit("connectToProviderSuccess");
+                            io.to(socket.id).emit("provider_connect");
                             io.to(sessionInfo.provider.socketId)
                                 .emit(
-                                "subscribedClient",
+                                "client_connect",
                                 socket.id,
                                 socket.handshake.query.token,
                                 sessionInfo.client.username, {
@@ -40,13 +40,13 @@ const socketServer = io => {
                                 });
                         } else {
                             log.verbose(`Client "${socket.id}" could not connect to provider "${sessionInfo.provider.providerName}". Provider not connected.`);
-                            io.to(socket.id).emit("connectFail", "ProviderNotConnectedError");
+                            io.to(socket.id).emit("connect_reject", "ProviderNotConnectedError");
                         }
                     }
                 }
             }).catch(error => {
                 log.error(error);
-                io.to(socket.id).emit("connectFail", error.name);
+                io.to(socket.id).emit("connect_reject", error.name);
                 socket.disconnect(true);
             });
         } else {
@@ -59,12 +59,12 @@ const socketServer = io => {
                 log.info(`${Object.keys(io.sockets.sockets).length} sockets left.`);
                 if (sessionInfo.type === "provider") {
                     sessionInfo.clientSocketIds.forEach(client => {
-                        io.to(client).emit("connectFail", "ProviderNotConnectedError");
+                        io.to(client).emit("connect_reject", "ProviderNotConnectedError");
                     });
                 } else if (sessionInfo.type === "client") {
                     findProviderSocketIdByProviderName(sessionInfo.providerName).then(socketId => {
                         if (socketId) {
-                            io.to(socketId).emit("unsubscribedClient", socket.id);
+                            io.to(socketId).emit("client_disconnect", socket.id);
                         }
                     }).catch(error => {
                         log.error(error);
@@ -80,53 +80,15 @@ const socketServer = io => {
             });
         });
 
-        socket.on("resetClientConnection", clientId => {
-            io.to(clientId).emit("resetConnection");
-        });
-
-        socket.on("resetProviderConnection", () => {
-            findProviderSocketIdByClientSocketId(socket.id).then(socketId => {
-                if (!socketId) {
-                    io.to(socket.id).emit("connectFail", "ProviderNotConnectedError");
-                } else {
-                    io.to(socketId).emit("resetConnection", socket.id);
-                }
-            }).catch(error => {
-                log.error(error);
-                socket.disconnect(true);
-            });
-        });
-
-        socket.on("requestP2PConnection", clientId => {
-            io.to(clientId).emit("requestedP2PConnection");
-        });
-
-        socket.on("offerP2PConnection", description => {
-            findProviderSocketIdByClientSocketId(socket.id).then(socketId => {
-                if (!socketId) {
-                    io.to(socket.id).emit("connectFail", "ProviderNotConnectedError");
-                } else {
-                    io.to(socketId).emit("initConnection", socket.id, description);
-                }
-            }).catch(error => {
-                log.error(error);
-                socket.disconnect(true);
-            });
-        });
-
-        socket.on("connectToClient", (clientId, description) => {
-            io.to(clientId).emit("receiveProviderDescription", description);
-        });
-
-        socket.on("sendICECandidate", (candidate, receiver) => {
-            if (receiver) {
-                io.to(receiver).emit("receiveICECandidate", candidate);
+        socket.on("connect_reset", clientId => {
+            if (clientId) {
+                io.to(clientId).emit("connect_reset");
             } else {
                 findProviderSocketIdByClientSocketId(socket.id).then(socketId => {
                     if (!socketId) {
-                        io.to(socket.id).emit("connectFail", "ProviderNotConnectedError");
+                        io.to(socket.id).emit("connect_reject", "ProviderNotConnectedError");
                     } else {
-                        io.to(socketId).emit("receiveICECandidate", socket.id, candidate);
+                        io.to(socketId).emit("connect_reset", socket.id);
                     }
                 }).catch(error => {
                     log.error(error);
@@ -135,10 +97,48 @@ const socketServer = io => {
             }
         });
 
-        socket.on("connectToClients", () => {
+        socket.on("p2p_request", clientId => {
+            io.to(clientId).emit("p2p_request");
+        });
+
+        socket.on("description", (description, receiver) => {
+            if (receiver) {
+                io.to(receiver).emit("description", description);
+            } else {
+                findProviderSocketIdByClientSocketId(socket.id).then(socketId => {
+                    if (!socketId) {
+                        io.to(socket.id).emit("connect_reject", "ProviderNotConnectedError");
+                    } else {
+                        io.to(socketId).emit("description", socket.id, description);
+                    }
+                }).catch(error => {
+                    log.error(error);
+                    socket.disconnect(true);
+                });
+            }
+        });
+
+        socket.on("ice_candidate", (candidate, receiver) => {
+            if (receiver) {
+                io.to(receiver).emit("ice_candidate", candidate);
+            } else {
+                findProviderSocketIdByClientSocketId(socket.id).then(socketId => {
+                    if (!socketId) {
+                        io.to(socket.id).emit("connect_reject", "ProviderNotConnectedError");
+                    } else {
+                        io.to(socketId).emit("ice_candidate", socket.id, candidate);
+                    }
+                }).catch(error => {
+                    log.error(error);
+                    socket.disconnect(true);
+                });
+            }
+        });
+
+        socket.on("client_tokens_request", () => {
             findClientSessionsByProviderSocketId(socket.id).then(clientSessions => {
                 clientSessions.forEach(client => {
-                    io.to(client).emit("requestToken");
+                    io.to(client).emit("token_request");
                 });
             }).catch(error => {
                 log.error(error);
@@ -146,21 +146,21 @@ const socketServer = io => {
             });
         });
 
-        socket.on("provideToken", token => {
+        socket.on("token_response", token => {
             let providerSocketId;
             findProviderSocketIdByClientSocketId(socket.id).then(socketId => {
                 providerSocketId = socketId;
                 return verifyToken(token);
             }).then(decoded => {
                 if (!decoded) {
-                    io.to(socket.id).emit("connectFail", "TokenExpiredError");
+                    io.to(socket.id).emit("connect_reject", "TokenExpiredError");
                 } else {
                     io.to(providerSocketId)
-                        .emit("subscribedClient", socket.id, token, decoded.client, {
+                        .emit("client_connect", socket.id, token, decoded.client, {
                             readable: decoded.readable,
                             writable: decoded.writable
                         });
-                    io.to(socket.id).emit("connectToProviderSuccess");
+                    io.to(socket.id).emit("provider_connect");
                 }
             }).catch(error => {
                 log.error(error);
@@ -168,7 +168,7 @@ const socketServer = io => {
             });
         });
 
-        socket.on("close-client-connection", clientSocketId => {
+        socket.on("close_client_connection", clientSocketId => {
             findProviderSocketIdByClientSocketId(clientSocketId).then(providerSocketId => {
                 if (providerSocketId && socket.id === providerSocketId) {
                     if (io.sockets.connected[clientSocketId]) {

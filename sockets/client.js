@@ -50,11 +50,11 @@ function Socket(RTC, token, errorHandler) {
         });
     });
 
-    this.socket.on("connectToProviderSuccess", () => {
+    this.socket.on("provider_connect", () => {
         console.log("Successfully connected");
     });
 
-    this.socket.on("connectFail", error => {
+    this.socket.on("connect_reject", error => {
         switch (error) {
             case "TokenExpiredError":
                 this.errorHandler({
@@ -77,18 +77,17 @@ function Socket(RTC, token, errorHandler) {
         this.RTC.deleteP2PConnection();
     });
 
-    this.socket.on("resetConnection", () => {
+    this.socket.on("connect_reset", () => {
         this.RTC.deleteP2PConnection();
         this.RTC.initializeP2PConnection();
     });
 
-    this.socket.on("requestedP2PConnection", () => {
+    this.socket.on("p2p_request", () => {
         this.RTC.initializeP2PConnection();
     });
 
-    this.socket.on("receiveProviderDescription", description => {
+    this.socket.on("description", description => {
         try {
-            console.log("inside receiveProviderDescription:")
             console.log(description);
             this.RTC.peerConnection.setRemoteDescription(JSON.parse(description));
         } catch (error) {
@@ -106,9 +105,9 @@ function Socket(RTC, token, errorHandler) {
         }
     });
 
-    this.socket.on("receiveICECandidate", candidate => {
+    this.socket.on("ice_candidate", candidate => {
         try {
-            console.log("inside receiveICECandidate");
+            console.log("inside ice_candidate");
             console.log(candidate);
             this.RTC.peerConnection.addIceCandidate(JSON.parse(candidate)).then(
                 () => { },
@@ -135,8 +134,8 @@ function Socket(RTC, token, errorHandler) {
         }
     });
 
-    this.socket.on("requestToken", () => {
-        this.socket.emit("provideToken", token);
+    this.socket.on("token_request", () => {
+        this.socket.emit("token_response", token);
     });
 
     console.log("connecting to provider");

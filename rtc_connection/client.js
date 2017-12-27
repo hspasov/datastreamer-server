@@ -34,16 +34,9 @@ class RTC {
             this.peerConnection.onicecandidate = event => {
                 if (event.candidate) {
                     console.log("sending ICE candidate", event.candidate);
-                    this.socket.emit("sendICECandidate", JSON.stringify(event.candidate));
+                    this.socket.emit("ice_candidate", JSON.stringify(event.candidate));
                 }
             };
-
-            this.sendMessageChannel.onopen = () => {
-                this.sendMessageChannel.send(JSON.stringify({
-                    action: "message",
-                    message: "It works, from client"
-                }));
-            }
 
             this.peerConnection.ondatachannel = event => {
                 switch (event.channel.label) {
@@ -67,7 +60,7 @@ class RTC {
                 description => {
                     this.peerConnection.setLocalDescription(description);
                     console.log("set local description", description);
-                    this.socket.emit("offerP2PConnection", JSON.stringify(description));
+                    this.socket.emit("description", JSON.stringify(description));
                 },
                 error => {
                     this.errorHandler({
@@ -113,7 +106,7 @@ class RTC {
             console.log("Closed peer connection");
             if (error) {
                 console.log("There was an error", error);
-                this.socket.emit("resetProviderConnection");
+                this.socket.emit("connect_reset");
             }
         }
     }
