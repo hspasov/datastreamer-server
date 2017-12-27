@@ -3,7 +3,7 @@ import ReactDOM from "react-dom";
 import { Provider } from "react-redux";
 import { ConnectedRouter } from "react-router-redux";
 import createHistory from "history/createBrowserHistory";
-import AppContainer from "./containers/app.container";
+import AppContainer from "./containers/app-container";
 
 import "semantic-ui-css/semantic.min.css";
 

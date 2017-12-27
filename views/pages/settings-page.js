@@ -2,7 +2,7 @@ import React from "react";
 import { connect } from "react-redux";
 import { Button, Form, Grid, Header, Segment } from "semantic-ui-react";
 import formurlencoded from "form-urlencoded";
-import FormSubmitError from "../components/formSubmitError.component";
+import FormSubmitError from "../components/form-submit-error";
 import { loginClient, logoutClient } from "../../store/actions/client";
 import { disconnectClient } from "../../store/actions/provider";
 

@@ -1,6 +1,6 @@
 const log = require("../../modules/log");
 const db = require("./index");
-const { verifyProviderToken, verifyConnectionToken } = require("../../modules/tokenActions");
+const { verifyProviderToken, verifyConnectionToken } = require("../../modules/token-actions");
 
 async function setClientRule(providerToken, connectionToken, readable, writable) {
     try {

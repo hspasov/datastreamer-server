@@ -1,18 +1,18 @@
 const log = require("../../modules/log");
 const redisClient = require("redis").createClient({ detect_buffers: true });
-const { verifyToken } = require("../../modules/tokenActions");
+const { verifyToken } = require("../../modules/token-actions");
 const {
-    createNewProviderSession,
+    createProviderSession,
     deleteProviderSession,
     findProviderNameBySocketId
-} = require("./providerSession");
+} = require("./provider-session");
 const {
-    createNewClientSession,
+    createClientSession,
     findClientSession,
     deleteClientSession
-} = require("./clientSession");
+} = require("./client-session");
 
-async function createNewStreamSession(socketId, token) {
+async function createPeerSession(socketId, token) {
     try {
         log.verbose(`Request for new stream session. Checking validity of token "${token}"`);
         const isInvalidated = await checkIfInvalidated(token);
@@ -26,10 +26,10 @@ async function createNewStreamSession(socketId, token) {
         let sessionInfo;
         switch (decoded.sub) {
             case "provider":
-                sessionInfo = await createNewProviderSession(socketId, decoded.username);
+                sessionInfo = await createProviderSession(socketId, decoded.username);
                 return sessionInfo;
             case "clientConnection":
-                sessionInfo = await createNewClientSession(socketId, decoded.provider);
+                sessionInfo = await createClientSession(socketId, decoded.provider);
                 return {
                     ...sessionInfo,
                     client: { username: decoded.client },
@@ -40,12 +40,12 @@ async function createNewStreamSession(socketId, token) {
                 return null;
         }
     } catch (error) {
-        log.error("While creating stream session:");
+        log.error("While creating peer session:");
         throw error;
     }
 }
 
-async function deleteStreamSession(socketId) {
+async function deletePeerSession(socketId) {
     try {
         const clientSession = await findClientSession(socketId);
         if (!clientSession) {
@@ -112,8 +112,8 @@ async function checkIfInvalidated(token) {
 }
 
 module.exports = {
-    createNewStreamSession,
-    deleteStreamSession,
+    createPeerSession,
+    deletePeerSession,
     invalidateToken,
     checkIfInvalidated
 };

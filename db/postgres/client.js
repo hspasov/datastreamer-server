@@ -1,7 +1,7 @@
 const log = require("../../modules/log");
 const db = require("./index");
-const { signClientToken, verifyClientToken, signConnectionToken } = require("../../modules/tokenActions");
-const { checkIfInvalidated, invalidateToken } = require("../redis/streamSession");
+const { signClientToken, verifyClientToken, signConnectionToken } = require("../../modules/token-actions");
+const { checkIfInvalidated, invalidateToken } = require("../redis/peer-session");
 
 async function register(username, password) {
     try {

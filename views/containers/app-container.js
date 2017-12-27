@@ -7,10 +7,10 @@ import { logoutClient } from "../../store/actions/client";
 import { disconnectClient } from "../../store/actions/provider";
 import { toggleSidebar } from "../../store/actions/sidebar";
 import disconnect from "../../modules/disconnect";
-import HomePage from "../pages/home.page";
-import LoginPage from "../pages/login.page";
-import RegisterPage from "../pages/register.page";
-import ConnectPage from "../pages/connect.page";
+import HomePage from "../pages/home-page";
+import LoginPage from "../pages/login-page";
+import RegisterPage from "../pages/register-page";
+import ConnectPage from "../pages/connect-page";
 import SettingsPage from "../pages/settings-page";
 import formurlencoded from "form-urlencoded";
 import {

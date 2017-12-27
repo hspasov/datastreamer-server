@@ -1,4 +1,4 @@
-const reducer = (state = { text: "", show: false }, action) => {
+const reducer = (state = { text: "", editedText: "", show: false, editMode: false }, action) => {
     switch (action.type) {
         case "SET_TEXT":
             return {
@@ -11,6 +11,22 @@ const reducer = (state = { text: "", show: false }, action) => {
                 ...state,
                 show: false,
                 text: ""
+            };
+        case "EDIT_TEXT":
+            return {
+                ...state,
+                editedText: action.payload
+            };
+        case "OPEN_EDIT_MODE":
+            return {
+                ...state,
+                editMode: true,
+                editedText: state.text
+            };
+        case "CLOSE_EDIT_MODE":
+            return {
+                ...state,
+                editMode: false
             };
     }
     return state;

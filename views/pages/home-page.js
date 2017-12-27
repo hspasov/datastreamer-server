@@ -3,7 +3,7 @@ import FileSaver from "file-saver";
 import { connect } from "react-redux";
 import { Redirect } from "react-router";
 import {
-    Breadcrumb, Button, Container, Divider,
+    Breadcrumb, Button, Container, Divider, Form,
     Header, Icon, Image, Item, Loader, Menu, Message,
     Progress, Reveal, Search, Segment
 } from "semantic-ui-react";
@@ -11,7 +11,7 @@ import RTC from "../../rtc_connection/client";
 import path from "path";
 import uniqid from "uniqid";
 import { findFile } from "../../modules/files";
-import Thumbnail from "../components/thumbnail.component";
+import Thumbnail from "../components/thumbnail";
 import DimmerComponent from "../components/dimmer-component";
 import NavigationComponent from "../components/navigation-component";
 import File from "../components/file";
@@ -34,7 +34,7 @@ import {
     clearPath
 } from "../../store/actions/navigation";
 import { setImage, removeImage } from "../../store/actions/image-viewer";
-import { removeText, setText } from "../../store/actions/text-viewer";
+import { removeText, setText, editText, closeEditMode, openEditMode } from "../../store/actions/text-viewer";
 
 class Home extends React.Component {
     constructor(props) {
@@ -317,7 +317,11 @@ class Home extends React.Component {
             if (this.props.imageViewer.show) {
                 return () => this.props.dispatch(removeImage());
             } else if (this.props.textViewer.show) {
-                return () => this.props.dispatch(removeText());
+                if (this.props.textViewer.editMode) {
+                    return () => this.props.dispatch(closeEditMode());
+                } else {
+                    return () => this.props.dispatch(removeText());
+                }
             } else {
                 return () => this.resolveNavigateBack(1);
             }
@@ -350,14 +354,22 @@ class Home extends React.Component {
             <Image src={this.props.imageViewer.imageURL}/>
         </div>;
 
+        const textViewerNormalMode = <pre>{this.props.textViewer.text}</pre>;
+        const textViewerEditMode = <Form>
+            <Form.TextArea onChange={event => this.props.dispatch(editText(event.target.value))} value={this.props.textViewer.editedText} />
+        </Form>;
+
         const textViewer = <Container>
-            <p>{this.props.textViewer.text}</p>
+            {
+                (this.props.textViewer.editMode) ?
+                    textViewerEditMode : textViewerNormalMode
+            }
         </Container>;
 
         return <div>
             <Menu color={menuColor} inverted fluid size="massive" fixed="top">
                 {logo}
-                <NavigationComponent style={{ overflow: "scroll" }} navigateBack={(uid) => this.resolveNavigate(uid)} />
+                <NavigationComponent navigateBack={(uid) => this.resolveNavigate(uid)} />
                 <Menu.Item fitted position="right">
                     <Reveal animated="fade">
                         <Reveal.Content visible>
@@ -370,6 +382,11 @@ class Home extends React.Component {
                         </Reveal.Content>
                     </Reveal>
                 </Menu.Item>
+                {this.props.textViewer.show && !this.props.textViewer.editMode &&
+                    <Menu.Item onClick={() => this.props.dispatch(openEditMode())}>
+                        <Icon name="edit"/> Edit
+                    </Menu.Item>
+                }
                 <Menu.Item
                     disabled={
                         !this.props.imageViewer.show &&

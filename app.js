@@ -8,7 +8,7 @@ const ddos = new Ddos();
 const config = require("./config/config");
 const clientRoutes = require("./routes/client");
 const providerRoutes = require("./routes/provider");
-const clientAccessRulesRoutes = require("./routes/clientAccessRules");
+const clientAccessRulesRoutes = require("./routes/client-access-rules");
 
 const app = express();
 

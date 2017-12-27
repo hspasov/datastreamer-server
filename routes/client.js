@@ -5,7 +5,7 @@ const router = express.Router();
 const { body, validationResult } = require("express-validator/check");
 const PasswordValidator = require("password-validator");
 const { login, register, connect, changePassword, deleteAccount } = require("../db/postgres/client");
-const { invalidateToken } = require("../db/redis/streamSession");
+const { invalidateToken } = require("../db/redis/peer-session");
 
 const password = new PasswordValidator();
 password.min(8).max(100).digits().lowercase().uppercase();

@@ -1,22 +1,22 @@
 const log = require("../modules/log");
-const { verifyToken } = require("../modules/tokenActions");
-const { findClientSession } = require("../db/redis/clientSession");
+const { verifyToken } = require("../modules/token-actions");
+const { findClientSession } = require("../db/redis/client-session");
 const {
     findProviderSocketIdByProviderName,
     findProviderSocketIdByClientSocketId,
     findClientSessionsByProviderSocketId
-} = require("../db/redis/providerSession");
+} = require("../db/redis/provider-session");
 const {
-    createNewStreamSession,
-    deleteStreamSession
-} = require("../db/redis/streamSession");
+    createPeerSession,
+    deletePeerSession
+} = require("../db/redis/peer-session");
 
 const socketServer = io => {
     log.verbose("Initialising sockets");
     io.on("connection", socket => {
         log.verbose("A new socket connection.");
         if (socket.handshake.query) {
-            createNewStreamSession(
+            createPeerSession(
                 socket.id,
                 socket.handshake.query.token
             ).then(sessionInfo => {
@@ -54,7 +54,7 @@ const socketServer = io => {
         }
 
         socket.on("disconnect", () => {
-            deleteStreamSession(socket.id).then(sessionInfo => {
+            deletePeerSession(socket.id).then(sessionInfo => {
                 log.info(`${socket.id} disconnected`);
                 log.info(`${Object.keys(io.sockets.sockets).length} sockets left.`);
                 if (sessionInfo.type === "provider") {

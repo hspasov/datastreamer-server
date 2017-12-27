@@ -5,7 +5,7 @@ const { body, validationResult } = require("express-validator/check");
 const {
     setClientRule,
     setProviderDefaultRule
-} = require("../db/postgres/clientAccessRules");
+} = require("../db/postgres/client-access-rules");
 
 router.post("/client", [
     body("providerToken").exists(),

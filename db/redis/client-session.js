@@ -1,7 +1,7 @@
 const redisClient = require("redis").createClient({ detect_buffers: true });
 const log = require("../../modules/log");
 
-async function createNewClientSession(socketId, providerName) {
+async function createClientSession(socketId, providerName) {
     try {
         const response = await redisClient.multi()
             .sismember("providers", providerName)
@@ -55,7 +55,7 @@ async function deleteClientSession(socketId) {
 }
 
 module.exports = {
-    createNewClientSession,
+    createClientSession,
     findClientSession,
     deleteClientSession
 };

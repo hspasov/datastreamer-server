@@ -1,6 +1,6 @@
 import React from "react";
 import { Accordion, Button, Header, Icon, Item, Popup, Progress } from "semantic-ui-react";
-import Thumbnail from "../components/thumbnail.component";
+import Thumbnail from "../components/thumbnail";
 
 class File extends React.Component {
     constructor(props) {

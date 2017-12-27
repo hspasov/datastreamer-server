@@ -5,7 +5,7 @@ import { push } from "react-router-redux";
 import { loginClient } from "../../store/actions/client";
 import formurlencoded from "form-urlencoded";
 import { Button, Form, Grid, Header, Message, Segment } from "semantic-ui-react";
-import FormSubmitError from "../components/formSubmitError.component";
+import FormSubmitError from "../components/form-submit-error";
 
 class Register extends React.Component {
     constructor(props) {
