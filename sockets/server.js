@@ -167,6 +167,19 @@ const socketServer = io => {
                 socket.disconnect(true);
             });
         });
+
+        socket.on("close-client-connection", clientSocketId => {
+            findProviderSocketIdByClientSocketId(clientSocketId).then(providerSocketId => {
+                if (providerSocketId && socket.id === providerSocketId) {
+                    if (io.sockets.connected[clientSocketId]) {
+                        io.sockets.connected[clientSocketId].disconnect();
+                    }
+                }
+            }).catch(error => {
+                log.error(error);
+                socket.disconnect(true);
+            });
+        });
     });
 };
 

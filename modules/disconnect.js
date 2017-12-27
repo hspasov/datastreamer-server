@@ -7,7 +7,7 @@ function disconnect() {
     };
     fetch("/disconnect", {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded", },
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: formurlencoded(formData)
     }).then(response => {
         this.props.dispatch(disconnectClient());
