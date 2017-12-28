@@ -40,7 +40,8 @@ class Home extends React.Component {
         super(props);
         this.state = {
             isComponentUpdateAllowed: true,
-            downloadPercent: 0
+            downloadPercent: 0,
+            uploads: []
         };
 
         this.addToDownloads = this.addToDownloads.bind(this);
@@ -53,6 +54,8 @@ class Home extends React.Component {
         this.copyFiles = this.copyFiles.bind(this);
         this.moveFiles = this.moveFiles.bind(this);
         this.deleteFiles = this.deleteFiles.bind(this);
+        this.handleInputChange = this.handleInputChange.bind(this);
+        this.getChunk = this.getChunk.bind(this);
         this.RTC = new RTC({
             connectionToken: this.props.provider.token,
             writeAccess: this.props.provider.writeAccess
@@ -114,6 +117,29 @@ class Home extends React.Component {
         this.props.dispatch(clearSelection());
     }
 
+    *getChunk(file, reader) {
+        let offset = 0;
+        let chunkSize = 32 * 1024;
+        while (file.size > offset) {
+            const slice = file.slice(offset, offset + chunkSize);
+            reader.readAsArrayBuffer(slice);
+            offset += chunkSize;
+            yield offset;
+        }
+    }
+
+    handleInputChange(event) {
+        let file = event.target.files[0];
+        this.setState({
+            uploads: event.target.files
+        });
+        console.log(file);
+        this.RTC.sendMessageWritable("uploadFile", {
+            name: file.name,
+            size: file.size
+        });
+    }
+
     messageHandler (message) {
         switch (message.action) {
             case "sendCurrentDirectory":
@@ -144,6 +170,17 @@ class Home extends React.Component {
                 this.props.dispatch(removeError());
                 this.setState({ isComponentUpdateAllowed: true });
                 break;
+            case "readyForFile":
+                const reader = new FileReader();
+                const chunkGenerator = this.getChunk(this.state.uploads[0], reader);
+                let offset = 0;
+                reader.onload = a => {
+                    this.RTC.sendFileChannel.send(a.target.result);
+                    if (offset.value < this.state.uploads[0].size) {
+                        offset = chunkGenerator.next();
+                    }
+                };
+                offset = chunkGenerator.next();
             case "connectSuccess":
                 console.log("Connect success!");
                 break;
@@ -312,6 +349,7 @@ class Home extends React.Component {
                 copyFiles={() => this.copyFiles()}
                 moveFiles={() => this.moveFiles()}
                 deleteFiles={() => this.deleteFiles()}
+                handleInputChange={this.handleInputChange}
             />
             <Segment padded="very" attached="top" color="grey">
                 <DimmerComponent />

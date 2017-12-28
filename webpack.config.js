@@ -1,7 +1,7 @@
 const path = require("path").posix;
 
 module.exports = {
-    entry: "./views/index.js",
+    entry: ["babel-polyfill", "./views/index.js"],
     output: {
         path: path.resolve(__dirname, "./public/js"),
         filename: "bundle.js",

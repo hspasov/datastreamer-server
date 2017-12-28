@@ -1,7 +1,7 @@
 import path from "path";
 import React from "react";
 import { connect } from "react-redux";
-import { Icon, Menu, Search } from "semantic-ui-react";
+import { Icon, Input, Label, Menu, Search } from "semantic-ui-react";
 import { toggleSidebar } from "../../store/actions/sidebar";
 import { removeImage } from "../../store/actions/image-viewer";
 import { closeEditMode, removeText } from "../../store/actions/text-viewer";
@@ -81,6 +81,12 @@ class HomeMenu extends React.Component {
                 </Menu.Item>
                 </Menu.Menu>
             }
+            <Menu.Item>
+                <label>
+                    <Input type="file" style={{ display: "none" }} onChange={this.props.handleInputChange} />
+                    Add file
+                </label>
+            </Menu.Item>
             <Menu.Item
                 disabled={
                     !this.props.imageViewer.show &&
