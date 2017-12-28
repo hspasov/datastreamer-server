@@ -29,7 +29,7 @@ async function createClientSession(socketId, providerName) {
 
 async function findClientSession(socketId) {
     try {
-        return await redisClient.sismemberAsync("clients", socketId);
+        return redisClient.sismemberAsync("clients", socketId);
         // todo: verbose
     } catch (error) {
         // todo: info

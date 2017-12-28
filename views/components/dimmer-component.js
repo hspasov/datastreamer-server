@@ -1,7 +1,7 @@
 import React from "react";
 import { connect } from "react-redux";
 import { Accordion, Dimmer, Icon, Loader, Message } from "semantic-ui-react";
-import { deactivateDimmer } from "../../store/actions/dimmer";
+import { toggleErrorMore, deactivateDimmer } from "../../store/actions/dimmer";
 
 class DimmerComponent extends React.Component {
     render() {

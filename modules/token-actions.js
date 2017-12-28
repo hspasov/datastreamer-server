@@ -1,4 +1,4 @@
-const fs = require("fs");
+const fs = require("fs-extra");
 const path = require("path").posix;
 const jwt = require("jsonwebtoken");
 const log = require("../modules/log");
@@ -10,10 +10,18 @@ const clientTokenSubject = "client";
 const connectionTokenSubject = "clientConnection";
 const expiresIn = 60 * 60; // 1 hour
 
+async function getPrivateKey() {
+    return fs.readFile(path.join(__dirname, "../config/privkey.pem"));
+}
+
+async function getPublicKey() {
+    return fs.readFile(path.join(__dirname, "../config/pubkey.pem"));
+}
+
 async function signProviderToken(username) {
     try {
-        const privateKey = await fs.readFileAsync(path.join(__dirname, "../config/privkey.pem"));
-        return await jwt.signAsync({ username }, privateKey, {
+        const privateKey = await getPrivateKey();
+        return jwt.signAsync({ username }, privateKey, {
             issuer,
             subject: providerTokenSubject,
             algorithm,
@@ -28,8 +36,8 @@ async function signProviderToken(username) {
 
 async function verifyProviderToken(token) {
     try {
-        const publicKey = await fs.readFileAsync(path.join(__dirname, "../config/pubkey.pem"));
-        return await jwt.verifyAsync(token, publicKey, {
+        const publicKey = await getPublicKey();
+        return jwt.verifyAsync(token, publicKey, {
             issuer,
             subject: providerTokenSubject,
             algorithm
@@ -43,8 +51,8 @@ async function verifyProviderToken(token) {
 
 async function signClientToken(username) {
     try {
-        const privateKey = await fs.readFileAsync(path.join(__dirname, "../config/privkey.pem"));
-        return await jwt.signAsync({ username }, privateKey, {
+        const privateKey = await getPrivateKey();
+        return jwt.signAsync({ username }, privateKey, {
             issuer,
             subject: clientTokenSubject,
             algorithm,
@@ -58,8 +66,8 @@ async function signClientToken(username) {
 
 async function verifyClientToken(token) {
     try {
-        const publicKey = await fs.readFileAsync(path.join(__dirname, "../config/pubkey.pem"));
-        return await jwt.verifyAsync(token, publicKey, {
+        const publicKey = await getPublicKey();
+        return jwt.verifyAsync(token, publicKey, {
             issuer,
             subject: clientTokenSubject,
             algorithm
@@ -72,8 +80,8 @@ async function verifyClientToken(token) {
 
 async function signConnectionToken(client, provider, readable, writable) {
     try {
-        const privateKey = await fs.readFileAsync(path.join(__dirname, "../config/privkey.pem"));
-        return await jwt.signAsync({ client, provider, readable, writable }, privateKey, {
+        const privateKey = await getPrivateKey();
+        return jwt.signAsync({ client, provider, readable, writable }, privateKey, {
             issuer,
             subject: connectionTokenSubject,
             algorithm,
@@ -88,8 +96,8 @@ async function signConnectionToken(client, provider, readable, writable) {
 
 async function verifyConnectionToken(token) {
     try {
-        const publicKey = await fs.readFileAsync(path.join(__dirname, "../config/pubkey.pem"));
-        return await jwt.verifyAsync(token, publicKey, {
+        const publicKey = await getPublicKey();
+        return jwt.verifyAsync(token, publicKey, {
             issuer,
             subject: connectionTokenSubject,
             algorithm
@@ -103,9 +111,9 @@ async function verifyConnectionToken(token) {
 
 async function verifyToken(token) {
     try {
-        const publicKey = await fs.readFileAsync(path.join(__dirname, "../config/pubkey.pem"));
+        const publicKey = await getPublicKey();
         try {
-            return await jwt.verifyAsync(token, publicKey, { issuer, algorithm });
+            return jwt.verifyAsync(token, publicKey, { issuer, algorithm });
         } catch (error) {
             log.verbose(error);
             return null;

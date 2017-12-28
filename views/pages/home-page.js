@@ -15,7 +15,7 @@ import Thumbnail from "../components/thumbnail";
 import DimmerComponent from "../components/dimmer-component";
 import NavigationComponent from "../components/navigation-component";
 import File from "../components/file";
-import { toggleErrorMore, setError, removeError, setLoaderMessage, deactivateDimmer } from "../../store/actions/dimmer";
+import { setError, removeError, setLoaderMessage, deactivateDimmer } from "../../store/actions/dimmer";
 import {
     addFile,
     addDir,
@@ -46,14 +46,21 @@ class Home extends React.Component {
 
         this.addToDownloads = this.addToDownloads.bind(this);
         this.downloadFile = this.downloadFile.bind(this);
-        this.onMessage = this.onMessage.bind(this);
-        this.onChunk = this.onChunk.bind(this);
+        this.messageHandler = this.messageHandler.bind(this);
+        this.chunkHandler = this.chunkHandler.bind(this);
         this.errorHandler = this.errorHandler.bind(this);
         this.resolveNavigate = this.resolveNavigate.bind(this);
         this.resolveNavigateBack = this.resolveNavigateBack.bind(this);
         this.executeNavigate = this.executeNavigate.bind(this);
         this.navigate = this.navigate.bind(this);
-        this.RTC = new RTC(this.props.provider.token, this.onMessage, this.onChunk, this.errorHandler);
+        this.RTC = new RTC({
+            connectionToken: this.props.provider.token,
+            writeAccess: this.props.provider.writeAccess
+        }, {
+            handleMessage: this.messageHandler,
+            handleChunk: this.chunkHandler,
+            errorHandler: this.errorHandler
+        });
     }
 
     componentWillMount() {
@@ -100,27 +107,10 @@ class Home extends React.Component {
     executeNavigate(directoryPath) {
         console.log("execute navigate:", directoryPath);
         this.props.dispatch(clearFiles());
-        try {
-            this.RTC.sendMessageChannel.send(JSON.stringify({
-                action: "openDirectory",
-                selectedDirectory: directoryPath
-            }));
-        } catch (error) {
-            if (!this.RTC.sendMessageChannel) {
-                this.errorHandler({
-                    type: "connection",
-                    message: "Connection to provider failed."
-                });
-            } else {
-                this.errorHandler({
-                    type: "generic",
-                    message: error
-                });
-            }
-        }
+        this.RTC.sendMessage("openDirectory", directoryPath);
     }
 
-    onMessage(message) {
+    messageHandler (message) {
         switch (message.action) {
             case "sendCurrentDirectory":
                 this.setState({
@@ -131,9 +121,7 @@ class Home extends React.Component {
                 break;
             case "sendThumbnailSize":
                 this.RTC.fileSize = message.data;
-                this.RTC.sendMessageChannel.send(JSON.stringify({
-                    action: "readyForThumbnail"
-                }));
+                this.RTC.sendMessage("readyForThumbnail");
                 break;
             case "add":
                 this.props.dispatch(addFile(message.data));
@@ -158,7 +146,7 @@ class Home extends React.Component {
         }
     }
 
-    onChunk(chunk) {
+    chunkHandler(chunk) {
         this.RTC.receiveBuffer.push(chunk);
         this.RTC.receivedBytes += chunk.byteLength;
         console.log(chunk.byteLength);
@@ -214,49 +202,23 @@ class Home extends React.Component {
     }
 
     downloadFile(file, context) {
-        try {
-            switch(context) {
-                case "download":
-                    this.RTC.fileSize = file.size;
-                    this.props.dispatch(prepareDownload(file));
-                    this.RTC.sendMessageChannel.send(JSON.stringify({
-                        action: "downloadFile",
-                        filePath: file.path
-                    }));
-                    break;
-                case "thumbnail":
-                    this.RTC.sendMessageChannel.send(JSON.stringify({
-                        action: "getThumbnail",
-                        filePath: file.path
-                    }));
-                    break;
-                case "image":
-                    this.RTC.fileSize = file.size;
-                    this.RTC.sendMessageChannel.send(JSON.stringify({
-                        action: "getImage",
-                        filePath: file.path
-                    }));
-                    break;
-                case "text":
-                    this.RTC.fileSize = file.size;
-                    this.RTC.sendMessageChannel.send(JSON.stringify({
-                        action: "getText",
-                        filePath: file.path
-                    }));
-                    break;
-            }
-        } catch (error) {
-            if (!this.RTC.sendMessageChannel) {
-                this.errorHandler({
-                    type: "connection",
-                    message: "Connection to provider failed."
-                });
-            } else {
-                this.errorHandler({
-                    type: "generic",
-                    message: error
-                });
-            }
+        switch(context) {
+            case "download":
+                this.RTC.fileSize = file.size;
+                this.props.dispatch(prepareDownload(file));
+                this.RTC.sendMessage("downloadFile", file.path);
+                break;
+            case "thumbnail":
+                this.RTC.sendMessage("getThumbnail", file.path);
+                break;
+            case "image":
+                this.RTC.fileSize = file.size;
+                this.RTC.sendMessage("getImage", file.path);
+                break;
+            case "text":
+                this.RTC.fileSize = file.size;
+                this.RTC.sendMessage("getText", file.path);
+                break;
         }
     }
 

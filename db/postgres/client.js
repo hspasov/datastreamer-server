@@ -5,18 +5,22 @@ const { checkIfInvalidated, invalidateToken } = require("../redis/peer-session")
 
 async function register(username, password) {
     try {
-        const response = await db.query("SELECT create_client($1, $2);", [username, password]);
-        const result = response.rows[0].create_client;
-        if (!result) {
+        const response = await db.query(`SELECT Username
+            FROM create_client($1, $2)
+            AS (Username VARCHAR);`, [username, password]);
+        if (response.rows.length <= 0 || response.rows.length > 1) {
+            throw `Invalid response from create_client: response.rows.length: ${response.rows.length}`;
+        }
+        if (!response.rows[0].username) {
             return { success: false };
         } else {
             log.info("New client successfully created...");
-            log.verbose(`Username: ${result.username}`);
-            const token = await signClientToken(result.username);
+            log.verbose(`Username: ${response.rows[0].username}`);
+            const token = await signClientToken(response.rows[0].username);
             return {
                 success: true,
                 token,
-                username: result.username
+                username: response.rows[0].username
             };
         }
     } catch (error) {
@@ -61,15 +65,21 @@ async function connect(token, username, password) {
             log.verbose(error);
             return { success: false, reason: "token" };
         }
-        const response = await db.query(`SELECT get_access_rules($1, $2, $3);`, [username, decoded.username, password]);
-        if (!response.rows[0].get_access_rules) {
+        const response = await db.query(`SELECT Username, Readable, Writable
+            FROM get_access_rules($1, $2, $3)
+            AS (Username VARCHAR, Readable BOOLEAN, Writable BOOLEAN);`,
+            [username, decoded.username, password]);
+        if (response.rows.length <= 0 || response.rows.length > 1) {
+            throw `Invalid response from get_access_rules: response.rows.length: ${response.rows.length}`;
+        }
+        if (!response.rows[0].username) {
             return { success: false, reason: "credentials" };
-        } else if (!response.rows[0].get_access_rules.readable) {
+        } else if (!response.rows[0].readable) {
             return { success: false, reason: "credentials" };
         }
-        const provider = response.rows[0].get_access_rules.username;
-        const readable = response.rows[0].get_access_rules.readable;
-        const writable = response.rows[0].get_access_rules.writable
+        const provider = response.rows[0].username;
+        const readable = response.rows[0].readable;
+        const writable = response.rows[0].writable
         const connectToken = await signConnectionToken(decoded.username, provider, readable, writable);
         return {
             success: true,

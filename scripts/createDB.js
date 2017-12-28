@@ -62,7 +62,7 @@ pool.query("DROP DATABASE IF EXISTS datastreamer;").then(() => {
     console.log("create client access rules success");
     return pool.query(`CREATE OR REPLACE FUNCTION get_access_rules(provider_username varchar,
         client_username varchar, client_connect_password varchar)
-        RETURNS json AS $$
+        RETURNS RECORD AS $$
         DECLARE
             default_rules RECORD;
             client_rules RECORD;
@@ -77,9 +77,9 @@ pool.query("DROP DATABASE IF EXISTS datastreamer;").then(() => {
                 INNER JOIN Clients ON ClientAccessRules.ClientId = Clients.Id
                 WHERE Providers.Username = provider_username AND Clients.Username = client_username;
                 IF FOUND THEN
-                    RETURN row_to_json(client_rules);
+                    RETURN client_rules;
                 ELSE
-                    RETURN row_to_json(default_rules);
+                    RETURN default_rules;
                 END IF;
             ELSE
                 RETURN NULL;
@@ -89,7 +89,7 @@ pool.query("DROP DATABASE IF EXISTS datastreamer;").then(() => {
     console.log("create function get_access_rules success");
     return pool.query(`CREATE OR REPLACE FUNCTION create_provider(provider_username varchar,
         provider_password varchar, client_connect_password varchar)
-        RETURNS json AS $$
+        RETURNS RECORD AS $$
         DECLARE
             provider RECORD;
         BEGIN
@@ -107,13 +107,13 @@ pool.query("DROP DATABASE IF EXISTS datastreamer;").then(() => {
                     FALSE,
                     FALSE
                 ) RETURNING Username, Readable, Writable INTO provider;
-                RETURN row_to_json(provider);
+                RETURN provider;
             END IF;
         END;$$ LANGUAGE plpgsql;`);
 }).then(() => {
     console.log("create function create_provider success");
     return pool.query(`CREATE OR REPLACE FUNCTION create_client(client_username varchar, client_password varchar)
-        RETURNS json AS $$
+        RETURNS RECORD AS $$
         DECLARE
             client RECORD;
         BEGIN
@@ -125,7 +125,7 @@ pool.query("DROP DATABASE IF EXISTS datastreamer;").then(() => {
                 INSERT INTO Clients (Username, Password)
                 VALUES (client_username, crypt(client_password, gen_salt('bf', 8)))
                 RETURNING Clients.Username INTO client;
-                RETURN row_to_json(client);
+                RETURN client;
             END IF;
         END;$$ LANGUAGE plpgsql;`);
 }).then(() => {

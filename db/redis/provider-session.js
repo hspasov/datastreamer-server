@@ -26,7 +26,7 @@ async function createProviderSession(socketId, providerName) {
 
 async function findProviderSocketIdByProviderName(providerName) {
     try {
-        return await redisClient.getAsync(`${providerName}:socketId`);
+        return redisClient.getAsync(`${providerName}:socketId`);
     } catch (error) {
         log.error("In find provider socketId by provider name:");
         throw error;
@@ -36,7 +36,7 @@ async function findProviderSocketIdByProviderName(providerName) {
 async function findProviderSocketIdByClientSocketId(clientSocketId) {
     try {
         const providerName = await redisClient.getAsync(`${clientSocketId}:providerName`);
-        return await findProviderSocketIdByProviderName(providerName);
+        return findProviderSocketIdByProviderName(providerName);
     } catch (error) {
         log.error("In find provider socketId by client socketId:");
         throw error;
@@ -45,7 +45,7 @@ async function findProviderSocketIdByClientSocketId(clientSocketId) {
 
 async function findProviderNameBySocketId(socketId) {
     try {
-        return await redisClient.getAsync(`${socketId}:providerName`);
+        return redisClient.getAsync(`${socketId}:providerName`);
     } catch (error) {
         log.error("In find provider name by socketId:");
         throw error;
@@ -54,7 +54,7 @@ async function findProviderNameBySocketId(socketId) {
 
 async function findClientSessionsByProviderName(providerName) {
     try {
-        return await redisClient.smembersAsync(`${providerName}:clientSocketIds`);
+        return redisClient.smembersAsync(`${providerName}:clientSocketIds`);
     } catch (error) {
         log.error("In find client session by provider name:");
         throw error;
@@ -64,7 +64,7 @@ async function findClientSessionsByProviderName(providerName) {
 async function findClientSessionsByProviderSocketId(socketId) {
     try {
         const providerName = await findProviderNameBySocketId(socketId);
-        return await findClientSessionsByProviderName(providerName);
+        return findClientSessionsByProviderName(providerName);
     } catch (error) {
         log.error("In find client sessions by provider socketId");
         throw error;

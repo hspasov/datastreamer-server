@@ -1,20 +1,23 @@
 import Socket from "../sockets/client";
 
 class RTC {
-    constructor(token, processMessage, processChunk, errorHandler) {
-        this.socket = new Socket(this, token, errorHandler).socket;
+    constructor(connectData, handlers) {
+        this.socket = new Socket(this, connectData.connectionToken).socket;
         this.servers = null;
         this.peerConnectionConstraint = null;
         this.dataConstraint = null;
 
-        this.token = token;
-        this.processMessage = processMessage;
-        this.processChunk = processChunk;
-        this.errorHandler = errorHandler;
+        this.writeAccess = connectData.writeAccess;
+        this.handleMessage = handlers.handleMessage;
+        this.handleChunk = handlers.handleChunk;
+        this.handleError = handlers.errorHandler;
 
         this.peerConnection = null;
         this.sendMessageChannel = null;
+        this.sendMessageWritableChannel = null;
+        this.sendFileChannel = null;
         this.receiveMessageChannel = null;
+        this.receiveFileChannel = null;
 
         this.receiveBuffer = [];
         this.receivedBytes = 0;
@@ -22,6 +25,8 @@ class RTC {
         this.downloads = [];
 
         this.initializeP2PConnection = this.initializeP2PConnection.bind(this);
+        this.sendMessage = this.sendMessage.bind(this);
+        this.sendMessageWritable = this.sendMessageWritable.bind(this);
         this.deleteP2PConnection = this.deleteP2PConnection.bind(this);
     }
 
@@ -29,7 +34,12 @@ class RTC {
         try {
             console.log("requested P2P connection");
             this.peerConnection = new RTCPeerConnection(this.servers, this.peerConnectionConstraint);
-            this.sendMessageChannel = this.peerConnection.createDataChannel("sendMessageChannel", this.dataConstraint);
+            this.sendMessageChannel = this.peerConnection.createDataChannel("clientMessage", this.dataConstraint);
+            if (this.writeAccess) {
+                this.sendMessageWritableChannel = this.peerConnection.createDataChannel("clientMessageWritable", this.dataConstraint);
+                this.sendFileChannel = this.peerConnection.createDataChannel("clientFile", this.dataConstraint);
+                this.sendFileChannel.binaryType = "arraybuffer";
+            }
 
             this.peerConnection.onicecandidate = event => {
                 if (event.candidate) {
@@ -40,17 +50,17 @@ class RTC {
 
             this.peerConnection.ondatachannel = event => {
                 switch (event.channel.label) {
-                    case "sendMessageChannel":
+                    case "providerMessage":
                         this.receiveMessageChannel = event.channel;
                         this.receiveMessageChannel.onmessage = event => {
-                            this.processMessage(JSON.parse(event.data));
+                            this.handleMessage(JSON.parse(event.data));
                         };
                         break;
-                    case "sendFileChannel":
+                    case "providerFile":
                         this.receiveFileChannel = event.channel;
                         this.receiveFileChannel.binaryType = "arraybuffer";
                         this.receiveFileChannel.onmessage = event => {
-                            this.processChunk(event.data);
+                            this.handleChunk(event.data);
                         };
                         break;
                 }
@@ -63,7 +73,7 @@ class RTC {
                     this.socket.emit("description", JSON.stringify(description));
                 },
                 error => {
-                    this.errorHandler({
+                    this.handleError({
                         type: "generic",
                         message: error
                     });
@@ -72,12 +82,48 @@ class RTC {
             );
         } catch (error) {
             if (!this.peerConnection || !this.sendMessageChannel || !this.receiveFileChannel || !this.receiveMessageChannel) {
-                this.errorHandler({
+                this.handleError({
                     type: "connection",
                     message: "Connection to provider failed."
                 });
             } else {
-                this.errorHandler({
+                this.handleError({
+                    type: "generic",
+                    message: error
+                });
+            }
+        }
+    }
+
+    sendMessage(type, payload) {
+        try {
+            this.sendMessageChannel.send(JSON.stringify({ type, payload }));
+        } catch (error) {
+            if (!this.sendMessageChannel) {
+                this.handleError({
+                    type: "connection",
+                    message: "Connection to provider failed."
+                });
+            } else {
+                this.handleError({
+                    type: "generic",
+                    message: error
+                });
+            }
+        }
+    }
+
+    sendMessageWritable(type, payload) {
+        try {
+            this.sendMessageWritableChannel.send(JSON.stringify({ type, payload }));
+        } catch (error) {
+            if (!this.sendMessageWritableChannel) {
+                this.handleError({
+                    type: "connection",
+                    message: "Connection to provider failed."
+                });
+            } else {
+                this.handleError({
                     type: "generic",
                     message: error
                 });

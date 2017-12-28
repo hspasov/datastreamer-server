@@ -6,10 +6,7 @@ function loginClient(clientData) {
 }
 
 function logoutClient() {
-    return {
-        type: "LOGOUT_CLIENT",
-        payload: null
-    };
+    return { type: "LOGOUT_CLIENT" };
 }
 
 export {

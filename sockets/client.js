@@ -1,13 +1,11 @@
 import io from "socket.io-client";
 
-function Socket(RTC, token, errorHandler) {
+function Socket(RTC, token) {
     this.RTC = RTC;
     this.socket = io(`https://${window.location.host}`, {
         query: `token=${token}`,
         secure: true
     });
-
-    this.errorHandler = errorHandler;
 
     // this.socket.on("connect", () => {
     //     pageAccessor(function () {
@@ -16,35 +14,35 @@ function Socket(RTC, token, errorHandler) {
     // });
 
     this.socket.on("connect_error", error => {
-        this.errorHandler({
+        this.RTC.handleError({
             type: "connection",
             message: "Connection to server failed."
         });
     });
 
     this.socket.on("connect_timeout", timeout => {
-        this.errorHandler({
+        this.RTC.handleError({
             type: "connection",
             message: "Connection to server failed."
         });
     });
 
     this.socket.on("error", error => {
-        this.errorHandler({
+        this.RTC.handleError({
             type: "generic",
             message: error
         });
     });
 
     this.socket.on("disconnect", reason => {
-        this.errorHandler({
+        this.RTC.handleError({
             type: "connection",
             message: "Connection to server failed."
         });
     });
 
     this.socket.on("reconnect_failed", () => {
-        this.errorHandler({
+        this.RTC.handleError({
             type: "connection",
             message: "Connection to server failed."
         });
@@ -57,19 +55,19 @@ function Socket(RTC, token, errorHandler) {
     this.socket.on("connect_reject", error => {
         switch (error) {
             case "TokenExpiredError":
-                this.errorHandler({
+                this.RTC.handleError({
                     type: "sessionExpired",
                     message: "Session has expired. Please authenticate again!"
                 });
                 break;
             case "ProviderNotConnectedError":
-                this.errorHandler({
+                this.RTC.handleError({
                     type: "connection",
                     message: "Connection to provider failed."
                 });
                 break;
             default:
-                this.errorHandler({
+                this.RTC.handleError({
                     type: "generic",
                     message: `Unknown error. Code: ${error}`
                 });
@@ -92,12 +90,12 @@ function Socket(RTC, token, errorHandler) {
             this.RTC.peerConnection.setRemoteDescription(JSON.parse(description));
         } catch (error) {
             if (!this.RTC.peerConnection) {
-                this.errorHandler({
+                this.RTC.handleError({
                     type: "connection",
                     message: "Connection to provider failed."
                 });
             } else {
-                this.errorHandler({
+                this.RTC.handleError({
                     type: "generic",
                     message: error
                 });
@@ -112,7 +110,7 @@ function Socket(RTC, token, errorHandler) {
             this.RTC.peerConnection.addIceCandidate(JSON.parse(candidate)).then(
                 () => { },
                 error => {
-                    this.errorHandler({
+                    this.RTC.handleError({
                         type: "generic",
                         message: error
                     });
@@ -121,12 +119,12 @@ function Socket(RTC, token, errorHandler) {
             );
         } catch (error) {
             if (!this.RTC.peerConnection) {
-                this.errorHandler({
+                this.RTC.handleError({
                     type: "connection",
                     message: "Connection to provider failed."
                 });
             } else {
-                this.errorHandler({
+                this.RTC.handleError({
                     type: "generic",
                     message: error
                 });

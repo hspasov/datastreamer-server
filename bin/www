@@ -4,7 +4,7 @@
  * Module dependencies.
  */
 
-const fs = require("fs");
+const fs = require("fs-extra");
 const jwt = require("jsonwebtoken");
 const path = require("path").posix;
 const app = require("../app");
@@ -35,7 +35,6 @@ redisClient.on("error", error => {
 bluebird.promisifyAll(redis.RedisClient.prototype);
 bluebird.promisifyAll(redis.Multi.prototype);
 bluebird.promisifyAll(jwt);
-bluebird.promisifyAll(fs);
 
 const options = {
     key: fs.readFileSync(path.join(__dirname, "../config/server.key")),

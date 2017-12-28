@@ -5,21 +5,25 @@ const { checkIfInvalidated, invalidateToken } = require("../redis/peer-session")
 
 async function register(username, password, clientConnectPassword) {
     try {
-        const response = await db.query("SELECT create_provider($1, $2, $3);",
+        const response = await db.query(`SELECT Username, Readable, Writable
+            FROM create_provider($1, $2, $3)
+            AS (Username VARCHAR, Readable BOOLEAN, Writable BOOLEAN);`,
             [username, password, clientConnectPassword]);
-        const result = response.rows[0].create_provider;
-        if (!result) {
+        if (response.rows.length <= 0 || response.rows.length > 1) {
+            throw `Invalid response from create_provider: response.rows.length: ${response.rows.length}`;
+        }
+        if (!response.rows[0].username) {
             return { success: false };
         } else {
             log.info("New provider successfully created...");
-            log.info(`username: ${result.username}`);
-            const token = await signProviderToken(result.username);
+            log.info(`username: ${response.rows[0].username}`);
+            const token = await signProviderToken(response.rows[0].username);
             return {
                 success: true,
                 token,
-                username: result.username,
-                readable: result.readable,
-                writable: result.writable
+                username: response.rows[0].username,
+                readable: response.rows[0].readable,
+                writable: response.rows[0].writable
             };
         }
     } catch (error) {
