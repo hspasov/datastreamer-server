@@ -4,8 +4,8 @@ import { connect } from "react-redux";
 import { Redirect } from "react-router";
 import {
     Breadcrumb, Button, Container, Divider, Form,
-    Header, Icon, Image, Item, Loader, Menu, Message,
-    Progress, Reveal, Search, Segment
+    Header, Image, Item, Loader, Menu, Message,
+    Progress, Segment
 } from "semantic-ui-react";
 import RTC from "../../rtc_connection/client";
 import path from "path";
@@ -13,7 +13,7 @@ import uniqid from "uniqid";
 import { findFile } from "../../modules/files";
 import Thumbnail from "../components/thumbnail";
 import DimmerComponent from "../components/dimmer-component";
-import NavigationComponent from "../components/navigation-component";
+import HomeMenuComponent from "../components/home-menu-component";
 import File from "../components/file";
 import { setError, removeError, setLoaderMessage, deactivateDimmer } from "../../store/actions/dimmer";
 import {
@@ -26,15 +26,14 @@ import {
     finishDownload,
     clearFiles,
 } from "../../store/actions/files";
-import { toggleSidebar } from "../../store/actions/sidebar";
 import {
     openDirectory,
-    navigateBack,
     changePath,
     clearPath
 } from "../../store/actions/navigation";
-import { setImage, removeImage } from "../../store/actions/image-viewer";
-import { removeText, setText, editText, closeEditMode, openEditMode } from "../../store/actions/text-viewer";
+import { setImage } from "../../store/actions/image-viewer";
+import { setText, editText } from "../../store/actions/text-viewer";
+import { addToSelected, clearSelection } from "../../store/actions/selection";
 
 class Home extends React.Component {
     constructor(props) {
@@ -49,10 +48,11 @@ class Home extends React.Component {
         this.messageHandler = this.messageHandler.bind(this);
         this.chunkHandler = this.chunkHandler.bind(this);
         this.errorHandler = this.errorHandler.bind(this);
-        this.resolveNavigate = this.resolveNavigate.bind(this);
-        this.resolveNavigateBack = this.resolveNavigateBack.bind(this);
         this.executeNavigate = this.executeNavigate.bind(this);
         this.navigate = this.navigate.bind(this);
+        this.copyFiles = this.copyFiles.bind(this);
+        this.moveFiles = this.moveFiles.bind(this);
+        this.deleteFiles = this.deleteFiles.bind(this);
         this.RTC = new RTC({
             connectionToken: this.props.provider.token,
             writeAccess: this.props.provider.writeAccess
@@ -66,6 +66,7 @@ class Home extends React.Component {
     componentWillMount() {
         this.props.dispatch(clearFiles());
         this.props.dispatch(clearPath());
+        this.props.dispatch(clearSelection());
         this.props.dispatch(setLoaderMessage("Connecting to provider..."));
     }
 
@@ -75,24 +76,6 @@ class Home extends React.Component {
 
     componentWillUnmount() {
         this.RTC.socket.disconnect();
-    }
-
-    resolveNavigate(uid) {
-        const parentDirectories = this.props.navigation.path.length;
-        const elementIndex = this.props.navigation.path.findIndex(e => e.uid === uid);
-        this.resolveNavigateBack(parentDirectories - elementIndex - 1);
-    }
-
-    resolveNavigateBack(steps) {
-        console.log(steps);
-        const parentDirectories = this.props.navigation.path.length;
-        if (parentDirectories === 0) {
-            console.log("You are already in root directory!");
-            return;
-        }
-        this.props.dispatch(navigateBack(parentDirectories - steps));
-        const directoryName = path.join(...this.props.navigation.path.slice(0, parentDirectories - steps).map(dir => dir.name));
-        this.executeNavigate(directoryName);
     }
 
     navigate(directoryPath) {
@@ -108,6 +91,27 @@ class Home extends React.Component {
         console.log("execute navigate:", directoryPath);
         this.props.dispatch(clearFiles());
         this.RTC.sendMessage("openDirectory", directoryPath);
+    }
+
+    copyFiles() {
+        this.props.selection.selected.forEach(file => {
+            this.RTC.sendMessageWritable("copyFile", file.path);
+        });
+        this.props.dispatch(clearSelection());
+    }
+
+    moveFiles() {
+        this.props.selection.selected.forEach(file => {
+            this.RTC.sendMessageWritable("moveFile", file.path);
+        });
+        this.props.dispatch(clearSelection());
+    }
+
+    deleteFiles() {
+        this.props.selection.selected.forEach(file => {
+            this.RTC.sendMessageWritable("deleteFile", file.path);
+        });
+        this.props.dispatch(clearSelection());
     }
 
     messageHandler (message) {
@@ -130,7 +134,7 @@ class Home extends React.Component {
                 this.props.dispatch(addDir(message.data));
                 break;
             case "change":
-                this.props.dispatch(change(message.data));
+                this.props.dispatch(changeFile(message.data));
                 break;
             case "unlink":
             case "unlinkDir":
@@ -263,33 +267,6 @@ class Home extends React.Component {
             return <Redirect to="/connect"></Redirect>;
         }
 
-        const menuColor = (this.props.provider.token && !this.props.dimmer.error.show) ? "green" : "red";
-
-        const logo = <Menu.Item onClick={() => this.props.dispatch(toggleSidebar())} as='a' header active={this.props.sidebar.visible}>
-            <Icon name="list layout" />
-            DataStreamer
-        </Menu.Item>;
-
-        const goBack = <Menu.Item as="a" position="right"
-            onClick={() => this.resolveNavigateBack(1)}>
-            Go back
-        </Menu.Item>
-
-        const resolveBackButtonOnClick = () => {
-            if (this.props.imageViewer.show) {
-                return () => this.props.dispatch(removeImage());
-            } else if (this.props.textViewer.show) {
-                if (this.props.textViewer.editMode) {
-                    return () => this.props.dispatch(closeEditMode());
-                } else {
-                    return () => this.props.dispatch(removeText());
-                }
-            } else {
-                return () => this.resolveNavigateBack(1);
-            }
-        }
-        const disabled = this.props.navigation.path.length === 0;
-
         const files = <Item.Group divided>
             {this.props.files.files.map((file, i) => {
                 return <File
@@ -308,6 +285,7 @@ class Home extends React.Component {
                     downloadStatus={(file.type !== "directory") ? file.download.status : null}
                     addToDownloads={() => this.addToDownloads(file.path, "download")}
                     downloadPercent={(this.RTC.downloads.length > 0 && this.RTC.downloads[0].path === file.path) ? this.state.downloadPercent : 0}
+                    selectFile={() => this.props.dispatch(addToSelected(file))}
                 />
             })}
         </Item.Group>;
@@ -329,36 +307,12 @@ class Home extends React.Component {
         </Container>;
 
         return <div>
-            <Menu color={menuColor} inverted fluid size="massive" fixed="top">
-                {logo}
-                <NavigationComponent navigateBack={(uid) => this.resolveNavigate(uid)} />
-                <Menu.Item fitted position="right">
-                    <Reveal animated="fade">
-                        <Reveal.Content visible>
-                            <p>
-                                Search
-                            </p>
-                        </Reveal.Content>
-                        <Reveal.Content visible={false}>
-                            <Search size="mini" />
-                        </Reveal.Content>
-                    </Reveal>
-                </Menu.Item>
-                {this.props.textViewer.show && !this.props.textViewer.editMode &&
-                    <Menu.Item onClick={() => this.props.dispatch(openEditMode())}>
-                        <Icon name="edit"/> Edit
-                    </Menu.Item>
-                }
-                <Menu.Item
-                    disabled={
-                        !this.props.imageViewer.show &&
-                        !this.props.textViewer.show &&
-                        this.props.navigation.path.length === 0
-                    }
-                    onClick={resolveBackButtonOnClick()}>
-                    Close
-                </Menu.Item>
-            </Menu>
+            <HomeMenuComponent
+                executeNavigate={directoryPath => this.executeNavigate(directoryPath)}
+                copyFiles={() => this.copyFiles()}
+                moveFiles={() => this.moveFiles()}
+                deleteFiles={() => this.deleteFiles()}
+            />
             <Segment padded="very" attached="top" color="grey">
                 <DimmerComponent />
                 {(this.props.imageViewer.show)? imageViewer : (this.props.textViewer.show) ? textViewer : files}
@@ -377,7 +331,8 @@ const HomePage = connect(store => {
         files: store.files,
         imageViewer: store.imageViewer,
         textViewer: store.textViewer,
-        fileProperties: store.fileProperties
+        fileProperties: store.fileProperties,
+        selection: store.selection
     };
 })(Home);
 

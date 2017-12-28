@@ -9,6 +9,7 @@ import dimmer from "./dimmer";
 import files from "./files";
 import imageViewer from "./image-viewer";
 import textViewer from "./text-viewer";
+import selection from "./selection";
 
 export default combineReducers({
     client,
@@ -19,5 +20,6 @@ export default combineReducers({
     files,
     imageViewer,
     textViewer,
+    selection,
     router: routerReducer
 });

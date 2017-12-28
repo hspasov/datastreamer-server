@@ -45,11 +45,13 @@ class File extends React.Component {
                         Download file
                     </Button>
                 }</div>
+                <Button onClick={() => this.props.selectFile()}>Select</Button>
                 {this.state.showMore &&
                     <div>
                         <Item.Meta>Type: {this.props.type}</Item.Meta>
                         <Item.Meta>Mime: {this.props.mime}</Item.Meta>
                         <Item.Meta>Size: {this.props.size}</Item.Meta>
+                        <Item.Meta>Path: {this.props.path}</Item.Meta>
                         <Header>Permissions:
                                 <p>
                                 {this.props.access.read && <Popup
