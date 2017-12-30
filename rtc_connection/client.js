@@ -2,7 +2,7 @@ import Socket from "../sockets/client";
 
 class RTC {
     constructor(connectData, handlers) {
-        this.socket = new Socket(this, connectData.connectionToken).socket;
+        this.socket = new Socket(this, connectData.connectionToken, handlers.pageActionHandler).socket;
         this.servers = null;
         this.peerConnectionConstraint = null;
         this.dataConstraint = null;
@@ -116,6 +116,7 @@ class RTC {
 
     sendMessageWritable(type, payload) {
         try {
+            console.log(payload);
             this.sendMessageWritableChannel.send(JSON.stringify({ type, payload }));
         } catch (error) {
             if (!this.sendMessageWritableChannel) {

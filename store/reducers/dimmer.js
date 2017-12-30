@@ -1,6 +1,7 @@
 const defaultState = {
     show: true,
     loaderMessage: "",
+    dismissible: false,
     error: {
         show: false,
         message: "",
@@ -28,6 +29,7 @@ const reducer = (state = defaultState, action) => {
                 ...state,
                 show: true,
                 loaderMessage: action.payload,
+                dismissible: false,
                 error: {
                     ...state.error,
                     show: false
@@ -43,6 +45,7 @@ const reducer = (state = defaultState, action) => {
             return {
                 ...state,
                 show: true,
+                dismissible: true,
                 error: {
                     ...state.error,
                     show: true,

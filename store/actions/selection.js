@@ -1,18 +1,18 @@
-const addToSelected = file => {
+function addToSelected(file) {
     return {
         type: "ADD_TO_SELECTED",
         payload: file
     };
 };
 
-const removeFromSelected = filePath => {
+function removeFromSelected(filePath) {
     return {
         type: "REMOVE_FROM_SELECTED",
         payload: filePath
     };
 };
 
-const clearSelection = () => {
+function clearSelection() {
     return { type: "CLEAR_SELECTION" };
 };
 

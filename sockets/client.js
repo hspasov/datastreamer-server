@@ -1,17 +1,17 @@
 import io from "socket.io-client";
 
-function Socket(RTC, token) {
+function Socket(RTC, token, pageActionHandler) {
     this.RTC = RTC;
     this.socket = io(`https://${window.location.host}`, {
         query: `token=${token}`,
         secure: true
     });
 
-    // this.socket.on("connect", () => {
-    //     pageAccessor(function () {
-    //         this.statusHandler({ event: "connect" });
-    //     });
-    // });
+    this.socket.on("connect", () => {
+        pageActionHandler(function () {
+            this.props.setLoaderMessage("Connecting to provider...");
+        });
+    });
 
     this.socket.on("connect_error", error => {
         this.RTC.handleError({
@@ -54,7 +54,9 @@ function Socket(RTC, token) {
     });
 
     this.socket.on("provider_connect", () => {
-        console.log("Successfully connected");
+        pageActionHandler(function () {
+            this.props.setLoaderMessage("Provider found. Waiting for RTC request...");
+        });
     });
 
     this.socket.on("connect_reject", error => {
@@ -86,6 +88,9 @@ function Socket(RTC, token) {
     });
 
     this.socket.on("p2p_request", () => {
+        pageActionHandler(function () {
+            this.props.setLoaderMessage("Initializing P2P connection...");
+        });
         this.RTC.initializeP2PConnection();
     });
 
@@ -93,6 +98,9 @@ function Socket(RTC, token) {
         try {
             console.log(description);
             this.RTC.peerConnection.setRemoteDescription(JSON.parse(description));
+            pageActionHandler(function () {
+                this.props.setLoaderMessage("Peer negotiation...");
+            });
         } catch (error) {
             if (!this.RTC.peerConnection) {
                 this.RTC.handleError({

@@ -1,14 +1,7 @@
-function addFile(file) {
+function addFiles(files) {
     return {
-        type: "ADD_FILE",
-        payload: file
-    };
-}
-
-function addDir(dir) {
-    return {
-        type: "ADD_DIR",
-        payload: dir
+        type: "ADD_FILES",
+        payload: files
     };
 }
 
@@ -45,8 +38,7 @@ function clearFiles() {
 }
 
 export {
-    addFile,
-    addDir,
+    addFiles,
     changeFile,
     unlink,
     prepareDownload,

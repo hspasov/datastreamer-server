@@ -1,19 +1,9 @@
 const reducer = (state = { files: [] }, action) => {
     switch (action.type) {
-        case "ADD_FILE":
+        case "ADD_FILES":
             return {
                 ...state,
-                files: state.files.concat([{
-                    ...action.payload,
-                    download: {
-                        status: "notInitialized"
-                    }
-                }])
-            };
-        case "ADD_DIR":
-            return {
-                ...state,
-                files: state.files.concat([action.payload])
+                files: action.payload
             };
         case "CHANGE":
             const file = action.payload;

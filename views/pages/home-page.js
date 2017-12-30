@@ -10,19 +10,23 @@ import HomeMenuComponent from "../components/home-menu-component";
 import File from "../components/file";
 import fileChunkGenerator from "../../modules/file-chunk-generator";
 import chunkArrayToText from "../../modules/chunk-array-to-text";
-import { setError, removeError, setLoaderMessage, deactivateDimmer } from "../../store/actions/dimmer";
 import { openDirectory, changePath, clearPath, navigateBack } from "../../store/actions/navigation";
 import { setImage, removeImage } from "../../store/actions/image-viewer";
 import { setText, editText, removeText } from "../../store/actions/text-viewer";
 import { addToSelected, clearSelection } from "../../store/actions/selection";
 import {
-    addFile,
-    addDir,
+    addFiles,
     changeFile,
     unlink,
     prepareDownload,
     clearFiles,
 } from "../../store/actions/files";
+import {
+    setError,
+    removeLoaderMessage,
+    setLoaderMessage,
+    deactivateDimmer
+} from "../../store/actions/dimmer";
 
 class Home extends React.Component {
     constructor(props) {
@@ -32,11 +36,15 @@ class Home extends React.Component {
             uploads: []
         };
 
+        this.timer = null;
+        this.files = [];
         this.addToDownloads = this.addToDownloads.bind(this);
         this.requestDownload = this.requestDownload.bind(this);
         this.messageHandler = this.messageHandler.bind(this);
         this.chunkHandler = this.chunkHandler.bind(this);
         this.errorHandler = this.errorHandler.bind(this);
+        this.pageActionHandler = this.pageActionHandler.bind(this);
+        this.moveFilesToState = this.moveFilesToState.bind(this);
         this.navigate = this.navigate.bind(this);
         this.resolveNavigateBack = this.resolveNavigateBack.bind(this);
         this.resolveNavigateFront = this.resolveNavigateFront.bind(this);
@@ -52,7 +60,8 @@ class Home extends React.Component {
         }, {
             handleMessage: this.messageHandler,
             handleChunk: this.chunkHandler,
-            handleError: this.errorHandler
+            handleError: this.errorHandler,
+            pageActionHandler: this.pageActionHandler
         });
     }
 
@@ -62,11 +71,24 @@ class Home extends React.Component {
         this.props.clearSelection();
         this.props.removeImage();
         this.props.removeText();
-        this.props.setLoaderMessage("Connecting to provider...");
+        this.props.setLoaderMessage("Connecting to server...");
     }
 
     componentWillUnmount() {
         this.RTC.socket.disconnect();
+    }
+
+    pageActionHandler(action) {
+        action.bind(this)();
+    }
+
+    moveFilesToState() {
+        clearTimeout(this.timer);
+        this.props.setScanningMessage();
+        this.timer = setTimeout(() => {
+            this.props.removeLoaderMessage();
+            console.log("time's up");
+        }, 100);
     }
 
     navigate(directoryPath) {
@@ -135,22 +157,55 @@ class Home extends React.Component {
         this.setState({
             uploads: event.target.files
         });
+        console.log(file)
         this.RTC.sendMessageWritable("uploadFile", {
             name: file.name,
             size: file.size
         });
     }
 
+    // Adding each file to redux is very slow: each object in redux has to be immutable,
+    // therefore to add new file to the array of files, a new array has to be created, and that is a slow operation.
+    // But in order to display the files, they need to be in redux. Solution is function handleAddFile.
+    // How it works: we have the first file pushed into "this.files", a mutable array
+    // and when we call "clearTimeout(this.timer)". "this.timer" is null so
+    // nothing happens, and then the setTimeout with 0 ms delay adds "this.props.addFiles(this.files)"
+    // to the end of the execution stack. "this.props.addFiles(this.files)" quickly comes to execution
+    // but that operation by itself is very slow, and while it's being executed, numerous actions
+    // to put a file in "this.files" are being placed in the execution stack. Each new action puts
+    // new "this.props.addFiles(this.files);" to the end of the execution stack, but it also
+    // removes the previous addition of it via clearTimeout call. In result, incoming files are not being blocked by
+    // "this.props.addFiles(this.files);" and they are being quickly added to "this.files", and
+    // when there are no more new files and no more clearTimeouts, the files are moved from "this.files"
+    // to redux
+    handleAddFile(file) {
+        this.files.push({
+            ...file,
+            download: {
+                status: "notInitialized"
+            }
+        });
+        clearTimeout(this.timer);
+        this.timer = setTimeout(() => {
+            this.props.addFiles(this.files);
+        }, 0);
+    }
+
     messageHandler (message) {
         switch (message.action) {
-            case "sendCurrentDirectory":
+            case "scanFinished":
+                this.props.removeLoaderMessage();
+                break;
+            case "readyForFile":
+                this.sendFiles();
+                break;
+            case "newScan":
                 this.props.clearFiles();
+                this.files = [];
                 break;
             case "add":
-                this.props.addFile(message.data);
-                break;
             case "addDir":
-                this.props.addDir(message.data);
+                this.handleAddFile(message.data);
                 break;
             case "change":
                 this.props.changeFile(message.data);
@@ -158,12 +213,6 @@ class Home extends React.Component {
             case "unlink":
             case "unlinkDir":
                 this.props.unlink(message.data);
-                break;
-            case "doneSending":
-                this.props.removeError();
-                break;
-            case "readyForFile":
-                this.sendFiles();
                 break;
         }
     }
@@ -239,18 +288,7 @@ class Home extends React.Component {
 
     requestDownload() {
         const download = this.RTC.downloads[0];
-        console.log(download);
-        switch (download.context) {
-            case "file":
-                this.RTC.sendMessage("downloadFile", download.path);
-                break;
-            case "image":
-                this.RTC.sendMessage("getImage", download.path);
-                break;
-            case "text":
-                this.RTC.sendMessage("getText", download.path);
-                break;
-        }
+        this.RTC.sendMessage("downloadFile", download.path);
     }
 
     errorHandler(error) {
@@ -280,7 +318,7 @@ class Home extends React.Component {
         }
 
         const files = <Item.Group divided>
-            {this.props.files.files.map((file, i) => {
+            {!this.props.dimmer.show && this.props.files.files.map((file, i) => {
                 return <File
                     key={file.path}
                     fileData={file}
@@ -321,7 +359,10 @@ class Home extends React.Component {
             />
             <Segment padded="very" attached="top" color="grey">
                 <DimmerComponent />
-                {(this.props.imageViewer.show)? imageViewer : (this.props.textViewer.show) ? textViewer : files}
+                {(this.props.imageViewer.show) ? imageViewer :
+                    (this.props.textViewer.show) ? textViewer :
+                        files
+                }
             </Segment>
         </div>;
     }
@@ -346,16 +387,16 @@ const HomePage = connect(store => {
     clearSelection,
     removeImage,
     removeText,
-    removeError,
+    removeLoaderMessage,
     navigateBack,
     openDirectory,
-    addFile,
-    addDir,
+    addFiles,
     changeFile,
     unlink,
     setImage,
     setText,
     setError,
+    setLoaderMessage,
     addToSelected,
     editText
 })(Home);

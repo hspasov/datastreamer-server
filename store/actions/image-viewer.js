@@ -1,11 +1,11 @@
-const setImage = imageURL => {
+function setImage(imageURL) {
     return {
         type: "SET_IMAGE",
         payload: imageURL
     };
-};
+}
 
-const removeImage = () => {
+function removeImage() {
     return { type: "REMOVE_IMAGE" };
 };
 

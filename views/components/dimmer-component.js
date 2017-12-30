@@ -7,7 +7,7 @@ class DimmerComponent extends React.Component {
     render() {
         return <Dimmer
             active={this.props.dimmer.show}
-            onClickOutside={() => this.props.deactivateDimmer()}
+            onClickOutside={() => this.props.dimmer.dismissible && this.props.deactivateDimmer()}
             page>
             <Loader disabled={this.props.dimmer.error.show}>{this.props.dimmer.loaderMessage}</Loader>
             <Message negative hidden={!this.props.dimmer.error.show}>
