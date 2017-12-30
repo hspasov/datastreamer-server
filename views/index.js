@@ -2,19 +2,19 @@ import "babel-polyfill";
 import React from "react";
 import ReactDOM from "react-dom";
 import { Provider } from "react-redux";
-import { ConnectedRouter } from "react-router-redux";
+import { BrowserRouter } from "react-router-dom";
 import createHistory from "history/createBrowserHistory";
 import AppContainer from "./containers/app-container";
 
 import "semantic-ui-css/semantic.min.css";
 
-import { store, history } from "../store/store";
+import { store } from "../store/store";
 
 ReactDOM.render(
     <Provider store={store}>
-        <ConnectedRouter history={history}>
+        <BrowserRouter>
             <AppContainer />
-        </ConnectedRouter>
+        </BrowserRouter>
     </Provider>,
     document.getElementById("content")
 );

@@ -18,6 +18,7 @@ function Socket(RTC, token) {
             type: "connection",
             message: "Connection to server failed."
         });
+        console.log("connect_error");
     });
 
     this.socket.on("connect_timeout", timeout => {
@@ -25,6 +26,7 @@ function Socket(RTC, token) {
             type: "connection",
             message: "Connection to server failed."
         });
+        console.log("connect_timeout");
     });
 
     this.socket.on("error", error => {
@@ -32,6 +34,7 @@ function Socket(RTC, token) {
             type: "generic",
             message: error
         });
+        console.log("error");
     });
 
     this.socket.on("disconnect", reason => {
@@ -39,6 +42,7 @@ function Socket(RTC, token) {
             type: "connection",
             message: "Connection to server failed."
         });
+        console.log("disconnect");
     });
 
     this.socket.on("reconnect_failed", () => {
@@ -46,6 +50,7 @@ function Socket(RTC, token) {
             type: "connection",
             message: "Connection to server failed."
         });
+        console.log("reconnect failed");
     });
 
     this.socket.on("provider_connect", () => {

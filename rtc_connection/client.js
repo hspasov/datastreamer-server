@@ -10,7 +10,7 @@ class RTC {
         this.writeAccess = connectData.writeAccess;
         this.handleMessage = handlers.handleMessage;
         this.handleChunk = handlers.handleChunk;
-        this.handleError = handlers.errorHandler;
+        this.handleError = handlers.handleError;
 
         this.peerConnection = null;
         this.sendMessageChannel = null;
@@ -19,9 +19,9 @@ class RTC {
         this.receiveMessageChannel = null;
         this.receiveFileChannel = null;
 
-        this.receiveBuffer = [];
-        this.receivedBytes = 0;
-        this.fileSize = 0;
+        this.bufferLimit = 15 * 1024 * 1024; // 15 MB, WebRTC fails at 16 MB
+        this.chunkSize = 32 * 1024; // 32 KB
+
         this.downloads = [];
 
         this.initializeP2PConnection = this.initializeP2PConnection.bind(this);
@@ -39,6 +39,7 @@ class RTC {
                 this.sendMessageWritableChannel = this.peerConnection.createDataChannel("clientMessageWritable", this.dataConstraint);
                 this.sendFileChannel = this.peerConnection.createDataChannel("clientFile", this.dataConstraint);
                 this.sendFileChannel.binaryType = "arraybuffer";
+                this.sendFileChannel.bufferedAmountLowThreshold = 1 * 1024 * 1024; // 1 MB
             }
 
             this.peerConnection.onicecandidate = event => {
@@ -133,23 +134,14 @@ class RTC {
 
     deleteP2PConnection(error = null) {
         if (this.peerConnection) {
-            console.log("Connect to provider failed");
-            this.sendMessageChannel && console.log("Closed data channel with label: ", this.sendMessageChannel.label);
-            console.log(this.sendMessageChannel);
             this.sendMessageChannel && this.sendMessageChannel.close();
-            console.log(this.sendMessageChannel);
             this.sendMessageChannel = null;
-            this.receiveMessageChannel && console.log("Closed data channel with label: ", this.receiveMessageChannel.label);
-            console.log(this.receiveMessageChannel);
             this.receiveMessageChannel && this.receiveMessageChannel.close();
-            console.log(this.receiveMessageChannel);
             this.receiveMessageChannel = null;
-            this.receiveFileChannel && console.log("Closed data channel with label: ", this.receiveFileChannel.label);
-            console.log(this.receiveFileChannel);
             this.receiveFileChannel && this.receiveFileChannel.close();
+            this.receiveFileChannel = null;
             this.peerConnection && this.peerConnection.close();
             this.peerConnection = null;
-            console.log("Closed peer connection");
             if (error) {
                 console.log("There was an error", error);
                 this.socket.emit("connect_reset");

@@ -14,8 +14,6 @@ class HomeMenu extends React.Component {
         super(props);
 
         this.resolveBackButtonOnClick = this.resolveBackButtonOnClick.bind(this);
-        this.resolveNavigate = this.resolveNavigate.bind(this);
-        this.resolveNavigateBack = this.resolveNavigateBack.bind(this);
     }
 
     resolveBackButtonOnClick() {
@@ -28,26 +26,8 @@ class HomeMenu extends React.Component {
                 return () => this.props.dispatch(removeText());
             }
         } else {
-            return () => this.resolveNavigateBack(1);
+            return () => this.props.navigateBack(this.props.navigation.path.length - 1);
         }
-    }
-
-    resolveNavigate(uid) {
-        const parentDirectories = this.props.navigation.path.length;
-        const elementIndex = this.props.navigation.path.findIndex(e => e.uid === uid);
-        this.resolveNavigateBack(parentDirectories - elementIndex - 1);
-    }
-
-    resolveNavigateBack(steps) {
-        console.log(steps);
-        const parentDirectories = this.props.navigation.path.length;
-        if (parentDirectories === 0) {
-            console.log("You are already in root directory!");
-            return;
-        }
-        this.props.dispatch(navigateBack(parentDirectories - steps));
-        const directoryName = path.join(...this.props.navigation.path.slice(0, parentDirectories - steps).map(dir => dir.name));
-        this.props.executeNavigate(directoryName);
     }
 
     render() {
@@ -60,7 +40,7 @@ class HomeMenu extends React.Component {
 
         return <Menu color={menuColor} inverted fluid size="massive" fixed="top">
             {logo}
-            <NavigationComponent navigateBack={(uid) => this.resolveNavigate(uid)} />
+            <NavigationComponent navigateBack={index => this.props.navigateBack(index)} />
             <Menu.Item fitted position="right">
                 <Search size="mini" />
             </Menu.Item>

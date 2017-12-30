@@ -23,24 +23,24 @@ class File extends React.Component {
         return <Item>
             <Item.Content>
                 <Thumbnail
-                    mime={this.props.mime}
-                    thumbnail={this.props.imageURL}
+                    mime={this.props.fileData.mime}
+                    thumbnail={this.props.fileData.imageURL}
                     onClick={() => this.props.getThumbnail()} />
-                {(this.props.type === "directory") ?
-                    <Item.Header size="huge" as="a" onClick={() => this.props.openDirectory()}>{this.props.name}</Item.Header> :
-                    <Item.Header size="huge">{this.props.name}</Item.Header>
+                {(this.props.fileData.type === "directory") ?
+                    <Item.Header size="huge" as="a" onClick={() => this.props.openDirectory()}>{this.props.fileData.name}</Item.Header> :
+                    <Item.Header size="huge">{this.props.fileData.name}</Item.Header>
                 }
                 <Button floated="right" onClick={() => this.toggleMore()}><Icon size="huge" name="list layout" /></Button>
-                {(this.props.mime === "image/png" || this.props.mime === "image/jpeg") &&
+                {(this.props.fileData.mime === "image/png" || this.props.fileData.mime === "image/jpeg") &&
                     <Button onClick={() => this.props.openImage()}>View image</Button>
                 }
-                {(/^text\//.test(this.props.mime)) &&
+                {(/^text\//.test(this.props.fileData.mime)) &&
                     <Button onClick={() => this.props.openText()}>View text file</Button>
                 }
-                <div>{this.props.type !== "directory" &&
+                <div>{this.props.fileData.type !== "directory" &&
                     <Button
-                        disabled={this.props.downloadStatus === "initialized"}
-                        loading={this.props.downloadStatus === "initialized"}
+                        disabled={this.props.fileData.downloadStatus === "initialized"}
+                        loading={this.props.fileData.downloadStatus === "initialized"}
                         onClick={() => this.props.addToDownloads()}>
                         Download file
                     </Button>
@@ -48,21 +48,21 @@ class File extends React.Component {
                 <Button onClick={() => this.props.selectFile()}>Select</Button>
                 {this.state.showMore &&
                     <div>
-                        <Item.Meta>Type: {this.props.type}</Item.Meta>
-                        <Item.Meta>Mime: {this.props.mime}</Item.Meta>
-                        <Item.Meta>Size: {this.props.size}</Item.Meta>
-                        <Item.Meta>Path: {this.props.path}</Item.Meta>
+                        <Item.Meta>Type: {this.props.fileData.type}</Item.Meta>
+                        <Item.Meta>Mime: {this.props.fileData.mime}</Item.Meta>
+                        <Item.Meta>Size: {this.props.fileData.size}</Item.Meta>
+                        <Item.Meta>Path: {this.props.fileData.path}</Item.Meta>
                         <Header>Permissions:
                                 <p>
-                                {this.props.access.read && <Popup
+                                {this.props.fileData.access.read && <Popup
                                     trigger={<Icon name="eye" size="big" />}
                                     content="Read access"
                                 />}
-                                {this.props.access.write && <Popup
+                                {this.props.fileData.access.write && <Popup
                                     trigger={<Icon name="write" size="big" />}
                                     content="Write access"
                                 />}
-                                {this.props.access.execute && <Popup
+                                {this.props.fileData.access.execute && <Popup
                                     trigger={<Icon name="external" size="big" />}
                                     content="Execute access"
                                 />}
@@ -70,7 +70,7 @@ class File extends React.Component {
                         </Header>
                     </div>}
                 <div>
-                    {this.props.downloadPercent > 0 && <Progress percent={this.props.downloadPercent} indicating />}
+                    {this.props.fileData.downloadPercent > 0 && <Progress percent={this.props.fileData.downloadPercent} indicating />}
                 </div>
             </Item.Content>
         </Item>

@@ -2,67 +2,58 @@ import React from "react";
 import FileSaver from "file-saver";
 import { connect } from "react-redux";
 import { Redirect } from "react-router";
-import {
-    Breadcrumb, Button, Container, Divider, Form,
-    Header, Image, Item, Loader, Menu, Message,
-    Progress, Segment
-} from "semantic-ui-react";
-import RTC from "../../rtc_connection/client";
+import { Container, Form, Image, Item, Segment } from "semantic-ui-react";
 import path from "path";
-import uniqid from "uniqid";
-import { findFile } from "../../modules/files";
-import Thumbnail from "../components/thumbnail";
+import RTC from "../../rtc_connection/client";
 import DimmerComponent from "../components/dimmer-component";
 import HomeMenuComponent from "../components/home-menu-component";
 import File from "../components/file";
+import fileChunkGenerator from "../../modules/file-chunk-generator";
+import chunkArrayToText from "../../modules/chunk-array-to-text";
 import { setError, removeError, setLoaderMessage, deactivateDimmer } from "../../store/actions/dimmer";
+import { openDirectory, changePath, clearPath, navigateBack } from "../../store/actions/navigation";
+import { setImage, removeImage } from "../../store/actions/image-viewer";
+import { setText, editText, removeText } from "../../store/actions/text-viewer";
+import { addToSelected, clearSelection } from "../../store/actions/selection";
 import {
     addFile,
     addDir,
-    change,
+    changeFile,
     unlink,
     setThumbnail,
     prepareDownload,
-    finishDownload,
     clearFiles,
 } from "../../store/actions/files";
-import {
-    openDirectory,
-    changePath,
-    clearPath
-} from "../../store/actions/navigation";
-import { setImage } from "../../store/actions/image-viewer";
-import { setText, editText } from "../../store/actions/text-viewer";
-import { addToSelected, clearSelection } from "../../store/actions/selection";
 
 class Home extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            isComponentUpdateAllowed: true,
             downloadPercent: 0,
             uploads: []
         };
 
         this.addToDownloads = this.addToDownloads.bind(this);
-        this.downloadFile = this.downloadFile.bind(this);
+        this.requestDownload = this.requestDownload.bind(this);
         this.messageHandler = this.messageHandler.bind(this);
         this.chunkHandler = this.chunkHandler.bind(this);
         this.errorHandler = this.errorHandler.bind(this);
-        this.executeNavigate = this.executeNavigate.bind(this);
         this.navigate = this.navigate.bind(this);
+        this.resolveNavigateBack = this.resolveNavigateBack.bind(this);
+        this.resolveNavigateFront = this.resolveNavigateFront.bind(this);
         this.copyFiles = this.copyFiles.bind(this);
         this.moveFiles = this.moveFiles.bind(this);
         this.deleteFiles = this.deleteFiles.bind(this);
+        this.sendFiles = this.sendFiles.bind(this);
         this.handleInputChange = this.handleInputChange.bind(this);
-        this.getChunk = this.getChunk.bind(this);
+        this.addToDownloads = this.addToDownloads.bind(this);
         this.RTC = new RTC({
             connectionToken: this.props.provider.token,
             writeAccess: this.props.provider.writeAccess
         }, {
             handleMessage: this.messageHandler,
             handleChunk: this.chunkHandler,
-            errorHandler: this.errorHandler
+            handleError: this.errorHandler
         });
     }
 
@@ -70,11 +61,11 @@ class Home extends React.Component {
         this.props.dispatch(clearFiles());
         this.props.dispatch(clearPath());
         this.props.dispatch(clearSelection());
+        this.props.dispatch(removeImage());
+        this.props.dispatch(removeText());
+        this.props.dispatch(clearPath());
+        this.props.dispatch(clearSelection());
         this.props.dispatch(setLoaderMessage("Connecting to provider..."));
-    }
-
-    shouldComponentUpdate(nextProps, nextState) {
-        return nextState.isComponentUpdateAllowed;
     }
 
     componentWillUnmount() {
@@ -82,18 +73,21 @@ class Home extends React.Component {
     }
 
     navigate(directoryPath) {
-        const directoryName = path.basename(directoryPath);
-        this.props.dispatch(openDirectory({
-            name: directoryName,
-            uid: uniqid()
-        }));
-        this.executeNavigate(directoryPath);
-    }
-
-    executeNavigate(directoryPath) {
         console.log("execute navigate:", directoryPath);
         this.props.dispatch(clearFiles());
         this.RTC.sendMessage("openDirectory", directoryPath);
+    }
+
+    resolveNavigateBack(directoryIndex) {
+        this.props.dispatch(navigateBack(directoryIndex));
+        const directoryPath = path.join(...this.props.navigation.path.slice(0, directoryIndex));
+        this.navigate(directoryPath);
+    }
+
+    resolveNavigateFront(directoryPath) {
+        const directoryName = path.basename(directoryPath);
+        this.props.dispatch(openDirectory(directoryName));
+        this.navigate(directoryPath);
     }
 
     copyFiles() {
@@ -117,15 +111,26 @@ class Home extends React.Component {
         this.props.dispatch(clearSelection());
     }
 
-    *getChunk(file, reader) {
-        let offset = 0;
-        let chunkSize = 32 * 1024;
-        while (file.size > offset) {
-            const slice = file.slice(offset, offset + chunkSize);
-            reader.readAsArrayBuffer(slice);
-            offset += chunkSize;
-            yield offset;
-        }
+    sendFiles() {
+        const reader = new FileReader();
+        const chunkGenerator = fileChunkGenerator(this.state.uploads[0], reader, this.RTC.chunkSize);
+        let received = 0;
+        this.RTC.sendFileChannel.onbufferedamountlow = () => {
+            if (received.value < this.state.uploads[0].size) {
+                received = chunkGenerator.next();
+            }
+        };
+        reader.onload = load => {
+            this.RTC.sendFileChannel.send(load.target.result);
+            if (received.value < this.state.uploads[0].size) {
+                if (this.RTC.sendFileChannel.bufferedAmount < this.RTC.bufferLimit) {
+                    received = chunkGenerator.next();
+                }
+            } else {
+                chunkGenerator.return();
+            }
+        };
+        received = chunkGenerator.next();
     }
 
     handleInputChange(event) {
@@ -133,7 +138,6 @@ class Home extends React.Component {
         this.setState({
             uploads: event.target.files
         });
-        console.log(file);
         this.RTC.sendMessageWritable("uploadFile", {
             name: file.name,
             size: file.size
@@ -143,14 +147,10 @@ class Home extends React.Component {
     messageHandler (message) {
         switch (message.action) {
             case "sendCurrentDirectory":
-                this.setState({
-                    isComponentUpdateAllowed: false,
-                    currentDirectory: message.data.path,
-                });
                 this.props.dispatch(clearFiles());
                 break;
             case "sendThumbnailSize":
-                this.RTC.fileSize = message.data;
+                this.addToDownloads({ size: message.data }, "thumbnail");
                 this.RTC.sendMessage("readyForThumbnail");
                 break;
             case "add":
@@ -168,110 +168,101 @@ class Home extends React.Component {
                 break;
             case "doneSending":
                 this.props.dispatch(removeError());
-                this.setState({ isComponentUpdateAllowed: true });
                 break;
             case "readyForFile":
-                const reader = new FileReader();
-                const chunkGenerator = this.getChunk(this.state.uploads[0], reader);
-                let offset = 0;
-                reader.onload = a => {
-                    this.RTC.sendFileChannel.send(a.target.result);
-                    if (offset.value < this.state.uploads[0].size) {
-                        offset = chunkGenerator.next();
-                    }
-                };
-                offset = chunkGenerator.next();
-            case "connectSuccess":
-                console.log("Connect success!");
+                this.sendFiles();
                 break;
         }
     }
 
     chunkHandler(chunk) {
-        this.RTC.receiveBuffer.push(chunk);
-        this.RTC.receivedBytes += chunk.byteLength;
-        console.log(chunk.byteLength);
-        const percent = (this.RTC.receivedBytes / this.RTC.fileSize) * 100;
-        if (percent - this.state.downloadPercent > 10) {
-            this.setState({
-                downloadPercent: percent
-            });
+        try {
+            this.RTC.downloads[0].chunkArray.push(chunk);
+            this.RTC.downloads[0].received += chunk.byteLength;
+            console.log(chunk.byteLength);
+            const percent = (this.RTC.downloads[0].received / this.RTC.downloads[0].size) * 100;
+            // if (percent - this.state.downloadPercent > 10) {
+            //     this.setState({
+            //         downloadPercent: percent
+            //     });
+            // }
+            if (this.RTC.downloads[0].received >= this.RTC.downloads[0].size) {
+                this.finishDownload();
+            } else {
+                console.log(percent);
+            }
+        } catch (error) {
+            console.log(error);
+            this.RTC.downloads.shift();
+            if (this.RTC.downloads.length > 0) {
+                this.requestDownload();
+            }
         }
-        if (this.RTC.receivedBytes >= this.RTC.fileSize) {
+    }
+
+    finishDownload() {
+        const downloaded = this.RTC.downloads.shift();
+        try {
             console.log("end of file");
             this.setState({
                 downloadPercent: 0
             });
-            const file = findFile(this.props.files.files, this.RTC.downloads[0].path);
-            const received = new Blob(this.RTC.receiveBuffer, { type: file.mime });
-            switch(this.RTC.downloads[0].context) {
-                case "download":
-                    this.props.dispatch(finishDownload(file));
-                    FileSaver.saveAs(received, path.basename(file.path));
+            const received = new Blob(downloaded.chunkArray, { type: downloaded.mime });
+            switch (downloaded.context) {
+                case "file":
+                    FileSaver.saveAs(received, path.basename(downloaded.path));
                     break;
                 case "thumbnail":
-                    this.props.dispatch(setThumbnail(file.path, window.URL.createObjectURL(received)));
+                    this.props.dispatch(setThumbnail(downloaded.path, URL.createObjectURL(received)));
                     break;
                 case "image":
-                    this.props.dispatch(setImage(window.URL.createObjectURL(received)));
+                    this.props.dispatch(setImage(URL.createObjectURL(received)));
                     break;
                 case "text":
-                    let result = "";
-                    const decoder = new TextDecoder();
-                    for (let i = 0; i < this.RTC.receiveBuffer.length; i++) {
-                        result += decoder.decode(this.RTC.receiveBuffer[i]);
-                    }
-                    this.props.dispatch(setText(result));
+                    this.props.dispatch(setText(chunkArrayToText(downloaded.chunkArray)));
                     break;
             }
-            this.RTC.receiveBuffer = [];
-            this.RTC.receivedBytes = 0;
-            this.RTC.fileSize = 0;
-            this.RTC.downloads.shift();
-            if (this.RTC.downloads.length >= 1) {
-                const download = this.RTC.downloads[0];
-                const file = findFile(this.props.files.files, download.path);
-                console.log(`files to download: ${this.RTC.downloads.length}`);
-                console.log(file);
-                this.downloadFile(file, download.context);
-            } else {
-                console.log(`cant download more, length is ${this.RTC.downloads.length}`);
+            if (this.RTC.downloads.length > 0) {
+                this.requestDownload();
             }
-        } else {
-
+        } catch (error) {
+            console.log(error);
+            if (this.RTC.downloads.length > 0) {
+                this.requestDownload();
+            }
         }
     }
 
-    downloadFile(file, context) {
-        switch(context) {
-            case "download":
-                this.RTC.fileSize = file.size;
-                this.props.dispatch(prepareDownload(file));
-                this.RTC.sendMessage("downloadFile", file.path);
+    addToDownloads(file, context) {
+        console.log("added to downloads");
+        this.RTC.downloads.push({
+            ...file,
+            context,
+            chunkArray: [],
+            received: 0
+        });
+        if (this.RTC.downloads.length === 1) {
+            console.log("requested downloada");
+            this.requestDownload();
+        }
+    }
+
+    requestDownload() {
+        const download = this.RTC.downloads[0];
+        console.log(download);
+        switch (download.context) {
+            case "file":
+                this.RTC.sendMessage("downloadFile", download.path);
                 break;
             case "thumbnail":
-                this.RTC.sendMessage("getThumbnail", file.path);
+                this.RTC.sendMessage("getThumbnail", download.path);
                 break;
             case "image":
-                this.RTC.fileSize = file.size;
-                this.RTC.sendMessage("getImage", file.path);
+                this.RTC.sendMessage("getImage", download.path);
                 break;
             case "text":
-                this.RTC.fileSize = file.size;
-                this.RTC.sendMessage("getText", file.path);
+                this.RTC.sendMessage("getText", download.path);
                 break;
-        }
-    }
-
-    addToDownloads(filePath, context) {
-        this.RTC.downloads.push({ path: filePath, context });
-        console.log(`added to downlads, length is ${this.RTC.downloads.length}`);
-        if (this.RTC.downloads.length === 1) {
-            const download = this.RTC.downloads[0];
-            console.log(download);
-            const file = findFile(this.props.files.files, download.path);
-            console.log(file);
-            this.downloadFile(file, context);
         }
     }
 
@@ -290,9 +281,6 @@ class Home extends React.Component {
                 this.props.dispatch(setError("Session expired.", error.message));
                 break;
         }
-        this.setState({
-            isComponentUpdateAllowed: true
-        });
         console.log(error);
     }
 
@@ -308,20 +296,14 @@ class Home extends React.Component {
             {this.props.files.files.map((file, i) => {
                 return <File
                     key={file.path}
-                    name={file.name}
-                    type={file.type}
-                    size={file.size}
-                    access={file.access}
-                    path={file.path}
-                    mime={file.mime}
-                    imageURL={file.imageURL}
-                    openDirectory={() => this.navigate(file.path)}
-                    openImage={() => this.addToDownloads(file.path, "image")}
-                    openText={() => this.addToDownloads(file.path, "text")}
-                    getThumbnail={() => this.addToDownloads(file.path, "thumbnail")}
+                    fileData={file}
+                    openDirectory={() => this.resolveNavigateFront(file.path)}
+                    openImage={() => this.addToDownloads(file, "image")}
+                    openText={() => this.addToDownloads(file, "text")}
+                    getThumbnail={() => this.addToDownloads(file, "thumbnail")}
                     downloadStatus={(file.type !== "directory") ? file.download.status : null}
-                    addToDownloads={() => this.addToDownloads(file.path, "download")}
-                    downloadPercent={(this.RTC.downloads.length > 0 && this.RTC.downloads[0].path === file.path) ? this.state.downloadPercent : 0}
+                    addToDownloads={() => this.addToDownloads(file, "file")}
+                    downloadPercent={/*(this.props.download.current && this.props.download.current.path === file.path) ? this.state.downloadPercent :*/ 0}
                     selectFile={() => this.props.dispatch(addToSelected(file))}
                 />
             })}
@@ -345,7 +327,7 @@ class Home extends React.Component {
 
         return <div>
             <HomeMenuComponent
-                executeNavigate={directoryPath => this.executeNavigate(directoryPath)}
+                navigateBack={index => this.resolveNavigateBack(index)}
                 copyFiles={() => this.copyFiles()}
                 moveFiles={() => this.moveFiles()}
                 deleteFiles={() => this.deleteFiles()}
@@ -364,13 +346,13 @@ const HomePage = connect(store => {
         client: store.client,
         provider: store.provider,
         dimmer: store.dimmer,
-        sidebar: store.sidebar,
         navigation: store.navigation,
         files: store.files,
         imageViewer: store.imageViewer,
         textViewer: store.textViewer,
         fileProperties: store.fileProperties,
-        selection: store.selection
+        selection: store.selection,
+        download: store.download
     };
 })(Home);
 

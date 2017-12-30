@@ -21,8 +21,8 @@ const reducer = (state = { files: [] }, action) => {
             return {
                 ...state,
                 files: (file.type === "directory") ?
-                    state.files.concat([file]) :
-                    state.files.concat([{
+                    filesWithoutOld.concat([file]) :
+                    filesWithoutOld.concat([{
                         ...file,
                         download: {
                             status: "notInitialized"

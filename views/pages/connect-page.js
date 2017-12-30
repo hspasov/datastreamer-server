@@ -1,7 +1,7 @@
 import React from "react";
 import { Redirect } from "react-router";
 import { connect } from "react-redux";
-import { push } from "react-router-redux";
+import { withRouter } from "react-router-dom";
 import { connectClient } from "../../store/actions/provider";
 import disconnect from "../../modules/disconnect";
 import formurlencoded from "form-urlencoded";
@@ -70,11 +70,7 @@ class Connect extends React.Component {
             }
         }).then(json => {
             this.props.dispatch(connectClient(json));
-            // One dispatch SHOULD work, but
-            // it only changes the link in navbar
-            // Component rendering happens only on second dispatch
-            this.props.dispatch(push("/home"));
-            this.props.dispatch(push("/home"));
+            this.props.history.push("/home");
         }).catch(errorCode => {
             let formErrors;
             switch (errorCode) {
@@ -135,12 +131,12 @@ class Connect extends React.Component {
     }
 }
 
-const ConnectPage = connect(store => {
+const ConnectPage = withRouter(connect(store => {
     return {
         client: store.client,
         provider: store.provider,
         router: store.router
     };
-})(Connect);
+})(Connect));
 
 export default ConnectPage;

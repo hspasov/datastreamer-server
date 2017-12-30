@@ -20,6 +20,5 @@ export default combineReducers({
     files,
     imageViewer,
     textViewer,
-    selection,
-    router: routerReducer
+    selection
 });

@@ -1,7 +1,6 @@
 import React from "react";
-import { Link, Redirect } from "react-router-dom";
+import { Link, Redirect, withRouter } from "react-router-dom";
 import { connect } from "react-redux";
-import { push } from "react-router-redux";
 import { loginClient } from "../../store/actions/client";
 import formurlencoded from "form-urlencoded";
 import { Button, Form, Grid, Header, Message, Segment } from "semantic-ui-react";
@@ -80,11 +79,7 @@ class Register extends React.Component {
             }
         }).then(json => {
             this.props.dispatch(loginClient(json));
-            // One dispatch SHOULD work, but
-            // it only changes the link in navbar
-            // Component rendering happens only on second dispatch
-            this.props.dispatch(push("/connect"));
-            this.props.dispatch(push("/connect"));
+            this.props.history.push("/connect");
         }).catch(errorCode => {
             let formErrors;
             switch (errorCode) {
@@ -154,11 +149,11 @@ class Register extends React.Component {
     }
 }
 
-const RegisterPage = connect(store => {
+const RegisterPage = withRouter(connect(store => {
     return {
         client: store.client,
         router: store.router
     };
-})(Register);
+})(Register));
 
 export default RegisterPage;

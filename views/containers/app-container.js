@@ -1,8 +1,7 @@
 import React from "react";
 import { Breadcrumb, Divider, Grid, Header, Icon, Image, Menu, Segment, Sidebar } from "semantic-ui-react";
-import { Link, Route, Switch } from "react-router-dom";
+import { Link, Route, Switch, withRouter } from "react-router-dom";
 import { connect } from "react-redux";
-import { push } from "react-router-redux";
 import { logoutClient } from "../../store/actions/client";
 import { disconnectClient } from "../../store/actions/provider";
 import { toggleSidebar } from "../../store/actions/sidebar";
@@ -110,7 +109,7 @@ class App extends React.Component {
 
         return <div style={this.props.sidebar.visible ? { height: "100%", marginLeft: "250px" } : { height: "100%" }}>
             {this.props.sidebar.visible && sideMenu}
-            {this.props.router.location.pathname !== "/home" && topMenu}
+            <Route render={({ location }) => { return location.pathname === "/home" ? <div></div> : topMenu }} />
             <Switch>
                 <Route path="/home" component={HomePage} />
                 <Route path="/login" component={LoginPage} />
@@ -122,7 +121,7 @@ class App extends React.Component {
     }
 }
 
-const AppContainer = connect(store => {
+const AppContainer = withRouter(connect(store => {
     return {
         client: store.client,
         provider: store.provider,
@@ -131,6 +130,6 @@ const AppContainer = connect(store => {
         dimmer: store.dimmer,
         router: store.router
     };
-})(App);
+})(App));
 
 export default AppContainer;
