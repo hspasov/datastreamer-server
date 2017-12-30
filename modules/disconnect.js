@@ -1,4 +1,3 @@
-import { disconnectClient } from "../store/actions/provider";
 import formurlencoded from "form-urlencoded";
 
 function disconnect() {
@@ -10,7 +9,7 @@ function disconnect() {
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: formurlencoded(formData)
     }).then(response => {
-        this.props.dispatch(disconnectClient());
+        this.props.disconnectClient();
     }).catch(error => {
         console.log(error);
     });

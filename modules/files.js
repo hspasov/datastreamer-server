@@ -25,16 +25,6 @@ const findFile = (files, path) => {
     return files.filter(file => file.path === path)[0];
 }
 
-const setThumbnail = (files, path, thumbnail) => {
-    return files.map(f =>
-        f.path === path ?
-            {
-                ...f,
-                thumbnail
-            } : f
-    );
-}
-
 const prepareDownload = (files, file) => {
     return files.map(f =>
         f.path === file.path ?
@@ -67,6 +57,5 @@ export {
     unlink,
     prepareDownload,
     finishDownload,
-    setThumbnail,
     findFile
 };

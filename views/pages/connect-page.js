@@ -69,7 +69,7 @@ class Connect extends React.Component {
                 throw response.status;
             }
         }).then(json => {
-            this.props.dispatch(connectClient(json));
+            this.props.connectClient(json);
             this.props.history.push("/home");
         }).catch(errorCode => {
             let formErrors;
@@ -134,9 +134,8 @@ class Connect extends React.Component {
 const ConnectPage = withRouter(connect(store => {
     return {
         client: store.client,
-        provider: store.provider,
-        router: store.router
+        provider: store.provider
     };
-})(Connect));
+}, { connectClient })(Connect));
 
 export default ConnectPage;

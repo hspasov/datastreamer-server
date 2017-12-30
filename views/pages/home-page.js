@@ -20,7 +20,6 @@ import {
     addDir,
     changeFile,
     unlink,
-    setThumbnail,
     prepareDownload,
     clearFiles,
 } from "../../store/actions/files";
@@ -58,14 +57,12 @@ class Home extends React.Component {
     }
 
     componentWillMount() {
-        this.props.dispatch(clearFiles());
-        this.props.dispatch(clearPath());
-        this.props.dispatch(clearSelection());
-        this.props.dispatch(removeImage());
-        this.props.dispatch(removeText());
-        this.props.dispatch(clearPath());
-        this.props.dispatch(clearSelection());
-        this.props.dispatch(setLoaderMessage("Connecting to provider..."));
+        this.props.clearFiles();
+        this.props.clearPath();
+        this.props.clearSelection();
+        this.props.removeImage();
+        this.props.removeText();
+        this.props.setLoaderMessage("Connecting to provider...");
     }
 
     componentWillUnmount() {
@@ -74,19 +71,19 @@ class Home extends React.Component {
 
     navigate(directoryPath) {
         console.log("execute navigate:", directoryPath);
-        this.props.dispatch(clearFiles());
+        this.props.clearFiles();
         this.RTC.sendMessage("openDirectory", directoryPath);
     }
 
     resolveNavigateBack(directoryIndex) {
-        this.props.dispatch(navigateBack(directoryIndex));
+        this.props.navigateBack(directoryIndex);
         const directoryPath = path.join(...this.props.navigation.path.slice(0, directoryIndex));
         this.navigate(directoryPath);
     }
 
     resolveNavigateFront(directoryPath) {
         const directoryName = path.basename(directoryPath);
-        this.props.dispatch(openDirectory(directoryName));
+        this.props.openDirectory(directoryName);
         this.navigate(directoryPath);
     }
 
@@ -94,21 +91,21 @@ class Home extends React.Component {
         this.props.selection.selected.forEach(file => {
             this.RTC.sendMessageWritable("copyFile", file.path);
         });
-        this.props.dispatch(clearSelection());
+        this.props.clearSelection();
     }
 
     moveFiles() {
         this.props.selection.selected.forEach(file => {
             this.RTC.sendMessageWritable("moveFile", file.path);
         });
-        this.props.dispatch(clearSelection());
+        this.props.clearSelection();
     }
 
     deleteFiles() {
         this.props.selection.selected.forEach(file => {
             this.RTC.sendMessageWritable("deleteFile", file.path);
         });
-        this.props.dispatch(clearSelection());
+        this.props.clearSelection();
     }
 
     sendFiles() {
@@ -147,27 +144,23 @@ class Home extends React.Component {
     messageHandler (message) {
         switch (message.action) {
             case "sendCurrentDirectory":
-                this.props.dispatch(clearFiles());
-                break;
-            case "sendThumbnailSize":
-                this.addToDownloads({ size: message.data }, "thumbnail");
-                this.RTC.sendMessage("readyForThumbnail");
+                this.props.clearFiles();
                 break;
             case "add":
-                this.props.dispatch(addFile(message.data));
+                this.props.addFile(message.data);
                 break;
             case "addDir":
-                this.props.dispatch(addDir(message.data));
+                this.props.addDir(message.data);
                 break;
             case "change":
-                this.props.dispatch(changeFile(message.data));
+                this.props.changeFile(message.data);
                 break;
             case "unlink":
             case "unlinkDir":
-                this.props.dispatch(unlink(message.data));
+                this.props.unlink(message.data);
                 break;
             case "doneSending":
-                this.props.dispatch(removeError());
+                this.props.removeError();
                 break;
             case "readyForFile":
                 this.sendFiles();
@@ -212,14 +205,11 @@ class Home extends React.Component {
                 case "file":
                     FileSaver.saveAs(received, path.basename(downloaded.path));
                     break;
-                case "thumbnail":
-                    this.props.dispatch(setThumbnail(downloaded.path, URL.createObjectURL(received)));
-                    break;
                 case "image":
-                    this.props.dispatch(setImage(URL.createObjectURL(received)));
+                    this.props.setImage(URL.createObjectURL(received));
                     break;
                 case "text":
-                    this.props.dispatch(setText(chunkArrayToText(downloaded.chunkArray)));
+                    this.props.setText(chunkArrayToText(downloaded.chunkArray));
                     break;
             }
             if (this.RTC.downloads.length > 0) {
@@ -254,9 +244,6 @@ class Home extends React.Component {
             case "file":
                 this.RTC.sendMessage("downloadFile", download.path);
                 break;
-            case "thumbnail":
-                this.RTC.sendMessage("getThumbnail", download.path);
-                break;
             case "image":
                 this.RTC.sendMessage("getImage", download.path);
                 break;
@@ -269,16 +256,16 @@ class Home extends React.Component {
     errorHandler(error) {
         switch (error.type) {
             case "generic":
-                this.props.dispatch(setError("Something went wrong.", error.message));
+                this.props.setError("Something went wrong.", error.message);
                 break;
             case "connection":
-                this.props.dispatch(setError("Connection failure.", error.message));
+                this.props.setError("Connection failure.", error.message);
                 break;
             case "invalidToken":
-                this.props.dispatch(setError("Authentication failed.", error.message));
+                this.props.setError("Authentication failed.", error.message);
                 break;
             case "sessionExpired":
-                this.props.dispatch(setError("Session expired.", error.message));
+                this.props.setError("Session expired.", error.message);
                 break;
         }
         console.log(error);
@@ -300,11 +287,10 @@ class Home extends React.Component {
                     openDirectory={() => this.resolveNavigateFront(file.path)}
                     openImage={() => this.addToDownloads(file, "image")}
                     openText={() => this.addToDownloads(file, "text")}
-                    getThumbnail={() => this.addToDownloads(file, "thumbnail")}
                     downloadStatus={(file.type !== "directory") ? file.download.status : null}
                     addToDownloads={() => this.addToDownloads(file, "file")}
                     downloadPercent={/*(this.props.download.current && this.props.download.current.path === file.path) ? this.state.downloadPercent :*/ 0}
-                    selectFile={() => this.props.dispatch(addToSelected(file))}
+                    selectFile={() => this.props.addToSelected(file)}
                 />
             })}
         </Item.Group>;
@@ -315,7 +301,7 @@ class Home extends React.Component {
 
         const textViewerNormalMode = <pre>{this.props.textViewer.text}</pre>;
         const textViewerEditMode = <Form>
-            <Form.TextArea onChange={event => this.props.dispatch(editText(event.target.value))} value={this.props.textViewer.editedText} />
+            <Form.TextArea onChange={event => this.props.editText(event.target.value)} value={this.props.textViewer.editedText} />
         </Form>;
 
         const textViewer = <Container>
@@ -354,6 +340,24 @@ const HomePage = connect(store => {
         selection: store.selection,
         download: store.download
     };
+}, {
+    clearPath,
+    clearFiles,
+    clearSelection,
+    removeImage,
+    removeText,
+    removeError,
+    navigateBack,
+    openDirectory,
+    addFile,
+    addDir,
+    changeFile,
+    unlink,
+    setImage,
+    setText,
+    setError,
+    addToSelected,
+    editText
 })(Home);
 
 export default HomePage;

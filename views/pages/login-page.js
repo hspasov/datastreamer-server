@@ -64,7 +64,7 @@ class Login extends React.Component {
                 throw response.status;
             }
         }).then(json => {
-            this.props.dispatch(loginClient(json));
+            this.props.loginClient(json);
             this.props.history.push("/connect");
         }).catch(errorCode => {
             console.log(errorCode);
@@ -124,11 +124,6 @@ class Login extends React.Component {
     }
 }
 
-const LoginPage = withRouter(connect(store => {
-    return {
-        client: store.client,
-        router: store.router
-    };
-})(Login));
+const LoginPage = withRouter(connect(null, { loginClient })(Login));
 
 export default LoginPage;

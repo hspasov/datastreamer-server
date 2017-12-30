@@ -26,16 +26,6 @@ function unlink(file) {
     };
 }
 
-function setThumbnail(filePath, imageURL) {
-    return {
-        type: "SET_THUMBNAIL",
-        payload: {
-            path: filePath,
-            imageURL
-        }
-    };
-}
-
 function prepareDownload(file) {
     return {
         type: "PREPARE_DOWNLOAD",
@@ -59,7 +49,6 @@ export {
     addDir,
     changeFile,
     unlink,
-    setThumbnail,
     prepareDownload,
     finishDownload,
     clearFiles

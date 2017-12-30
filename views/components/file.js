@@ -22,10 +22,7 @@ class File extends React.Component {
     render() {
         return <Item>
             <Item.Content>
-                <Thumbnail
-                    mime={this.props.fileData.mime}
-                    thumbnail={this.props.fileData.imageURL}
-                    onClick={() => this.props.getThumbnail()} />
+                <Thumbnail mime={this.props.fileData.mime} />
                 {(this.props.fileData.type === "directory") ?
                     <Item.Header size="huge" as="a" onClick={() => this.props.openDirectory()}>{this.props.fileData.name}</Item.Header> :
                     <Item.Header size="huge">{this.props.fileData.name}</Item.Header>

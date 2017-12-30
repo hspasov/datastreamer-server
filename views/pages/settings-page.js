@@ -67,10 +67,10 @@ class Settings extends React.Component {
                 throw response.status;
             }
         }).then(json => {
-            this.props.dispatch(loginClient({
+            this.props.loginClient({
                 token: json.token,
                 username: this.props.client.username
-            }));
+            });
         }).catch(errorCode => {
             let formErrors;
             switch (errorCode) {
@@ -117,8 +117,8 @@ class Settings extends React.Component {
             body: formurlencoded(formData)
         }).then(response => {
             if (response.status === 200) {
-                this.props.dispatch(disconnectClient());
-                this.props.dispatch(logoutClient());
+                this.props.disconnectClient();
+                this.props.logoutClient();
             } else {
                 throw response.status;
             }
@@ -268,9 +268,8 @@ class Settings extends React.Component {
 
 const SettingsPage = connect(store => {
     return {
-        client: store.client,
-        router: store.router
+        client: store.client
     };
-})(Settings);
+}, { loginClient, disconnectClient, logoutClient })(Settings);
 
 export default SettingsPage;

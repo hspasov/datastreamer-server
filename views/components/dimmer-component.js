@@ -7,13 +7,13 @@ class DimmerComponent extends React.Component {
     render() {
         return <Dimmer
             active={this.props.dimmer.show}
-            onClickOutside={() => this.props.dispatch(deactivateDimmer())}
+            onClickOutside={() => this.props.deactivateDimmer()}
             page>
             <Loader disabled={this.props.dimmer.error.show}>{this.props.dimmer.loaderMessage}</Loader>
             <Message negative hidden={!this.props.dimmer.error.show}>
                 <Message.Header>{this.props.dimmer.error.message}</Message.Header>
                 <Accordion>
-                    <Accordion.Title onClick={() => this.props.dispatch(toggleErrorMore())}>
+                    <Accordion.Title onClick={() => this.props.toggleErrorMore()}>
                         <Icon name="dropdown" />
                         More information
                     </Accordion.Title>
@@ -30,4 +30,7 @@ export default connect(store => {
     return {
         dimmer: store.dimmer
     };
+}, {
+    deactivateDimmer,
+    toggleErrorMore
 })(DimmerComponent);

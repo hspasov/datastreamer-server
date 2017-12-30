@@ -34,17 +34,6 @@ const reducer = (state = { files: [] }, action) => {
                 ...state,
                 files: state.files.filter(f => f.path !== action.payload.path)
             };
-        case "SET_THUMBNAIL":
-            return {
-                ...state,
-                files: state.files.map(f =>
-                    f.path === action.payload.path ?
-                        {
-                            ...f,
-                            imageURL: action.payload.imageURL
-                        } : f
-                )
-            };
         case "PREPARE_DOWNLOAD":
             return {
                 ...state,

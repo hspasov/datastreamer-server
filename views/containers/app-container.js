@@ -38,15 +38,15 @@ class App extends React.Component {
             headers: { "Content-Type": "application/x-www-form-urlencoded", },
             body: formurlencoded(formData)
         }).then(response => {
-            this.props.dispatch(disconnectClient());
-            this.props.dispatch(logoutClient());
+            this.props.disconnectClient();
+            this.props.logoutClient();
         }).catch(error => {
             console.log(error);
         });
     }
 
     toggleSidebar() {
-        this.props.dispatch(toggleSidebar());
+        this.props.toggleSidebar();
     }
 
     render() {
@@ -125,11 +125,12 @@ const AppContainer = withRouter(connect(store => {
     return {
         client: store.client,
         provider: store.provider,
-        sidebar: store.sidebar,
-        navigation: store.navigation,
-        dimmer: store.dimmer,
-        router: store.router
+        sidebar: store.sidebar
     };
+}, {
+    disconnectClient,
+    logoutClient,
+    toggleSidebar
 })(App));
 
 export default AppContainer;

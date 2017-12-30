@@ -35,9 +35,7 @@ class Thumbnail extends React.Component {
     }
 
     render() {
-        const icon = <Icon onClick={this.props.onClick} name={this.getIcon()} size="massive" />;
-        const thumbnail = <Image onClick={this.props.onClick} src={this.props.thumbnail}/>;
-        return (this.props.thumbnail) ? thumbnail : icon;
+        return <Icon name={this.getIcon()} size="massive" />;
     }
 }
 

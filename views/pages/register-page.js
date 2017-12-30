@@ -78,7 +78,7 @@ class Register extends React.Component {
                 throw response.status;
             }
         }).then(json => {
-            this.props.dispatch(loginClient(json));
+            this.props.loginClient(json);
             this.props.history.push("/connect");
         }).catch(errorCode => {
             let formErrors;
@@ -149,11 +149,6 @@ class Register extends React.Component {
     }
 }
 
-const RegisterPage = withRouter(connect(store => {
-    return {
-        client: store.client,
-        router: store.router
-    };
-})(Register));
+const RegisterPage = withRouter(connect(null, { loginClient })(Register));
 
 export default RegisterPage;

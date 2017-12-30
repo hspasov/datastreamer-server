@@ -18,12 +18,12 @@ class HomeMenu extends React.Component {
 
     resolveBackButtonOnClick() {
         if (this.props.imageViewer.show) {
-            return () => this.props.dispatch(removeImage());
+            return () => this.props.removeImage();
         } else if (this.props.textViewer.show) {
             if (this.props.textViewer.editMode) {
-                return () => this.props.dispatch(closeEditMode());
+                return () => this.props.closeEditMode();
             } else {
-                return () => this.props.dispatch(removeText());
+                return () => this.props.removeText();
             }
         } else {
             return () => this.props.navigateBack(this.props.navigation.path.length - 1);
@@ -33,7 +33,7 @@ class HomeMenu extends React.Component {
     render() {
         const menuColor = (this.props.provider.token && !this.props.dimmer.error.show) ? "green" : "red";
 
-        const logo = <Menu.Item onClick={() => this.props.dispatch(toggleSidebar())} as="a" header active={this.props.sidebar.visible}>
+        const logo = <Menu.Item onClick={() => this.props.toggleSidebar()} as="a" header active={this.props.sidebar.visible}>
             <Icon name="list layout" />
             DataStreamer
         </Menu.Item>;
@@ -45,7 +45,7 @@ class HomeMenu extends React.Component {
                 <Search size="mini" />
             </Menu.Item>
             {this.props.textViewer.show && !this.props.textViewer.editMode &&
-                <Menu.Item onClick={() => this.props.dispatch(openEditMode())}>
+                <Menu.Item onClick={() => this.props.openEditMode()}>
                     <Icon name="edit" /> Edit
                 </Menu.Item>
             }
@@ -90,6 +90,12 @@ const HomeMenuComponent = connect(store => {
         navigation: store.navigation,
         selection: store.selection
     };
+}, {
+    removeImage,
+    openEditMode,
+    closeEditMode,
+    removeText,
+    toggleSidebar,
 })(HomeMenu);
 
 export default HomeMenuComponent;
