@@ -1,5 +1,6 @@
 import React from "react";
 import { connect } from "react-redux";
+import { Helmet } from "react-helmet";
 import { Button, Form, Grid, Header, Segment } from "semantic-ui-react";
 import formurlencoded from "form-urlencoded";
 import FormSubmitError from "../components/form-submit-error";
@@ -256,7 +257,14 @@ class Settings extends React.Component {
             <Button onClick={() => this.setShowDeleteAccount(true)}>Delete account</Button>
         </Segment>;
 
-        return <Segment>
+        return <Segment className="settingsPage">
+            <Helmet><style>{`
+      body > div,
+      body > div > div,
+      body > div > div > div.settingsPage {
+        height: 100%;
+      }
+    `}</style></Helmet>
             <Grid textAlign="center" style={{ height: "100%" }} verticalAlign="middle">
                 <Grid.Column style={{ maxWidth: 450 }}>
                     {(this.state.showDeleteAccount)? deleteAccount : changePassword}

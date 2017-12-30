@@ -2,6 +2,7 @@ import React from "react";
 import { Redirect } from "react-router";
 import { connect } from "react-redux";
 import { withRouter } from "react-router-dom";
+import { Helmet } from "react-helmet";
 import { connectClient } from "../../store/actions/provider";
 import disconnect from "../../modules/disconnect";
 import formurlencoded from "form-urlencoded";
@@ -98,7 +99,16 @@ class Connect extends React.Component {
             return <Redirect to="/login"></Redirect>;
         }
 
-        return <Segment style={{height: "100%"}} padded="very" attached="top">
+        return <Segment className="connectPage" padded="very" attached="top">
+            <Helmet>
+                <style>{`
+            body > div,
+            body > div > div,
+            body > div > div > div.connectPage {
+                height: 100%;
+            }
+            `}</style>
+            </Helmet>
             <Grid textAlign="center" style={{ height: "100%" }} verticalAlign="middle">
                 <Grid.Column style={{ maxWidth: 450 }} >
                     <Header as="h2" color="black" textAlign="center">

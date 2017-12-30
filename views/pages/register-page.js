@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, Redirect, withRouter } from "react-router-dom";
 import { connect } from "react-redux";
+import { Helmet } from "react-helmet";
 import { loginClient } from "../../store/actions/client";
 import formurlencoded from "form-urlencoded";
 import { Button, Form, Grid, Header, Message, Segment } from "semantic-ui-react";
@@ -103,7 +104,16 @@ class Register extends React.Component {
     }
 
     render() {
-        return <Segment padded="very" attached="top">
+        return <Segment className="registerPage" padded="very" attached="top">
+            <Helmet>
+                <style>{`
+            body > div,
+            body > div > div,
+            body > div > div > div.registerPage {
+                height: 100%;
+            }
+            `}</style>
+            </Helmet>
             <Grid textAlign="center" style={{ height: "100%" }} verticalAlign="middle">
                 <Grid.Column style={{ maxWidth: 450 }}>
                     <Header as="h2" color="black" textAlign="center">

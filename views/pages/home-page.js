@@ -2,6 +2,7 @@ import React from "react";
 import FileSaver from "file-saver";
 import { connect } from "react-redux";
 import { Redirect } from "react-router";
+import { Helmet } from "react-helmet";
 import { Container, Form, Image, Item, Segment } from "semantic-ui-react";
 import path from "path";
 import RTC from "../../rtc_connection/client";
@@ -349,7 +350,7 @@ class Home extends React.Component {
             }
         </Container>;
 
-        return <div>
+        return <Segment>
             <HomeMenuComponent
                 navigateBack={index => this.resolveNavigateBack(index)}
                 copyFiles={() => this.copyFiles()}
@@ -364,7 +365,7 @@ class Home extends React.Component {
                         files
                 }
             </Segment>
-        </div>;
+        </Segment>;
     }
 }
 
