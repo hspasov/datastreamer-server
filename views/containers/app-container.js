@@ -70,7 +70,7 @@ class App extends React.Component {
             <Menu.Item>{
                 (this.props.provider.token) ?
                     <div>
-                        <Header as="h2" color="green">{this.props.provider.username}</Header>
+                        <Menu.Item as={Link} to="/home" color="green">{this.props.provider.username}</Menu.Item>
                         <Menu.Item onClick={this.disconnect}>Disconnect</Menu.Item>
                     </div> :
                     <Header as="h2" color="red">No provider</Header>
@@ -103,8 +103,14 @@ class App extends React.Component {
             DataStreamer
             </Menu.Item>;
 
+        const location = (this.props.location.pathname === "/login") ? "Login" :
+                (this.props.location.pathname === "/register") ? "Register" :
+                (this.props.location.pathname === "/connect") ? "Connect" :
+                (this.props.location.pathname === "/settings") ? "Settings" : "";
+
         const topMenu = <Menu color={menuColor} inverted fluid size="massive" fixed="top">
             {logo}
+            <Menu.Item>{location}</Menu.Item>
         </Menu>
 
         return <div style={this.props.sidebar.visible ? { height: "100%", marginLeft: "250px" } : { height: "100%" }}>

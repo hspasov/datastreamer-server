@@ -1,4 +1,4 @@
-const reducer = (state = {selected: []}, action) => {
+const reducer = (state = {selected: [], show: false}, action) => {
     switch (action.type) {
         case "ADD_TO_SELECTED":
             return {
@@ -10,6 +10,18 @@ const reducer = (state = {selected: []}, action) => {
                 ...state,
                 selected: state.selected.filter(f => f.path !== action.payload)
             };
+        case "SHOW_SELECTED":
+            return {
+                ...state,
+                show: true
+            };
+            break;
+        case "HIDE_SELECTED":
+            return {
+                ...state,
+                show: false
+            };
+            break;
         case "CLEAR_SELECTION":
             return {
                 ...state,

@@ -41,32 +41,11 @@ class HomeMenu extends React.Component {
         return <Menu color={menuColor} inverted fluid size="massive" fixed="top">
             {logo}
             <NavigationComponent navigateBack={index => this.props.navigateBack(index)} />
-            <Menu.Item fitted position="right">
-                <Search size="mini" />
-            </Menu.Item>
             {this.props.textViewer.show && !this.props.textViewer.editMode &&
                 <Menu.Item onClick={() => this.props.openEditMode()}>
                     <Icon name="edit" /> Edit
                 </Menu.Item>
             }
-            {this.props.selection.selected.length > 0 && <Menu.Menu>
-                <Menu.Item onClick={() => this.props.copyFiles()}>
-                    <Icon name="copy"/> Copy here
-                </Menu.Item>
-                <Menu.Item onClick={() => this.props.moveFiles()}>
-                    <Icon name="move" /> Move here
-                </Menu.Item>
-                <Menu.Item onClick={() => this.props.deleteFiles()}>
-                    <Icon name="delete" /> Delete all
-                </Menu.Item>
-                </Menu.Menu>
-            }
-            <Menu.Item>
-                <label>
-                    <Input type="file" style={{ display: "none" }} onChange={this.props.handleInputChange} />
-                    Add file
-                </label>
-            </Menu.Item>
             <Menu.Item
                 disabled={
                     !this.props.imageViewer.show &&
@@ -74,8 +53,35 @@ class HomeMenu extends React.Component {
                     this.props.navigation.path.length === 0
                 }
                 onClick={this.resolveBackButtonOnClick()}>
-                Close
-            </Menu.Item>
+                <Icon size="large" name="arrow left" />Go back
+                    </Menu.Item>
+            {this.props.selection.selected.length > 0 ? <Menu.Menu position="right">
+                    <Menu.Item onClick={() => this.props.showSelected()}>
+                        <Icon name="file" />{this.props.selection.selected.length} selected
+                    </Menu.Item>
+                    <Menu.Item onClick={() => this.props.copyFiles()}>
+                        <Icon name="copy" /> Copy here
+                    </Menu.Item>
+                    <Menu.Item onClick={() => this.props.moveFiles()}>
+                        <Icon name="move" /> Move here
+                    </Menu.Item>
+                    <Menu.Item onClick={() => this.props.deleteFiles()}>
+                        <Icon name="trash" /> Delete all
+                    </Menu.Item>
+                    <Menu.Item onClick={() => this.props.clearSelection()}>
+                        <Icon name="cancel" /> Cancel
+                    </Menu.Item>
+                </Menu.Menu>
+                :
+                <Menu.Menu position="right">
+                    <Menu.Item>
+                        <label>
+                            <Input type="file" style={{ display: "none" }} onChange={this.props.handleInputChange} />
+                            <Icon size="large" name="plus" />Add file
+                         </label>
+                    </Menu.Item>
+                </Menu.Menu>
+            }
         </Menu>;
     }
 }

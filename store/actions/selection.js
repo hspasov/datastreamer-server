@@ -12,6 +12,14 @@ function removeFromSelected(filePath) {
     };
 };
 
+function showSelected() {
+    return { type: "SHOW_SELECTED" };
+}
+
+function hideSelected() {
+    return { type: "HIDE_SELECTED" };
+}
+
 function clearSelection() {
     return { type: "CLEAR_SELECTION" };
 };
@@ -19,5 +27,7 @@ function clearSelection() {
 export {
     addToSelected,
     removeFromSelected,
-    clearSelection
+    clearSelection,
+    showSelected,
+    hideSelected
 };

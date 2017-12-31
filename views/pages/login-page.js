@@ -111,7 +111,6 @@ class Login extends React.Component {
                                 iconPosition="left"
                                 placeholder="Username"
                                 required
-                                error
                                 onChange={this.handleUsernameChange}/>
                             <Form.Input
                                 fluid

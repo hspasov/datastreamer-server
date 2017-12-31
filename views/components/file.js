@@ -27,22 +27,23 @@ class File extends React.Component {
                     <Item.Header size="huge" as="a" onClick={() => this.props.openDirectory()}>{this.props.fileData.name}</Item.Header> :
                     <Item.Header size="huge">{this.props.fileData.name}</Item.Header>
                 }
-                <Button floated="right" onClick={() => this.toggleMore()}><Icon size="huge" name="list layout" /></Button>
+                <Button floated="right" onClick={() => this.toggleMore()}><Icon size="big" name="list layout" /> Show more</Button>
+                <Button floated="right" onClick={() => this.props.selectFile()}><Icon size="big" name="checkmark" />Select</Button>
                 {(this.props.fileData.mime === "image/png" || this.props.fileData.mime === "image/jpeg") &&
-                    <Button onClick={() => this.props.openImage()}>View image</Button>
+                    <Button floated="right" onClick={() => this.props.openImage()}><Icon size="big" name="image" /> View image</Button>
                 }
                 {(/^text\//.test(this.props.fileData.mime)) &&
-                    <Button onClick={() => this.props.openText()}>View text file</Button>
+                    <Button floated="right" onClick={() => this.props.openText()}><Icon size="big" name="file text" />View text file</Button>
                 }
-                <div>{this.props.fileData.type !== "directory" &&
+                {this.props.fileData.type !== "directory" &&
                     <Button
+                        floated="right"
                         disabled={this.props.fileData.downloadStatus === "initialized"}
                         loading={this.props.fileData.downloadStatus === "initialized"}
                         onClick={() => this.props.addToDownloads()}>
-                        Download file
+                    <Icon size="big" name="download" />Download file
                     </Button>
-                }</div>
-                <Button onClick={() => this.props.selectFile()}>Select</Button>
+                }
                 {this.state.showMore &&
                     <div>
                         <Item.Meta>Type: {this.props.fileData.type}</Item.Meta>

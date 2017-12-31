@@ -1,19 +1,20 @@
 import path from "path";
 import React from "react";
 import { connect } from "react-redux";
-import { Breadcrumb, Menu } from "semantic-ui-react";
+import { Breadcrumb, Icon, Menu } from "semantic-ui-react";
 
 class Navigation extends React.Component {
     render() {
-        return <Menu.Item as={Breadcrumb}>
-            <Breadcrumb.Section link><p>{this.props.provider.username}</p></Breadcrumb.Section>
-            {this.props.navigation.path.map((dir, i) => {
+        return <Menu.Menu>
+            <div>
+            <Menu.Item onClick={() => this.props.navigateBack(0)} link>{this.props.provider.username}</Menu.Item>
+            </div>
+                {this.props.navigation.path.map((dir, i) => {
                 return <div key={i}>
-                    <Breadcrumb.Divider />
-                    <Breadcrumb.Section link onClick={() => this.props.navigateBack(i + 1)}><p>{dir}</p></Breadcrumb.Section>
+                    <Menu.Item link onClick={() => this.props.navigateBack(i + 1)}>{dir}</Menu.Item>
                 </div>;
             })}
-        </Menu.Item>;
+        </Menu.Menu>;
     }
 }
 
