@@ -10,10 +10,12 @@ const path = require("path").posix;
 const app = require("../app");
 const log = require("../modules/log");
 const https = require("https");
+const http = require("http");
 const bluebird = require("bluebird");
 const redis = require("redis");
 const redisClient = redis.createClient({ detect_buffers: true });
 const redisSocketIoAdapter = require("socket.io-redis");
+const config = require("../config/config");
 
 log.verbose("Warning: Verbose logging should never be used in production!");
 
@@ -21,7 +23,7 @@ log.verbose("Warning: Verbose logging should never be used in production!");
  * Get port from environment and store in Express.
  */
 
-const port = normalizePort(process.env.PORT || "3000");
+const port = normalizePort(process.env.PORT || config.port);
 app.set("port", port);
 
 redisClient.on("error", error => {
@@ -41,7 +43,8 @@ const options = {
     cert: fs.readFileSync(path.join(__dirname, "../config/server.crt"))
 };
 
-const server = https.createServer(options, app);
+const server = config.secure ?
+    https.createServer(options, app) : http.createServer(app);
 
 server.listen(port);
 server.on("error", onError);

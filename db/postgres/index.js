@@ -2,7 +2,7 @@ const { Pool } = require("pg");
 
 const pool = new Pool({
     user: "datastreamer",
-    host: "datastreamer.local",
+    host: "localhost",
     database: "datastreamer",
     password: null,
     port: 5432,

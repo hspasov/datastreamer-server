@@ -1,10 +1,10 @@
 import io from "socket.io-client";
+import config from "../views/config";
 
 function Socket(RTC, token, pageActionHandler) {
     this.RTC = RTC;
-    this.socket = io(`https://${window.location.host}`, {
-        query: `token=${token}`,
-        secure: true
+    this.socket = io(config.uri, {
+        query: `token=${token}`
     });
 
     this.socket.on("connect", () => {
