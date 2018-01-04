@@ -23,11 +23,6 @@ class RTC {
         this.chunkSize = 32 * 1024; // 32 KB
 
         this.downloads = [];
-
-        this.initializeP2PConnection = this.initializeP2PConnection.bind(this);
-        this.sendMessage = this.sendMessage.bind(this);
-        this.sendMessageWritable = this.sendMessageWritable.bind(this);
-        this.deleteP2PConnection = this.deleteP2PConnection.bind(this);
     }
 
     initializeP2PConnection() {

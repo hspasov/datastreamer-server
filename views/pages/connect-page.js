@@ -21,10 +21,6 @@ class Connect extends React.Component {
             formErrors: []
         }
 
-        this.handleUsernameChange = this.handleUsernameChange.bind(this);
-        this.handlePasswordChange = this.handlePasswordChange.bind(this);
-        this.handleSubmit = this.handleSubmit.bind(this);
-
         this.props.provider.token && disconnect.bind(this)();
     }
 
@@ -122,7 +118,7 @@ class Connect extends React.Component {
                                 iconPosition="left"
                                 placeholder="Provider name"
                                 required
-                                onChange={this.handleUsernameChange} />
+                                onChange={event => this.handleUsernameChange(event)} />
                             <Form.Input
                                 fluid
                                 icon="lock"
@@ -130,8 +126,8 @@ class Connect extends React.Component {
                                 placeholder="Password"
                                 type="password"
                                 required
-                                onChange={this.handlePasswordChange} />
-                            <Button color="black" fluid size="large" onClick={this.handleSubmit}>Connect</Button>
+                                onChange={event => this.handlePasswordChange(event)} />
+                            <Button color="black" fluid size="large" onClick={() => this.handleSubmit()}>Connect</Button>
                             <FormSubmitError visible={this.state.hasFormErrors} errors={this.state.formErrors}/>
                         </Segment>
                     </Form>

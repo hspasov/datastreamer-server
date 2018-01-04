@@ -4,8 +4,6 @@ import { Icon, Image } from "semantic-ui-react";
 class Thumbnail extends React.Component {
     constructor(props) {
         super(props);
-
-        this.getIcon = this.getIcon.bind(this);
     }
 
     getIcon() {

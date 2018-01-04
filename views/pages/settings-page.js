@@ -20,14 +20,6 @@ class Settings extends React.Component {
             hasFormErrors: false,
             formErrors: []
         };
-
-        this.handleChangePasswordSubmit = this.handleChangePasswordSubmit.bind(this);
-        this.handleOldPasswordChange = this.handleOldPasswordChange.bind(this);
-        this.handleNewPasswordChange = this.handleNewPasswordChange.bind(this);
-        this.handleConfirmNewPasswordChange = this.handleConfirmNewPasswordChange.bind(this);
-        this.handleDeleteAccountPasswordChange = this.handleDeleteAccountPasswordChange.bind(this);
-        this.handleDeleteAccount = this.handleDeleteAccount.bind(this);
-        this.setShowDeleteAccount = this.setShowDeleteAccount.bind(this);
     }
 
     handleChangePasswordSubmit() {
@@ -208,9 +200,9 @@ class Settings extends React.Component {
                         type="password"
                         required
                         error
-                        onChange={this.handleDeleteAccountPasswordChange}
+                        onChange={event => this.handleDeleteAccountPasswordChange(event)}
                     />
-                    <Button color="red" fluid size="large" onClick={this.handleDeleteAccount}>DELETE</Button>
+                    <Button color="red" fluid size="large" onClick={() => this.handleDeleteAccount()}>DELETE</Button>
                     <FormSubmitError visible={this.state.hasFormErrors} errors={this.state.formErrors} />
                 </Segment>
             </Form>
@@ -230,7 +222,7 @@ class Settings extends React.Component {
                         placeholder="Old password"
                         type="password"
                         required
-                        onChange={this.handleOldPasswordChange}
+                        onChange={event => this.handleOldPasswordChange(event)}
                     />
                     <Form.Input
                         fluid
@@ -239,7 +231,7 @@ class Settings extends React.Component {
                         placeholder="New password"
                         type="password"
                         required
-                        onChange={this.handleNewPasswordChange}
+                        onChange={event => this.handleNewPasswordChange(event)}
                     />
                     <Form.Input
                         fluid
@@ -248,9 +240,9 @@ class Settings extends React.Component {
                         placeholder="Confirm new password"
                         type="password"
                         required
-                        onChange={this.handleConfirmNewPasswordChange}
+                        onChange={event => this.handleConfirmNewPasswordChange(event)}
                     />
-                    <Button color="black" fluid size="large" onClick={this.handleChangePasswordSubmit}>Submit</Button>
+                    <Button color="black" fluid size="large" onClick={() => this.handleChangePasswordSubmit()}>Submit</Button>
                     <FormSubmitError visible={this.state.hasFormErrors} errors={this.state.formErrors} />
                 </Segment>
             </Form>

@@ -3,7 +3,7 @@ import config from "../views/config";
 
 function Socket(RTC, token, pageActionHandler) {
     this.RTC = RTC;
-    this.socket = io(config.uri, {
+    this.socket = io(`http://${window.location.host}`, {
         query: `token=${token}`
     });
 

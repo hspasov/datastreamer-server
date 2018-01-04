@@ -9,8 +9,6 @@ class File extends React.Component {
         this.state = {
             showMore: false
         };
-
-        this.toggleMore = this.toggleMore.bind(this);
     }
 
     toggleMore() {

@@ -24,8 +24,6 @@ class App extends React.Component {
         super(props);
 
         this.disconnect = disconnect.bind(this);
-        this.logout = this.logout.bind(this);
-        this.toggleSidebar = this.toggleSidebar.bind(this);
     }
 
     logout() {
@@ -45,17 +43,13 @@ class App extends React.Component {
         });
     }
 
-    toggleSidebar() {
-        this.props.toggleSidebar();
-    }
-
     render() {
         const client = (this.props.client.token) ?
             <div>
                 <Menu.Item><Header as="h4" color="grey">Your client</Header></Menu.Item>
                 <Menu.Item><Header as="h4" color="grey">{this.props.client.username}</Header></Menu.Item>
                 <Menu.Item as={Link} to="/settings">Account settings</Menu.Item>
-                <Menu.Item onClick={this.logout}>Logout</Menu.Item>
+                <Menu.Item onClick={() => this.logout()}>Logout</Menu.Item>
                 <Menu.Item><Divider /></Menu.Item>
             </div> :
             <div>
@@ -85,7 +79,7 @@ class App extends React.Component {
         </div>;
 
         const sideMenu = <Menu icon="labeled" vertical inverted borderless fixed="left" style={{ width: "250px" }}>
-            <Menu.Item style={{width: "250px"}} onClick={this.toggleSidebar} as="a" header active={this.props.sidebar.visible}>
+            <Menu.Item style={{ width: "250px" }} onClick={() => this.props.toggleSidebar()} as="a" header active={this.props.sidebar.visible}>
                 <Grid><Grid.Row centered>
                     <Icon name="list layout" />
                     DataStreamer
@@ -98,7 +92,7 @@ class App extends React.Component {
 
         const menuColor = (this.props.client.token) ? "red" : "blue";
 
-        const logo = <Menu.Item onClick={this.toggleSidebar} as='a' header active={this.props.sidebar.visible}>
+        const logo = <Menu.Item onClick={() => this.props.toggleSidebar()} as='a' header active={this.props.sidebar.visible}>
             <Icon name="list layout" />
             DataStreamer
             </Menu.Item>;

@@ -12,8 +12,6 @@ import NavigationComponent from "./navigation-component";
 class HomeMenu extends React.Component {
     constructor(props) {
         super(props);
-
-        this.resolveBackButtonOnClick = this.resolveBackButtonOnClick.bind(this);
     }
 
     resolveBackButtonOnClick() {

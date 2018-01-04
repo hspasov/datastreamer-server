@@ -45,22 +45,10 @@ class Home extends React.Component {
 
         this.timer = null;
         this.files = [];
-        this.addToDownloads = this.addToDownloads.bind(this);
-        this.requestDownload = this.requestDownload.bind(this);
         this.messageHandler = this.messageHandler.bind(this);
         this.chunkHandler = this.chunkHandler.bind(this);
         this.errorHandler = this.errorHandler.bind(this);
         this.pageActionHandler = this.pageActionHandler.bind(this);
-        this.moveFilesToState = this.moveFilesToState.bind(this);
-        this.navigate = this.navigate.bind(this);
-        this.resolveNavigateBack = this.resolveNavigateBack.bind(this);
-        this.resolveNavigateFront = this.resolveNavigateFront.bind(this);
-        this.copyFiles = this.copyFiles.bind(this);
-        this.moveFiles = this.moveFiles.bind(this);
-        this.deleteFiles = this.deleteFiles.bind(this);
-        this.sendFiles = this.sendFiles.bind(this);
-        this.handleInputChange = this.handleInputChange.bind(this);
-        this.addToDownloads = this.addToDownloads.bind(this);
         this.RTC = new RTC({
             connectionToken: this.props.provider.token,
             writeAccess: this.props.provider.writeAccess
@@ -87,15 +75,6 @@ class Home extends React.Component {
 
     pageActionHandler(action) {
         action.bind(this)();
-    }
-
-    moveFilesToState() {
-        clearTimeout(this.timer);
-        this.props.setScanningMessage();
-        this.timer = setTimeout(() => {
-            this.props.removeLoaderMessage();
-            console.log("time's up");
-        }, 100);
     }
 
     navigate(directoryPath) {
@@ -378,7 +357,7 @@ class Home extends React.Component {
                 deleteFiles={() => this.deleteFiles()}
                 clearSelection={() => this.props.clearSelection()}
                 showSelected={() => this.props.showSelected()}
-                handleInputChange={this.handleInputChange}
+                handleInputChange={event => this.handleInputChange(event)}
             />
             <Segment padded="very" attached="top" color="grey">
                 <DimmerComponent />
