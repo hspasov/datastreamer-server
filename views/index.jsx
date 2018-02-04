@@ -3,7 +3,7 @@ import React from "react";
 import ReactDOM from "react-dom";
 import { Provider } from "react-redux";
 import { BrowserRouter } from "react-router-dom";
-import AppContainer from "./containers/app-container";
+import AppContainer from "./containers/app-container.jsx";
 
 import "semantic-ui-css/semantic.min.css";
 

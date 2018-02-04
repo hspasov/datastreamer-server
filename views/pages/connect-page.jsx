@@ -1,13 +1,16 @@
 import React from "react";
-import { Link, Redirect, withRouter } from "react-router-dom";
+import { Redirect } from "react-router";
 import { connect } from "react-redux";
+import { withRouter } from "react-router-dom";
 import { Helmet } from "react-helmet";
-import { loginClient } from "../../store/actions/client";
+import { connectClient } from "../../store/actions/provider";
+import disconnect from "../../modules/disconnect";
 import formurlencoded from "form-urlencoded";
 import { Button, Form, Grid, Header, Message, Segment } from "semantic-ui-react";
-import FormSubmitError from "../components/form-submit-error";
+import FormSubmitError from "../components/form-submit-error.jsx";
 
-class Login extends React.Component {
+
+class Connect extends React.Component {
     constructor(props) {
         super(props);
 
@@ -16,14 +19,16 @@ class Login extends React.Component {
             password: "",
             hasFormErrors: false,
             formErrors: []
-        };
+        }
+
+        this.props.provider.token && disconnect.bind(this)();
     }
 
     handleUsernameChange(event) {
         event.preventDefault();
         this.setState({
             username: event.target.value
-        });
+        })
     }
 
     handlePasswordChange(event) {
@@ -44,13 +49,13 @@ class Login extends React.Component {
         this.setState({
             hasFormErrors: false
         });
-
         const formData = {
             username: this.state.username,
-            password: this.state.password
+            password: this.state.password,
+            token: this.props.client.token
         }
 
-        fetch("/login", {
+        fetch("/connect", {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded", },
             body: formurlencoded(formData)
@@ -61,12 +66,14 @@ class Login extends React.Component {
                 throw response.status;
             }
         }).then(json => {
-            this.props.loginClient(json);
-            this.props.history.push("/connect");
+            this.props.connectClient(json);
+            this.props.history.push("/home");
         }).catch(errorCode => {
-            console.log(errorCode);
             let formErrors;
             switch (errorCode) {
+                case 401:
+                    formErrors = ["token"];
+                    break;
                 case 404:
                     formErrors = ["verification"];
                     break;
@@ -84,12 +91,16 @@ class Login extends React.Component {
     }
 
     render() {
-        return <Segment className="loginPage" padded="very" attached="top">
+        if (!this.props.client.token) {
+            return <Redirect to="/login"></Redirect>;
+        }
+
+        return <Segment className="connectPage" padded="very" attached="top">
             <Helmet>
                 <style>{`
             body > div,
             body > div > div,
-            body > div > div > div.loginPage {
+            body > div > div > div.connectPage {
                 height: 100%;
             }
             `}</style>
@@ -97,17 +108,17 @@ class Login extends React.Component {
             <Grid textAlign="center" style={{ height: "100%" }} verticalAlign="middle">
                 <Grid.Column style={{ maxWidth: 450 }} >
                     <Header as="h2" color="black" textAlign="center">
-                        Log-in to your account
+                        Connect to provider
                     </Header>
                     <Form size="massive">
-                    <Segment>
+                        <Segment>
                             <Form.Input
                                 fluid
                                 icon="user"
                                 iconPosition="left"
-                                placeholder="Username"
+                                placeholder="Provider name"
                                 required
-                                onChange={event => this.handleUsernameChange(event)}/>
+                                onChange={event => this.handleUsernameChange(event)} />
                             <Form.Input
                                 fluid
                                 icon="lock"
@@ -115,20 +126,22 @@ class Login extends React.Component {
                                 placeholder="Password"
                                 type="password"
                                 required
-                                onChange={event => this.handlePasswordChange(event)}/>
-                            <Button color="black" fluid size="large" onClick={() => this.handleSubmit()}>Login</Button>
-                            <FormSubmitError visible={this.state.hasFormErrors} errors={this.state.formErrors} />
+                                onChange={event => this.handlePasswordChange(event)} />
+                            <Button color="black" fluid size="large" onClick={() => this.handleSubmit()}>Connect</Button>
+                            <FormSubmitError visible={this.state.hasFormErrors} errors={this.state.formErrors}/>
                         </Segment>
                     </Form>
-                    <Message>
-                        Don't have an account? <Link to="/register">Register</Link>
-                    </Message>
                 </Grid.Column>
             </Grid>
         </Segment>;
     }
 }
 
-const LoginPage = withRouter(connect(null, { loginClient })(Login));
+const ConnectPage = withRouter(connect(store => {
+    return {
+        client: store.client,
+        provider: store.provider
+    };
+}, { connectClient })(Connect));
 
-export default LoginPage;
+export default ConnectPage;

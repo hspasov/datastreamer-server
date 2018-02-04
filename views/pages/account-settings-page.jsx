@@ -3,7 +3,7 @@ import { connect } from "react-redux";
 import { Helmet } from "react-helmet";
 import { Button, Form, Grid, Header, Segment } from "semantic-ui-react";
 import formurlencoded from "form-urlencoded";
-import FormSubmitError from "../components/form-submit-error";
+import FormSubmitError from "../components/form-submit-error.jsx";
 import { loginClient, logoutClient } from "../../store/actions/client";
 import { disconnectClient } from "../../store/actions/provider";
 

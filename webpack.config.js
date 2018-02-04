@@ -1,7 +1,7 @@
 const path = require("path").posix;
 
 module.exports = {
-    entry: ["babel-polyfill", "./views/index.js"],
+    entry: ["babel-polyfill", "./views/index.jsx"],
     output: {
         path: path.resolve(__dirname, "./public/js"),
         filename: "bundle.js",
@@ -10,7 +10,7 @@ module.exports = {
     module: {
         rules: [
             {
-                test: /\.js$/,
+                test: /\.js$|\.jsx$/,
                 exclude: /node_modules/,
                 use: [{
                     loader: "babel-loader",
