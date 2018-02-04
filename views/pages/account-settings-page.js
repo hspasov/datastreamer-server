@@ -7,7 +7,7 @@ import FormSubmitError from "../components/form-submit-error";
 import { loginClient, logoutClient } from "../../store/actions/client";
 import { disconnectClient } from "../../store/actions/provider";
 
-class Settings extends React.Component {
+class AccountSettings extends React.Component {
     constructor(props) {
         super(props);
 
@@ -249,11 +249,11 @@ class Settings extends React.Component {
             <Button onClick={() => this.setShowDeleteAccount(true)}>Delete account</Button>
         </Segment>;
 
-        return <Segment className="settingsPage">
+        return <Segment className="accountSettingsPage">
             <Helmet><style>{`
       body > div,
       body > div > div,
-      body > div > div > div.settingsPage {
+      body > div > div > div.accountSettingsPage {
         height: 100%;
       }
     `}</style></Helmet>
@@ -266,10 +266,10 @@ class Settings extends React.Component {
     }
 }
 
-const SettingsPage = connect(store => {
+const AccountSettingsPage = connect(store => {
     return {
         client: store.client
     };
-}, { loginClient, disconnectClient, logoutClient })(Settings);
+}, { loginClient, disconnectClient, logoutClient })(AccountSettings);
 
-export default SettingsPage;
+export default AccountSettingsPage;

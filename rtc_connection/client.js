@@ -26,69 +26,54 @@ class RTC {
     }
 
     initializeP2PConnection() {
-        try {
-            console.log("requested P2P connection");
-            this.peerConnection = new RTCPeerConnection(this.servers, this.peerConnectionConstraint);
-            this.sendMessageChannel = this.peerConnection.createDataChannel("clientMessage", this.dataConstraint);
-            if (this.writeAccess) {
-                this.sendMessageWritableChannel = this.peerConnection.createDataChannel("clientMessageWritable", this.dataConstraint);
-                this.sendFileChannel = this.peerConnection.createDataChannel("clientFile", this.dataConstraint);
-                this.sendFileChannel.binaryType = "arraybuffer";
-                this.sendFileChannel.bufferedAmountLowThreshold = 1 * 1024 * 1024; // 1 MB
+        console.log("requested P2P connection");
+        this.peerConnection = new RTCPeerConnection();
+        this.sendMessageChannel = this.peerConnection.createDataChannel("clientMessage", this.dataConstraint);
+        if (this.writeAccess) {
+            this.sendMessageWritableChannel = this.peerConnection.createDataChannel("clientMessageWritable", this.dataConstraint);
+            this.sendFileChannel = this.peerConnection.createDataChannel("clientFile", this.dataConstraint);
+            this.sendFileChannel.binaryType = "arraybuffer";
+            this.sendFileChannel.bufferedAmountLowThreshold = 1 * 1024 * 1024; // 1 MB
+        }
+
+        this.peerConnection.onicecandidate = event => {
+            if (event.candidate) {
+                console.log("sending ICE candidate", event.candidate);
+                this.socket.emit("ice_candidate", JSON.stringify(event.candidate));
             }
+        };
 
-            this.peerConnection.onicecandidate = event => {
-                if (event.candidate) {
-                    console.log("sending ICE candidate", event.candidate);
-                    this.socket.emit("ice_candidate", JSON.stringify(event.candidate));
-                }
-            };
-
-            this.peerConnection.ondatachannel = event => {
-                switch (event.channel.label) {
-                    case "providerMessage":
-                        this.receiveMessageChannel = event.channel;
-                        this.receiveMessageChannel.onmessage = event => {
-                            this.handleMessage(JSON.parse(event.data));
-                        };
-                        break;
-                    case "providerFile":
-                        this.receiveFileChannel = event.channel;
-                        this.receiveFileChannel.binaryType = "arraybuffer";
-                        this.receiveFileChannel.onmessage = event => {
-                            this.handleChunk(event.data);
-                        };
-                        break;
-                }
-            }
-
-            this.peerConnection.createOffer().then(
-                description => {
-                    this.peerConnection.setLocalDescription(description);
-                    console.log("set local description", description);
-                    this.socket.emit("description", JSON.stringify(description));
-                },
-                error => {
-                    this.handleError({
-                        type: "generic",
-                        message: error
-                    });
-                    this.deleteP2PConnection(error);
-                }
-            );
-        } catch (error) {
-            if (!this.peerConnection || !this.sendMessageChannel || !this.receiveFileChannel || !this.receiveMessageChannel) {
-                this.handleError({
-                    type: "connection",
-                    message: "Connection to provider failed."
-                });
-            } else {
-                this.handleError({
-                    type: "generic",
-                    message: error
-                });
+        this.peerConnection.ondatachannel = event => {
+            switch (event.channel.label) {
+                case "providerMessage":
+                    console.log("found providerMessage datachannel");
+                    this.receiveMessageChannel = event.channel;
+                    this.receiveMessageChannel.onmessage = event => {
+                        this.handleMessage(JSON.parse(event.data));
+                    };
+                    break;
+                case "providerFile":
+                    this.receiveFileChannel = event.channel;
+                    this.receiveFileChannel.binaryType = "arraybuffer";
+                    this.receiveFileChannel.onmessage = event => {
+                        this.handleChunk(event.data);
+                    };
+                    break;
             }
         }
+
+        this.peerConnection.createOffer().then(description => {
+            console.log("set local description", description);
+            return this.peerConnection.setLocalDescription(description);
+        }).then(() => {
+            this.socket.emit("description", JSON.stringify(this.peerConnection.localDescription));
+        }).catch(error => {
+            this.handleError({
+                type: "generic",
+                message: error
+            });
+            this.deleteP2PConnection(error);
+        });
     }
 
     sendMessage(type, payload) {
@@ -129,19 +114,13 @@ class RTC {
     }
 
     deleteP2PConnection(error = null) {
-        if (this.peerConnection) {
-            this.sendMessageChannel && this.sendMessageChannel.close();
-            this.sendMessageChannel = null;
-            this.receiveMessageChannel && this.receiveMessageChannel.close();
-            this.receiveMessageChannel = null;
-            this.receiveFileChannel && this.receiveFileChannel.close();
-            this.receiveFileChannel = null;
-            this.peerConnection && this.peerConnection.close();
-            this.peerConnection = null;
-            if (error) {
-                console.log("There was an error", error);
-                this.socket.emit("connect_reset");
-            }
+        this.sendMessageChannel && this.sendMessageChannel.close();
+        this.receiveMessageChannel && this.receiveMessageChannel.close();
+        this.receiveFileChannel && this.receiveFileChannel.close();
+        this.peerConnection && this.peerConnection.close();
+        if (error) {
+            console.log("There was an error", error);
+            this.socket.emit("connect_reset");
         }
     }
 }

@@ -3,7 +3,6 @@ import React from "react";
 import ReactDOM from "react-dom";
 import { Provider } from "react-redux";
 import { BrowserRouter } from "react-router-dom";
-import createHistory from "history/createBrowserHistory";
 import AppContainer from "./containers/app-container";
 
 import "semantic-ui-css/semantic.min.css";

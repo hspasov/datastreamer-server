@@ -22,7 +22,7 @@ const reducer = (state = { files: [] }, action) => {
         case "UNLINK":
             return {
                 ...state,
-                files: state.files.filter(f => f.path !== action.payload.path)
+                files: state.files.filter(f => f.path !== action.payload)
             };
         case "PREPARE_DOWNLOAD":
             return {

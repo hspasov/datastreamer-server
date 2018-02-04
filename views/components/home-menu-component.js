@@ -74,8 +74,8 @@ class HomeMenu extends React.Component {
                 <Menu.Menu position="right">
                     <Menu.Item>
                         <label>
-                            <Input type="file" style={{ display: "none" }} onChange={this.props.handleInputChange} />
-                            <Icon size="large" name="plus" />Add file
+                            <Input type="file" style={{ display: "none" }} onChange={this.props.handleUploadFiles} />
+                            <Icon size="large" name="plus" />Upload file
                          </label>
                     </Menu.Item>
                 </Menu.Menu>

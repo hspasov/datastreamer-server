@@ -47,7 +47,7 @@ class Home extends React.Component {
         this.files = [];
         this.messageHandler = this.messageHandler.bind(this);
         this.chunkHandler = this.chunkHandler.bind(this);
-        this.errorHandler = this.errorHandler.bind(this);
+        this.handleError = this.handleError.bind(this);
         this.pageActionHandler = this.pageActionHandler.bind(this);
         this.RTC = new RTC({
             connectionToken: this.props.provider.token,
@@ -55,7 +55,7 @@ class Home extends React.Component {
         }, {
             handleMessage: this.messageHandler,
             handleChunk: this.chunkHandler,
-            handleError: this.errorHandler,
+            handleError: this.handleError,
             pageActionHandler: this.pageActionHandler
         });
     }
@@ -138,7 +138,7 @@ class Home extends React.Component {
         received = chunkGenerator.next();
     }
 
-    handleInputChange(event) {
+    handleUploadFiles(event) {
         let file = event.target.files[0];
         this.setState({
             uploads: event.target.files
@@ -178,7 +178,7 @@ class Home extends React.Component {
     }
 
     messageHandler (message) {
-        switch (message.action) {
+        switch (message.type) {
             case "scanFinished":
                 this.props.removeLoaderMessage();
                 break;
@@ -191,14 +191,14 @@ class Home extends React.Component {
                 break;
             case "add":
             case "addDir":
-                this.handleAddFile(message.data);
+                this.handleAddFile(message.payload);
                 break;
             case "change":
-                this.props.changeFile(message.data);
+                this.props.changeFile(message.payload);
                 break;
             case "unlink":
             case "unlinkDir":
-                this.props.unlink(message.data);
+                this.props.unlink(message.payload);
                 break;
         }
     }
@@ -277,7 +277,7 @@ class Home extends React.Component {
         this.RTC.sendMessage("downloadFile", download.path);
     }
 
-    errorHandler(error) {
+    handleError(error) {
         switch (error.type) {
             case "generic":
                 this.props.setError("Something went wrong.", error.message);
@@ -357,7 +357,7 @@ class Home extends React.Component {
                 deleteFiles={() => this.deleteFiles()}
                 clearSelection={() => this.props.clearSelection()}
                 showSelected={() => this.props.showSelected()}
-                handleInputChange={event => this.handleInputChange(event)}
+                handleUploadFiles={event => this.handleUploadFiles(event)}
             />
             <Segment padded="very" attached="top" color="grey">
                 <DimmerComponent />

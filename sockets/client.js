@@ -120,16 +120,13 @@ function Socket(RTC, token, pageActionHandler) {
         try {
             console.log("inside ice_candidate");
             console.log(candidate);
-            this.RTC.peerConnection.addIceCandidate(JSON.parse(candidate)).then(
-                () => { },
-                error => {
-                    this.RTC.handleError({
-                        type: "generic",
-                        message: error
-                    });
-                    this.RTC.deleteP2PConnection(error);
-                }
-            );
+            this.RTC.peerConnection.addIceCandidate(JSON.parse(candidate)).catch(error => {
+                this.RTC.handleError({
+                    type: "generic",
+                    message: error
+                });
+                this.RTC.deleteP2PConnection(error);
+            });
         } catch (error) {
             if (!this.RTC.peerConnection) {
                 this.RTC.handleError({

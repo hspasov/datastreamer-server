@@ -10,7 +10,7 @@ import HomePage from "../pages/home-page";
 import LoginPage from "../pages/login-page";
 import RegisterPage from "../pages/register-page";
 import ConnectPage from "../pages/connect-page";
-import SettingsPage from "../pages/settings-page";
+import AccountSettingsPage from "../pages/account-settings-page";
 import formurlencoded from "form-urlencoded";
 import {
     openDirectory,
@@ -84,7 +84,7 @@ class App extends React.Component {
                     <Icon name="list layout" />
                     DataStreamer
                         </Grid.Row></Grid>
-            </Menu.Item>;
+            </Menu.Item>
                     {client}
             {this.props.client.token && connection}
             {this.props.client.token && availableProviders}
@@ -115,7 +115,7 @@ class App extends React.Component {
                 <Route path="/login" component={LoginPage} />
                 <Route path="/register" component={RegisterPage} />
                 <Route path="/connect" component={ConnectPage} />
-                <Route path="/settings" component={SettingsPage} />
+                <Route path="/settings" component={AccountSettingsPage} />
             </Switch>
         </div>;
     }
