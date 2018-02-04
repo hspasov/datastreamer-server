@@ -20,9 +20,15 @@ const reducer = (state = { files: [] }, action) => {
                     }])
             };
         case "UNLINK":
+            console.log("inside unlink");
+            console.log(action.payload);
             return {
                 ...state,
-                files: state.files.filter(f => f.path !== action.payload)
+                files: state.files.filter(f => {
+                    console.log(f.path !== action.payload);
+                    console.log(f.path);
+                    return f.path !== action.payload;
+                })
             };
         case "PREPARE_DOWNLOAD":
             return {

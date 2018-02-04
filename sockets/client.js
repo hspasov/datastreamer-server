@@ -118,8 +118,6 @@ function Socket(RTC, token, pageActionHandler) {
 
     this.socket.on("ice_candidate", candidate => {
         try {
-            console.log("inside ice_candidate");
-            console.log(candidate);
             this.RTC.peerConnection.addIceCandidate(JSON.parse(candidate)).catch(error => {
                 this.RTC.handleError({
                     type: "generic",

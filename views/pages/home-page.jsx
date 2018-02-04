@@ -44,7 +44,7 @@ class Home extends React.Component {
         };
 
         this.timer = null;
-        this.files = [];
+        this.files = {};
         this.messageHandler = this.messageHandler.bind(this);
         this.chunkHandler = this.chunkHandler.bind(this);
         this.handleError = this.handleError.bind(this);
@@ -153,11 +153,11 @@ class Home extends React.Component {
     // Adding each file to redux is very slow: each object in redux has to be immutable,
     // therefore to add new file to the array of files, a new array has to be created, and that is a slow operation.
     // But in order to display the files, they need to be in redux. Solution is function handleAddFile.
-    // How it works: we have the first file pushed into "this.files", a mutable array
+    // How it works: we have the first file put into "this.files" object, which is mutable
     // and when we call "clearTimeout(this.timer)". "this.timer" is null so
     // nothing happens, and then the setTimeout with 0 ms delay adds "this.props.addFiles(this.files)"
     // to the end of the execution stack. "this.props.addFiles(this.files)" quickly comes to execution
-    // but that operation by itself is very slow, and while it's being executed, numerous actions
+    // but that operation by itself is slow, and while it's being executed, numerous actions
     // to put a file in "this.files" are being placed in the execution stack. Each new action puts
     // new "this.props.addFiles(this.files);" to the end of the execution stack, but it also
     // removes the previous addition of it via clearTimeout call. In result, incoming files are not being blocked by
@@ -165,16 +165,21 @@ class Home extends React.Component {
     // when there are no more new files and no more clearTimeouts, the files are moved from "this.files"
     // to redux
     handleAddFile(file) {
-        this.files.push({
+        this.files[file.path] = {
             ...file,
             download: {
                 status: "notInitialized"
             }
-        });
+        };
         clearTimeout(this.timer);
         this.timer = setTimeout(() => {
-            this.props.addFiles(this.files);
+            this.props.addFiles(Object.values(this.files));
         }, 0);
+    }
+
+    handleRemoveFile(filePath) {
+        delete this.files[filePath];
+        this.props.unlink(filePath);
     }
 
     messageHandler (message) {
@@ -187,7 +192,7 @@ class Home extends React.Component {
                 break;
             case "newScan":
                 this.props.clearFiles();
-                this.files = [];
+                this.files = {};
                 break;
             case "add":
             case "addDir":
@@ -198,7 +203,7 @@ class Home extends React.Component {
                 break;
             case "unlink":
             case "unlinkDir":
-                this.props.unlink(message.payload);
+                this.handleRemoveFile(message.payload);
                 break;
         }
     }
