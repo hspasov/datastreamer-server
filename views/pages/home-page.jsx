@@ -3,23 +3,23 @@ import FileSaver from "file-saver";
 import { connect } from "react-redux";
 import { Redirect } from "react-router";
 import { Helmet } from "react-helmet";
-import { Button, Container, Dimmer, Form, Icon, Image, Item, Message, Segment } from "semantic-ui-react";
+import { Segment } from "semantic-ui-react";
 import path from "path";
 import RTC from "../../rtc_connection/client";
 import DimmerComponent from "../components/dimmer-component.jsx";
 import HomeMenuComponent from "../components/home-menu-component.jsx";
-import File from "../components/file.jsx";
+import FilesComponent from "../components/files-component.jsx";
+import ImageViewerComponent from "../components/image-viewer-component.jsx";
+import TextViewerComponent from "../components/text-viewer-component.jsx";
+import SelectedFilesComponent from "../components/selected-files-component.jsx";
 import fileChunkGenerator from "../../modules/file-chunk-generator";
 import chunkArrayToText from "../../modules/chunk-array-to-text";
 import { openDirectory, changePath, clearPath, navigateBack } from "../../store/actions/navigation";
 import { setImage, removeImage } from "../../store/actions/image-viewer";
-import { setText, editText, removeText } from "../../store/actions/text-viewer";
+import { setText, removeText } from "../../store/actions/text-viewer";
 import {
-    addToSelected,
     clearSelection,
-    showSelected,
-    hideSelected,
-    removeFromSelected
+    showSelected
 } from "../../store/actions/selection";
 import {
     addFiles,
@@ -303,52 +303,6 @@ class Home extends React.Component {
             return <Redirect to="/connect"></Redirect>;
         }
 
-        const files = <Item.Group divided>
-            {!this.props.dimmer.show && this.props.files.files.map((file, i) => {
-                return <File
-                    key={file.path}
-                    fileData={file}
-                    openDirectory={() => this.resolveNavigateFront(file.path)}
-                    openImage={() => this.addToDownloads(file, "image")}
-                    openText={() => this.addToDownloads(file, "text")}
-                    downloadStatus={(file.type !== "directory") ? file.download.status : null}
-                    addToDownloads={() => this.addToDownloads(file, "file")}
-                    downloadPercent={/*(this.props.download.current && this.props.download.current.path === file.path) ? this.state.downloadPercent :*/ 0}
-                    selectFile={() => this.props.addToSelected(file)}
-                />
-            })}
-        </Item.Group>;
-
-        const imageViewer = <div>
-            <Image style={{ display: "block", margin: "0 auto"}} src={this.props.imageViewer.imageURL}/>
-        </div>;
-
-        const textViewerNormalMode = <pre>{this.props.textViewer.text}</pre>;
-        const textViewerEditMode = <Form>
-            <Form.TextArea onChange={event => this.props.editText(event.target.value)} value={this.props.textViewer.editedText} />
-        </Form>;
-
-        const textViewer = <Container>
-            {
-                (this.props.textViewer.editMode) ?
-                    textViewerEditMode : textViewerNormalMode
-            }
-        </Container>;
-
-        const selection = <Dimmer active={this.props.selection.show} page onClickOutside={() => this.props.hideSelected()}>
-            <Message compact>
-                <Message.List>
-                    <Message.Header>Selected files</Message.Header>
-                    {this.props.selection.selected.map((file, index) => {
-                        return <Message.Item key={`selected:${file.path}`}>
-                            {file.path}
-                            <Button floated="right" color="red"><Icon name="remove" onClick={() => this.props.removeFromSelected(file.path)} />Unselect</Button>
-                        </Message.Item>
-                    })}
-                </Message.List>
-            </Message>
-        </Dimmer>
-
         return <Segment>
             <HomeMenuComponent
                 navigateBack={index => this.resolveNavigateBack(index)}
@@ -361,10 +315,13 @@ class Home extends React.Component {
             />
             <Segment padded="very" attached="top" color="grey">
                 <DimmerComponent />
-                {this.props.selection.show && selection}
-                {(this.props.imageViewer.show) ? imageViewer :
-                    (this.props.textViewer.show) ? textViewer :
-                        files
+                <SelectedFilesComponent />
+                {(this.props.imageViewer.show) ? <ImageViewerComponent /> :
+                    (this.props.textViewer.show) ? <TextViewerComponent /> :
+                        <FilesComponent
+                            addToDownloads={(file, context) => this.addToDownloads(file, context)}
+                            openDirectory={(path) => this.resolveNavigateFront(path)}
+                        />
                 }
             </Segment>
         </Segment>;
@@ -389,8 +346,6 @@ const HomePage = connect(store => {
     clearFiles,
     clearSelection,
     showSelected,
-    hideSelected,
-    removeFromSelected,
     removeImage,
     removeText,
     removeLoaderMessage,
@@ -402,9 +357,7 @@ const HomePage = connect(store => {
     setImage,
     setText,
     setError,
-    setLoaderMessage,
-    addToSelected,
-    editText
+    setLoaderMessage
 })(Home);
 
 export default HomePage;
