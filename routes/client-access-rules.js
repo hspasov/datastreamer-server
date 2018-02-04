@@ -8,8 +8,8 @@ const {
 } = require("../db/postgres/client-access-rules");
 
 router.post("/client", [
-    body("providerToken").exists(),
-    body("connectionToken").exists(),
+    body("token").exists(),
+    body("username").exists().trim().isLength({ min: 5, max: 60 }),
     body("readable").exists().isBoolean(),
     body("writable").exists().isBoolean()
 ], (req, res, next) => {
@@ -17,8 +17,8 @@ router.post("/client", [
         res.status(400).end();
     } else {
         setClientRule(
-            req.body.providerToken,
-            req.body.connectionToken,
+            req.body.token,
+            req.body.username,
             req.body.readable,
             req.body.writable
         ).then(response => {

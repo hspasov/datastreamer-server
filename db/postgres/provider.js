@@ -43,15 +43,14 @@ async function login(username, password) {
             return { success: false };
         }
         const result = response.rows[0];
-        const banned = await db.query(`SELECT
+        const clientAccessRules = await db.query(`SELECT
                 Clients.Username AS Username,
                 ClientAccessRules.Readable AS Readable,
                 ClientAccessRules.Writable AS Writable
                 FROM ClientAccessRules INNER JOIN Clients
                 ON ClientAccessRules.ClientId = Clients.Id
-                WHERE ClientAccessRules.ProviderId = $1 AND
-                ClientAccessRules.Readable = FALSE;`, [result.id]);
-        console.log(banned.rows);
+                WHERE ClientAccessRules.ProviderId = $1;`, [result.id]);
+        console.log(clientAccessRules.rows);
         const token = await signProviderToken(result.username);
         return {
             success: true,
@@ -59,7 +58,7 @@ async function login(username, password) {
             username: result.username,
             readable: result.readable,
             writable: result.writable,
-            banned: banned.rows
+            clientAccessRules: clientAccessRules.rows
         };
     } catch (error) {
         log.error("In login a provider:");

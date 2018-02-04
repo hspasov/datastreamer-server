@@ -28,7 +28,7 @@ router.post("/login", [
                     username: response.username,
                     readable: response.readable,
                     writable: response.writable,
-                    banned: response.banned
+                    clientAccessRules: response.clientAccessRules
                 });
             } else {
                 res.status(404).end();
