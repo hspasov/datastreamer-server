@@ -4,11 +4,13 @@ const { verifyProviderToken, verifyConnectionToken } = require("../../modules/to
 
 async function setClientRule(providerToken, clientUsername, readable, writable) {
     try {
+        let decoded;
         try {
-            await verifyProviderToken(providerToken);
+            decoded = await verifyProviderToken(providerToken);
         } catch (error) {
             return { success: false, reason: "providerToken" };
         }
+        console.log(decoded);
         const response = await db.query(`INSERT INTO ClientAccessRules (
             ProviderId, ClientId, Readable, Writable
         ) VALUES (
@@ -19,7 +21,7 @@ async function setClientRule(providerToken, clientUsername, readable, writable) 
         ON CONFLICT (ProviderId, ClientId)
         DO UPDATE SET
         Readable = EXCLUDED.Readable,
-        Writable = EXCLUDED.Writable RETURNING *;`, [decoded.provider, clientUsername, readable, writable]);
+        Writable = EXCLUDED.Writable RETURNING *;`, [decoded.username, clientUsername, readable, writable]);
         return {
             success: true,
             readable: response.rows[0].readable,
@@ -31,7 +33,7 @@ async function setClientRule(providerToken, clientUsername, readable, writable) 
     }
 }
 
-async function removeClientRule(providerToken, clientUsername) {
+async function deleteClientRule(providerToken, clientUsername) {
     try {
         let decoded;
         try {
@@ -41,8 +43,9 @@ async function removeClientRule(providerToken, clientUsername) {
         }
         const response = await db.query(`DELETE FROM ClientAccessRules
     WHERE ProviderId = (SELECT Id FROM Providers WHERE Username = $1)
-    AND ClientId = (SELECT Id FROM Clients WHERE Username = $2);`, [decoded.provider, clientUsername]);
-        return;
+    AND ClientId = (SELECT Id FROM Clients WHERE Username = $2);`, [decoded.username, clientUsername]);
+        console.log(response);
+        return { success: true };
     } catch (error) {
         log.error("In remove client rule:");
         throw error;
@@ -77,6 +80,6 @@ async function setProviderDefaultRule(token, readable, writable) {
 
 module.exports = {
     setClientRule,
-    removeClientRule,
+    deleteClientRule,
     setProviderDefaultRule
 };
