@@ -170,6 +170,26 @@ pool.query("DROP DATABASE IF EXISTS datastreamer;").then(() => {
         END;$$ LANGUAGE plpgsql;`);
 }).then(() => {
     console.log("create function change_provider_password success");
+    return pool.query(`CREATE OR REPLACE FUNCTION change_client_connect_password(provider_username varchar,
+        provider_password varchar, new_client_connect_password varchar)
+        RETURNS BOOLEAN AS $$
+        DECLARE
+            provider_id INTEGER;
+        BEGIN
+            SELECT INTO provider_id Id FROM Providers
+            WHERE Username = provider_username
+            AND Password = crypt(provider_password, Password);
+            IF FOUND THEN
+                UPDATE Providers
+                SET ClientConnectPassword = crypt(new_client_connect_password, gen_salt('bf', 8))
+                WHERE Id = provider_id;
+                RETURN TRUE;
+            ELSE
+                RETURN FALSE;
+            END IF;
+        END;$$ LANGUAGE plpgsql;`);
+}).then(() => {
+    console.log("create function change_client_connect_password success");
     return pool.query(`CREATE OR REPLACE FUNCTION delete_client(client_username varchar,
         client_password varchar)
         RETURNS BOOLEAN AS $$

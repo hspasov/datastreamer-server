@@ -10,7 +10,6 @@ async function setClientRule(providerToken, clientUsername, readable, writable) 
         } catch (error) {
             return { success: false, reason: "providerToken" };
         }
-        console.log(decoded);
         const response = await db.query(`INSERT INTO ClientAccessRules (
             ProviderId, ClientId, Readable, Writable
         ) VALUES (
@@ -44,7 +43,6 @@ async function deleteClientRule(providerToken, clientUsername) {
         const response = await db.query(`DELETE FROM ClientAccessRules
     WHERE ProviderId = (SELECT Id FROM Providers WHERE Username = $1)
     AND ClientId = (SELECT Id FROM Clients WHERE Username = $2);`, [decoded.username, clientUsername]);
-        console.log(response);
         return { success: true };
     } catch (error) {
         log.error("In remove client rule:");

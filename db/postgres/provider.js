@@ -50,7 +50,6 @@ async function login(username, password) {
                 FROM ClientAccessRules INNER JOIN Clients
                 ON ClientAccessRules.ClientId = Clients.Id
                 WHERE ClientAccessRules.ProviderId = $1;`, [result.id]);
-        console.log(clientAccessRules.rows);
         const token = await signProviderToken(result.username);
         return {
             success: true,
@@ -66,7 +65,7 @@ async function login(username, password) {
     }
 }
 
-async function changePassword(token, oldPassword, newPassword) {
+async function changeAccountPassword(token, oldPassword, newPassword) {
     try {
         const isInvalidated = await checkIfInvalidated(token);
         if (isInvalidated) {
@@ -90,6 +89,34 @@ async function changePassword(token, oldPassword, newPassword) {
         return { success: true, token: newToken };
     } catch (error) {
         log.error("In change provider password:");
+        throw error;
+    }
+}
+
+async function changeClientConnectPassword(token, accountPassword, newClientConnectPassword) {
+    try {
+        const isInvalidated = await checkIfInvalidated(token);
+        if (isInvalidated) {
+            return { success: false, reason: "token" };
+        }
+        let decoded;
+        try {
+            decoded = await verifyProviderToken(token);
+        } catch (error) {
+            log.info("In change client connect password could not verify provider token");
+            log.verbose(error);
+            return { success: false, reason: "token" };
+        }
+        const response = await db.query(`SELECT change_client_connect_password($1, $2, $3);`,
+            [decoded.username, accountPassword, newClientConnectPassword]);
+        if (!response.rows[0].change_client_connect_password) {
+            return { success: false, reason: "credentials" };
+        }
+        await invalidateToken(token);
+        const newToken = await signProviderToken(decoded.username);
+        return { success: true, token: newToken };
+    } catch (error) {
+        log.error("In change client connect password:");
         throw error;
     }
 }
@@ -123,6 +150,7 @@ async function deleteAccount(token, password) {
 module.exports = {
     register,
     login,
-    changePassword,
+    changeAccountPassword,
+    changeClientConnectPassword,
     deleteAccount
 };

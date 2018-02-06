@@ -3,7 +3,13 @@ var express = require("express");
 var router = express.Router();
 const { body, validationResult } = require("express-validator/check");
 const PasswordValidator = require("password-validator");
-const { login, register, changePassword, deleteAccount } = require("../db/postgres/provider");
+const {
+    login,
+    register,
+    changeAccountPassword,
+    changeClientConnectPassword,
+    deleteAccount
+} = require("../db/postgres/provider");
 const { invalidateToken } = require("../db/redis/peer-session");
 
 const password = new PasswordValidator();
@@ -69,13 +75,13 @@ router.post("/register", [
 
 router.post("/account", [
     body("token").exists(),
-    body("oldPassword").exists().isLength({ max: 100 }),
-    body("newPassword").exists().custom(passwordCheck)
+    // body("oldPassword").exists().isLength({ max: 100 }),
+    // body("newPassword").exists().custom(passwordCheck)
 ], (req, res, next) => {
     if (!validationResult(req).isEmpty()) {
         res.status(400).end();
-    } else {
-        changePassword(req.body.token, req.body.oldPassword, req.body.newPassword).then(response => {
+    } else if (req.query.action === "account password change") {
+        changeAccountPachangessword(req.body.token, req.body.oldPassword, req.body.newPassword).then(response => {
             if (response.success) {
                 res.status(201).send({ token: response.token });
             } else if (response.reason === "token") {
@@ -89,8 +95,25 @@ router.post("/account", [
             log.error(error);
             res.status(500).end();
         });
+    } else if (req.query.action === "client connect password change") {
+        changeClientConnectPassword(req.body.token, req.body.accountPassword, req.body.newClientConnectPassword).then(response => {
+            if (response.success) {
+                res.status(201).send({ token: response.token });
+            } else if (response.reason === "token") {
+                res.status(401).end();
+            } else if (response.reason === "credentials") {
+                res.status(404).end();
+            } else {
+                throw `Invalid response.reason: ${response.reason}`;
+            }
+        }).catch(error => {
+            log.error(error);
+            res.status(500).end();
+        })
+    } else {
+
     }
-    });
+});
 
 router.post("/delete", [
     body("token").exists(),
