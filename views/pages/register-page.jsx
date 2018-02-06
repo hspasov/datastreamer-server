@@ -5,6 +5,7 @@ import { Helmet } from "react-helmet";
 import { loginClient } from "../../store/actions/client";
 import formurlencoded from "form-urlencoded";
 import { Button, Form, Grid, Header, Message, Segment } from "semantic-ui-react";
+import FormComponent from "../components/form-component.jsx";
 import FormSubmitError from "../components/form-submit-error.jsx";
 
 class Register extends React.Component {
@@ -12,37 +13,13 @@ class Register extends React.Component {
         super(props);
 
         this.state = {
-            username: "",
-            password: "",
-            confirmPassword: "",
             hasFormErrors: false,
             formErrors: []
         }
     }
 
-    handleUsernameChange(event) {
-        event.preventDefault();
-        this.setState({
-            username: event.target.value
-        })
-    }
-
-    handlePasswordChange(event) {
-        event.preventDefault();
-        this.setState({
-            password: event.target.value
-        });
-    }
-
-    handleConfirmPasswordChange(event) {
-        event.preventDefault();
-        this.setState({
-            confirmPassword: event.target.value
-        });
-    }
-
-    handleSubmit() {
-        if (!(this.state.username && this.state.password)) {
+    handleSubmit(form) {
+        if (!(form.username && form.password)) {
             this.setState({
                 hasFormErrors: true,
                 formErrors: ["empty"]
@@ -50,7 +27,7 @@ class Register extends React.Component {
             return;
         }
 
-        if (this.state.password != this.state.confirmPassword) {
+        if (form.password != form.confirmPassword) {
             this.setState({
                 hasFormErrors: true,
                 formErrors: ["match"]
@@ -59,8 +36,8 @@ class Register extends React.Component {
         }
 
         const formData = {
-            username: this.state.username,
-            password: this.state.password
+            username: form.username,
+            password: form.password
         };
 
         fetch("/register", {
@@ -110,45 +87,40 @@ class Register extends React.Component {
             `}</style>
             </Helmet>
             <Grid textAlign="center" style={{ height: "100%" }} verticalAlign="middle">
-                <Grid.Column style={{ maxWidth: 450 }}>
-                    <Header as="h2" color="black" textAlign="center">
-                        Create new account
-                        </Header>
-                    <Form size="massive">
-                        <Segment>
-                            <Form.Input
-                                fluid
-                                icon="user"
-                                iconPosition="left"
-                                placeholder="Username"
-                                required
-                                onChange={event => this.handleUsernameChange(event)}
-                            />
-                            <Form.Input
-                                fluid
-                                icon="lock"
-                                iconPosition="left"
-                                placeholder="Password"
-                                type="password"
-                                required
-                                onChange={event => this.handlePasswordChange(event)}
-                            />
-                            <Form.Input
-                                fluid
-                                icon="lock"
-                                iconPosition="left"
-                                placeholder="Confirm password"
-                                type="password"
-                                onChange={event => this.handleConfirmPasswordChange(event)}
-                            />
-                            <Button color="black" fluid size="large" onClick={() => this.handleSubmit()}>Register</Button>
-                            <FormSubmitError visible={this.state.hasFormErrors} errors={this.state.formErrors} />
-                        </Segment>
-                    </Form>
-                    <Message>
+                <FormComponent
+                    title="Create new account"
+                    fields={[
+                        {
+                            label: "username",
+                            icon: "user",
+                            placeholder: "Username",
+                            type: "text",
+                            required: true
+                        },
+                        {
+                            label: "password",
+                            icon: "lock",
+                            placeholder: "Password",
+                            type: "password",
+                            required: true
+                        },
+                        {
+                            label: "confirmPassword",
+                            icon: "lock",
+                            placeholder: "Confirm password",
+                            type: "password",
+                            required: true
+                        }
+                    ]}
+                    submit={{
+                        label: "Register",
+                        color: "black",
+                        onClick: form => this.handleSubmit(form)
+                    }}
+                />
+                    {/* <Message>
                         Already have an account? <Link to="/login">Login</Link>
-                    </Message>
-                </Grid.Column>
+                    </Message> */}
             </Grid>
         </Segment>;
     }

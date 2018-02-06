@@ -6,7 +6,8 @@ import { Helmet } from "react-helmet";
 import { connectClient } from "../../store/actions/provider";
 import disconnect from "../../modules/disconnect";
 import formurlencoded from "form-urlencoded";
-import { Button, Form, Grid, Header, Message, Segment } from "semantic-ui-react";
+import { Grid, Segment } from "semantic-ui-react";
+import FormComponent from "../components/form-component.jsx";
 import FormSubmitError from "../components/form-submit-error.jsx";
 
 
@@ -15,31 +16,16 @@ class Connect extends React.Component {
         super(props);
 
         this.state = {
-            username: "",
-            password: "",
             hasFormErrors: false,
             formErrors: []
         }
 
+        // If there is connection disconnect
         this.props.provider.token && disconnect.bind(this)();
     }
 
-    handleUsernameChange(event) {
-        event.preventDefault();
-        this.setState({
-            username: event.target.value
-        })
-    }
-
-    handlePasswordChange(event) {
-        event.preventDefault();
-        this.setState({
-            password: event.target.value
-        });
-    }
-
-    handleSubmit() {
-        if (!(this.state.username && this.state.password)) {
+    handleSubmit(form) {
+        if (!(form.username && form.password)) {
             this.setState({
                 hasFormErrors: true,
                 formErrors: ["empty"]
@@ -50,8 +36,8 @@ class Connect extends React.Component {
             hasFormErrors: false
         });
         const formData = {
-            username: this.state.username,
-            password: this.state.password,
+            username: form.username,
+            password: form.password,
             token: this.props.client.token
         }
 
@@ -106,32 +92,30 @@ class Connect extends React.Component {
             `}</style>
             </Helmet>
             <Grid textAlign="center" style={{ height: "100%" }} verticalAlign="middle">
-                <Grid.Column style={{ maxWidth: 450 }} >
-                    <Header as="h2" color="black" textAlign="center">
-                        Connect to provider
-                    </Header>
-                    <Form size="massive">
-                        <Segment>
-                            <Form.Input
-                                fluid
-                                icon="user"
-                                iconPosition="left"
-                                placeholder="Provider name"
-                                required
-                                onChange={event => this.handleUsernameChange(event)} />
-                            <Form.Input
-                                fluid
-                                icon="lock"
-                                iconPosition="left"
-                                placeholder="Password"
-                                type="password"
-                                required
-                                onChange={event => this.handlePasswordChange(event)} />
-                            <Button color="black" fluid size="large" onClick={() => this.handleSubmit()}>Connect</Button>
-                            <FormSubmitError visible={this.state.hasFormErrors} errors={this.state.formErrors}/>
-                        </Segment>
-                    </Form>
-                </Grid.Column>
+                <FormComponent
+                    title="Connect to provider"
+                    fields={[
+                        {
+                            label: "username",
+                            icon: "user",
+                            placeholder: "Provider name",
+                            type: "text",
+                            required: true
+                        },
+                        {
+                            label: "password",
+                            icon: "lock",
+                            placeholder: "Client connect password",
+                            type: "password",
+                            required: true
+                        }
+                    ]}
+                    submit={{
+                        label: "Connect",
+                        color: "black",
+                        onClick: form => this.handleSubmit(form)
+                    }}
+                />
             </Grid>
         </Segment>;
     }

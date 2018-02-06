@@ -4,7 +4,8 @@ import { connect } from "react-redux";
 import { Helmet } from "react-helmet";
 import { loginClient } from "../../store/actions/client";
 import formurlencoded from "form-urlencoded";
-import { Button, Form, Grid, Header, Message, Segment } from "semantic-ui-react";
+import { Grid, Message, Segment } from "semantic-ui-react";
+import FormComponent from "../components/form-component.jsx";
 import FormSubmitError from "../components/form-submit-error.jsx";
 
 class Login extends React.Component {
@@ -19,22 +20,8 @@ class Login extends React.Component {
         };
     }
 
-    handleUsernameChange(event) {
-        event.preventDefault();
-        this.setState({
-            username: event.target.value
-        });
-    }
-
-    handlePasswordChange(event) {
-        event.preventDefault();
-        this.setState({
-            password: event.target.value
-        });
-    }
-
-    handleSubmit() {
-        if (!(this.state.username && this.state.password)) {
+    handleSubmit(form) {
+        if (!(form.username && form.password)) {
             this.setState({
                 hasFormErrors: true,
                 formErrors: ["empty"]
@@ -46,8 +33,8 @@ class Login extends React.Component {
         });
 
         const formData = {
-            username: this.state.username,
-            password: this.state.password
+            username: form.username,
+            password: form.password
         }
 
         fetch("/login", {
@@ -95,35 +82,33 @@ class Login extends React.Component {
             `}</style>
             </Helmet>
             <Grid textAlign="center" style={{ height: "100%" }} verticalAlign="middle">
-                <Grid.Column style={{ maxWidth: 450 }} >
-                    <Header as="h2" color="black" textAlign="center">
-                        Log-in to your account
-                    </Header>
-                    <Form size="massive">
-                    <Segment>
-                            <Form.Input
-                                fluid
-                                icon="user"
-                                iconPosition="left"
-                                placeholder="Username"
-                                required
-                                onChange={event => this.handleUsernameChange(event)}/>
-                            <Form.Input
-                                fluid
-                                icon="lock"
-                                iconPosition="left"
-                                placeholder="Password"
-                                type="password"
-                                required
-                                onChange={event => this.handlePasswordChange(event)}/>
-                            <Button color="black" fluid size="large" onClick={() => this.handleSubmit()}>Login</Button>
-                            <FormSubmitError visible={this.state.hasFormErrors} errors={this.state.formErrors} />
-                        </Segment>
-                    </Form>
-                    <Message>
-                        Don't have an account? <Link to="/register">Register</Link>
-                    </Message>
-                </Grid.Column>
+                <FormComponent
+                    title="Login to your account"
+                    fields={[
+                        {
+                            label: "username",
+                            icon: "user",
+                            placeholder: "Username",
+                            type: "text",
+                            required: true
+                        },
+                        {
+                            label: "password",
+                            icon: "lock",
+                            placeholder: "Password",
+                            type: "password",
+                            required: true
+                        }
+                    ]}
+                    submit={{
+                        label: "Login",
+                        color: "black",
+                        onClick: form => this.handleSubmit(form)
+                    }}
+                />
+                {/* <Message>
+                    Don't have an account? <Link to="/register">Register</Link>
+                </Message> */}
             </Grid>
         </Segment>;
     }

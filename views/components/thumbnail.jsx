@@ -2,10 +2,6 @@ import React from "react";
 import { Icon, Image } from "semantic-ui-react";
 
 class Thumbnail extends React.Component {
-    constructor(props) {
-        super(props);
-    }
-
     getIcon() {
         if (/^image\//.test(this.props.mime)) {
             return "file image outline";

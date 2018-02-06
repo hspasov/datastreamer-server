@@ -11,10 +11,6 @@ import LogoComponent from "./logo-component.jsx";
 import SelectOptionsComponent from "./select-options-component.jsx";
 
 class HomeMenu extends React.Component {
-    constructor(props) {
-        super(props);
-    }
-
     resolveBackButtonOnClick() {
         if (this.props.imageViewer.show) {
             return () => this.props.removeImage();

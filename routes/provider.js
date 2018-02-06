@@ -81,7 +81,7 @@ router.post("/account", [
     if (!validationResult(req).isEmpty()) {
         res.status(400).end();
     } else if (req.query.action === "account password change") {
-        changeAccountPachangessword(req.body.token, req.body.oldPassword, req.body.newPassword).then(response => {
+        changeAccountPassword(req.body.token, req.body.oldPassword, req.body.newPassword).then(response => {
             if (response.success) {
                 res.status(201).send({ token: response.token });
             } else if (response.reason === "token") {
