@@ -4,6 +4,7 @@ var router = express.Router();
 const { body, validationResult } = require("express-validator/check");
 const PasswordValidator = require("password-validator");
 const { login, register, changePassword, deleteAccount } = require("../db/postgres/provider");
+const { invalidateToken } = require("../db/redis/peer-session");
 
 const password = new PasswordValidator();
 password.min(8).max(100).digits().lowercase().uppercase();
@@ -113,6 +114,23 @@ router.post("/delete", [
             res.status(500).end();
         });
     }
+});
+
+router.post("/logout", (req, res, next) => {
+    invalidateToken(req.body.providerToken).then(success => {
+        if (!success) {
+            log.info("Could not invalidate providerToken.");
+            log.verbose(req.body.providerToken);
+        }
+        // Server response when all client tokens have been invalidated
+        Promise.all(req.body.clientTokens.map(token => invalidateToken(token))).then(results => {
+            log.verbose("invalidating clientTokens finished");
+            res.status(200).end();
+        }).catch(error => {
+            log.error(error);
+            res.status(500).end();
+        })
+    })
 });
 
 module.exports = router;

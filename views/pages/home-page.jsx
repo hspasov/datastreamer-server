@@ -5,7 +5,7 @@ import { Redirect } from "react-router";
 import { Helmet } from "react-helmet";
 import { Segment } from "semantic-ui-react";
 import path from "path";
-import RTC from "../../rtc_connection/client";
+import RTC from "../../modules/rtc";
 import DimmerComponent from "../components/dimmer-component.jsx";
 import HomeMenuComponent from "../components/home-menu-component.jsx";
 import FilesComponent from "../components/files-component.jsx";
