@@ -33,6 +33,10 @@ function finishDownload(file) {
     };
 }
 
+function sortFilesByNameAsc() {
+    return { type: "SORT_FILES_BY_NAME_ASC" };
+}
+
 function clearFiles() {
     return { type: "CLEAR_FILES" };
 }
@@ -43,5 +47,6 @@ export {
     unlink,
     prepareDownload,
     finishDownload,
+    sortFilesByNameAsc,
     clearFiles
 }

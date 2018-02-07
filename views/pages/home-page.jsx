@@ -2,6 +2,7 @@ import React from "react";
 import FileSaver from "file-saver";
 import { connect } from "react-redux";
 import { Redirect } from "react-router";
+import { withRouter } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import { Segment } from "semantic-ui-react";
 import path from "path";
@@ -17,6 +18,8 @@ import chunkArrayToText from "../../modules/chunk-array-to-text";
 import { openDirectory, changePath, clearPath, navigateBack } from "../../store/actions/navigation";
 import { setImage, removeImage } from "../../store/actions/image-viewer";
 import { setText, removeText } from "../../store/actions/text-viewer";
+import { logoutClient } from "../../store/actions/client";
+import { disconnectClient } from "../../store/actions/provider";
 import {
     clearSelection,
     showSelected
@@ -292,9 +295,15 @@ class Home extends React.Component {
                 break;
             case "invalidToken":
                 this.props.setError("Authentication failed.", error.message);
+                this.props.disconnectClient();
+                this.props.logoutClient();
+                this.props.history.push("/login");
                 break;
             case "sessionExpired":
                 this.props.setError("Session expired.", error.message);
+                this.props.disconnectClient();
+                this.props.logoutClient();
+                this.props.history.push("/login");
                 break;
         }
         console.log(error);
@@ -333,7 +342,7 @@ class Home extends React.Component {
     }
 }
 
-const HomePage = connect(store => {
+const HomePage = withRouter(connect(store => {
     return {
         client: store.client,
         provider: store.provider,
@@ -362,7 +371,9 @@ const HomePage = connect(store => {
     setImage,
     setText,
     setError,
-    setLoaderMessage
-})(Home);
+    setLoaderMessage,
+    disconnectClient,
+    logoutClient
+})(Home));
 
 export default HomePage;

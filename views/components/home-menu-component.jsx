@@ -6,6 +6,7 @@ import { removeImage } from "../../store/actions/image-viewer";
 import { closeEditMode, removeText } from "../../store/actions/text-viewer";
 import { navigateBack } from "../../store/actions/navigation";
 import { openEditMode } from "../../store/actions/text-viewer";
+import { sortFilesByNameAsc } from "../../store/actions/files";
 import NavigationComponent from "./navigation-component.jsx";
 import LogoComponent from "./logo-component.jsx";
 import SelectOptionsComponent from "./select-options-component.jsx";
@@ -54,7 +55,10 @@ class HomeMenu extends React.Component {
                 clearSelection={this.props.clearSelection}
             />
             <Menu.Menu position="right">
-                <Menu.Item>
+                <Menu.Item onClick={() => this.props.sortFilesByNameAsc()} link>
+                    Sort by name
+                </Menu.Item>
+                <Menu.Item link>
                     <label>
                         <Input type="file" style={{ display: "none" }} onChange={this.props.handleUploadFiles} />
                         <Icon size="large" name="plus" />Upload file
@@ -77,7 +81,8 @@ const HomeMenuComponent = connect(store => {
     removeImage,
     openEditMode,
     closeEditMode,
-    removeText
+    removeText,
+    sortFilesByNameAsc
 })(HomeMenu);
 
 export default HomeMenuComponent;

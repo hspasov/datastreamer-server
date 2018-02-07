@@ -1,4 +1,5 @@
 import React from "react";
+import { Redirect } from "react-router";
 import { Helmet } from "react-helmet";
 import { Button, Grid, Segment } from "semantic-ui-react";
 import ChangePasswordComponent from "../components/change-password-component.jsx";
@@ -21,6 +22,10 @@ class AccountSettingsPage extends React.Component {
     }
 
     render() {
+        if (!this.props.client.token) {
+            return <Redirect to="/login"></Redirect>;
+        }
+
         return <Segment className="accountSettingsPage">
             <Helmet><style>{`
       body > div,

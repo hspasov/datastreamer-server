@@ -76,6 +76,10 @@ class Register extends React.Component {
     }
 
     render() {
+        if (this.props.client.token || this.props.provider.token) {
+            return <Redirect to="/home"></Redirect>;
+        }
+
         return <Segment className="registerPage" padded="very" attached="top">
             <Helmet>
                 <style>{`
@@ -126,6 +130,11 @@ class Register extends React.Component {
     }
 }
 
-const RegisterPage = withRouter(connect(null, { loginClient })(Register));
+const RegisterPage = withRouter(connect(store => {
+    return {
+        client: store.client,
+        provider: store.provider
+    };
+}, { loginClient })(Register));
 
 export default RegisterPage;

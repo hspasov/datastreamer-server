@@ -56,6 +56,7 @@ class ChangePassword extends React.Component {
                 token: json.token,
                 username: this.props.client.username
             });
+            this.props.history.push("/home");
         }).catch(errorCode => {
             let formErrors;
             switch (errorCode) {

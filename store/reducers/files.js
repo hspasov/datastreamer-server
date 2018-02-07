@@ -20,13 +20,9 @@ const reducer = (state = { files: [] }, action) => {
                     }])
             };
         case "UNLINK":
-            console.log("inside unlink");
-            console.log(action.payload);
             return {
                 ...state,
                 files: state.files.filter(f => {
-                    console.log(f.path !== action.payload);
-                    console.log(f.path);
                     return f.path !== action.payload;
                 })
             };
@@ -56,6 +52,21 @@ const reducer = (state = { files: [] }, action) => {
                             }
                         } : f
                 )
+            };
+        case "SORT_FILES_BY_NAME_ASC":
+            return {
+                ...state,
+                files: state.files.sort((file1, file2) => {
+                    let name1 = file1.name.toLowerCase();
+                    let name2 = file2.name.toLowerCase();
+                    if (name1 > name2) {
+                        return 1;
+                    } else if (name1 < name2) {
+                        return -1;
+                    } else {
+                        return 0;
+                    }
+                })
             };
         case "CLEAR_FILES":
             return {

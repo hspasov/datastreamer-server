@@ -71,6 +71,10 @@ class Login extends React.Component {
     }
 
     render() {
+        if (this.props.client.token || this.props.provider.token) {
+            return <Redirect to="/home"></Redirect>;
+        }
+
         return <Segment className="loginPage" padded="very" attached="top">
             <Helmet>
                 <style>{`
@@ -114,6 +118,11 @@ class Login extends React.Component {
     }
 }
 
-const LoginPage = withRouter(connect(null, { loginClient })(Login));
+const LoginPage = withRouter(connect(store => {
+    return {
+        client: store.client,
+        provider: store.provider
+    };
+}, { loginClient })(Login));
 
 export default LoginPage;
