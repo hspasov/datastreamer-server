@@ -32,7 +32,8 @@ class ChangePassword extends React.Component {
             return;
         }
         this.setState({
-            hasFormErrors: false
+            hasFormErrors: false,
+            formErrors: []
         });
 
         const formData = {
@@ -49,7 +50,7 @@ class ChangePassword extends React.Component {
             if (response.status === 201) {
                 return response.json();
             } else {
-                throw response.status;
+                throw response;
             }
         }).then(json => {
             this.props.loginClient({
@@ -57,27 +58,10 @@ class ChangePassword extends React.Component {
                 username: this.props.client.username
             });
             this.props.history.push("/home");
-        }).catch(errorCode => {
-            let formErrors;
-            switch (errorCode) {
-                case 400:
-                    formErrors = ["format"];
-                    break;
-                case 401:
-                    formErrors = ["token"];
-                    break;
-                case 404:
-                    formErrors = ["verification"];
-                    break;
-                case 500:
-                    formErrors = ["error"];
-                    break;
-                default:
-                    formErrors = ["connect"];
-            }
+        }).catch(error => {
             this.setState({
                 hasFormErrors: true,
-                formErrors
+                formErrors: [error.status]
             });
         });
     }
@@ -91,27 +75,34 @@ class ChangePassword extends React.Component {
                     icon: "lock",
                     placeholder: "Old password",
                     type: "password",
-                    required: true
+                    required: true,
+                    autocomplete: "off"
                 },
                 {
                     label: "newPassword",
                     icon: "lock",
                     placeholder: "New password",
                     type: "password",
-                    required: true
+                    required: true,
+                    autocomplete: "new-password"
                 },
                 {
                     label: "confirmNewPassword",
                     icon: "lock",
                     placeholder: "Confirm new password",
                     type: "password",
-                    required: true
+                    required: true,
+                    autocomplete: "new-password"
                 }
             ]}
             submit={{
                 label: "Submit",
                 color: "black",
                 onClick: form => this.handleSubmit(form)
+            }}
+            error={{
+                hasFormErrors: this.state.hasFormErrors,
+                formErrors: this.state.formErrors
             }}
         />;
     }

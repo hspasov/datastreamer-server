@@ -40,29 +40,12 @@ class DeleteAccount extends React.Component {
                 this.props.logoutClient();
                 this.props.history.push("/login");
             } else {
-                throw response.status;
+                throw response;
             }
-        }).catch(errorCode => {
-            let formErrors;
-            switch (errorCode) {
-                case 400:
-                    formErrors = ["format"];
-                    break;
-                case 401:
-                    formErrors = ["token"];
-                    break;
-                case 404:
-                    formErrors = ["verification"];
-                    break;
-                case 500:
-                    formErrors = ["error"];
-                    break;
-                default:
-                    formErrors = ["connect"];
-            }
+        }).catch(error => {
             this.setState({
                 hasFormErrors: true,
-                formErrors
+                formErrors: [error.status]
             });
         });
     }
@@ -76,13 +59,18 @@ class DeleteAccount extends React.Component {
                     icon: "lock",
                     placeholder: "Password",
                     type: "password",
-                    required: true
+                    required: true,
+                    autocomplete: "off"
                 }
             ]}
             submit={{
                 label: "DELETE",
                 color: "red",
                 onClick: form => this.handleSubmit(form)
+            }}
+            error={{
+                hasFormErrors: this.state.hasFormErrors,
+                formErrors: this.state.formErrors
             }}
         />;
     }

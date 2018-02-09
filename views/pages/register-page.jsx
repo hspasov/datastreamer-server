@@ -6,7 +6,6 @@ import { loginClient } from "../../store/actions/client";
 import formurlencoded from "form-urlencoded";
 import { Button, Form, Grid, Header, Message, Segment } from "semantic-ui-react";
 import FormComponent from "../components/form-component.jsx";
-import FormSubmitError from "../components/form-submit-error.jsx";
 
 class Register extends React.Component {
     constructor(props) {
@@ -48,29 +47,15 @@ class Register extends React.Component {
             if (response.status == 201) {
                 return response.json();
             } else {
-                throw response.status;
+                throw response;
             }
         }).then(json => {
             this.props.loginClient(json);
             this.props.history.push("/connect");
-        }).catch(errorCode => {
-            let formErrors;
-            switch (errorCode) {
-                case 400:
-                    formErrors = ["format"];
-                    break;
-                case 412:
-                    formErrors = ["exists"];
-                    break;
-                case 500:
-                    formErrors = ["error"];
-                    break;
-                default:
-                    formErrors = ["connect"];
-            }
+        }).catch(error => {
             this.setState({
                 hasFormErrors: true,
-                formErrors
+                formErrors: [error.status]
             });
         });
     }
@@ -99,21 +84,24 @@ class Register extends React.Component {
                             icon: "user",
                             placeholder: "Username",
                             type: "text",
-                            required: true
+                            required: true,
+                            autocomplete: "username"
                         },
                         {
                             label: "password",
                             icon: "lock",
                             placeholder: "Password",
                             type: "password",
-                            required: true
+                            required: true,
+                            autocomplete: "new-password"
                         },
                         {
                             label: "confirmPassword",
                             icon: "lock",
                             placeholder: "Confirm password",
                             type: "password",
-                            required: true
+                            required: true,
+                            autocomplete: "new-password"
                         }
                     ]}
                     submit={{
@@ -121,10 +109,14 @@ class Register extends React.Component {
                         color: "black",
                         onClick: form => this.handleSubmit(form)
                     }}
-                />
-                    {/* <Message>
+                    error={{
+                        hasFormErrors: this.state.hasFormErrors,
+                        formErrors: this.state.formErrors
+                    }}
+                    message={<Message>
                         Already have an account? <Link to="/login">Login</Link>
-                    </Message> */}
+                    </Message>}
+                />
             </Grid>
         </Segment>;
     }

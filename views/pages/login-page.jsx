@@ -6,15 +6,12 @@ import { loginClient } from "../../store/actions/client";
 import formurlencoded from "form-urlencoded";
 import { Grid, Message, Segment } from "semantic-ui-react";
 import FormComponent from "../components/form-component.jsx";
-import FormSubmitError from "../components/form-submit-error.jsx";
 
 class Login extends React.Component {
     constructor(props) {
         super(props);
 
         this.state = {
-            username: "",
-            password: "",
             hasFormErrors: false,
             formErrors: []
         };
@@ -45,27 +42,15 @@ class Login extends React.Component {
             if (response.status === 200) {
                 return response.json();
             } else {
-                throw response.status;
+                throw response;
             }
         }).then(json => {
             this.props.loginClient(json);
             this.props.history.push("/connect");
-        }).catch(errorCode => {
-            console.log(errorCode);
-            let formErrors;
-            switch (errorCode) {
-                case 404:
-                    formErrors = ["verification"];
-                    break;
-                case 500:
-                    formErrors = ["error"];
-                    break;
-                default:
-                    formErrors = ["connect"];
-            }
+        }).catch(error => {
             this.setState({
                 hasFormErrors: true,
-                formErrors
+                formErrors: [error.status]
             });
         });
     }
@@ -94,14 +79,16 @@ class Login extends React.Component {
                             icon: "user",
                             placeholder: "Username",
                             type: "text",
-                            required: true
+                            required: true,
+                            autocomplete: "username"
                         },
                         {
                             label: "password",
                             icon: "lock",
                             placeholder: "Password",
                             type: "password",
-                            required: true
+                            required: true,
+                            autocomplete: "current-password"
                         }
                     ]}
                     submit={{
@@ -109,10 +96,14 @@ class Login extends React.Component {
                         color: "black",
                         onClick: form => this.handleSubmit(form)
                     }}
+                    error={{
+                        hasFormErrors: this.state.hasFormErrors,
+                        formErrors: this.state.formErrors
+                    }}
+                    message={<Message>
+                        Don't have an account? <Link to="/register">Register</Link>
+                    </Message>}
                 />
-                {/* <Message>
-                    Don't have an account? <Link to="/register">Register</Link>
-                </Message> */}
             </Grid>
         </Segment>;
     }

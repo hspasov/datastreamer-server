@@ -8,8 +8,6 @@ import disconnect from "../../modules/disconnect";
 import formurlencoded from "form-urlencoded";
 import { Grid, Segment } from "semantic-ui-react";
 import FormComponent from "../components/form-component.jsx";
-import FormSubmitError from "../components/form-submit-error.jsx";
-
 
 class Connect extends React.Component {
     constructor(props) {
@@ -49,29 +47,15 @@ class Connect extends React.Component {
             if (response.status === 200) {
                 return response.json();
             } else {
-                throw response.status;
+                throw response;
             }
         }).then(json => {
             this.props.connectClient(json);
             this.props.history.push("/home");
-        }).catch(errorCode => {
-            let formErrors;
-            switch (errorCode) {
-                case 401:
-                    formErrors = ["token"];
-                    break;
-                case 404:
-                    formErrors = ["verification"];
-                    break;
-                case 500:
-                    formErrors = ["error"];
-                    break;
-                default:
-                    formErrors = ["connect"];
-            }
+        }).catch(error => {
             this.setState({
                 hasFormErrors: true,
-                formErrors
+                formErrors: [error.status]
             });
         });
     }
@@ -100,20 +84,26 @@ class Connect extends React.Component {
                             icon: "user",
                             placeholder: "Provider name",
                             type: "text",
-                            required: true
+                            required: true,
+                            autocomplete: "off"
                         },
                         {
                             label: "password",
                             icon: "lock",
                             placeholder: "Client connect password",
                             type: "password",
-                            required: true
+                            required: true,
+                            autocomplete: "off"
                         }
                     ]}
                     submit={{
                         label: "Connect",
                         color: "black",
                         onClick: form => this.handleSubmit(form)
+                    }}
+                    error={{
+                        hasFormErrors: this.state.hasFormErrors,
+                        formErrors: this.state.formErrors
                     }}
                 />
             </Grid>

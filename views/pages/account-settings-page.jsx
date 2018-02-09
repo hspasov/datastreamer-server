@@ -4,7 +4,6 @@ import { Helmet } from "react-helmet";
 import { Button, Grid, Segment } from "semantic-ui-react";
 import ChangePasswordComponent from "../components/change-password-component.jsx";
 import DeleteAccountComponent from "../components/delete-account-component.jsx";
-import FormSubmitError from "../components/form-submit-error.jsx";
 
 class AccountSettingsPage extends React.Component {
     constructor(props) {
