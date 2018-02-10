@@ -13,7 +13,7 @@ class SelectedFiles extends React.Component {
                         {this.props.selection.selected.map((file, index) => {
                             return <Message.Item key={`selected:${file.path}`}>
                                 {file.path}
-                                <Button floated="right" color="red"><Icon name="remove" onClick={() => this.props.removeFromSelected(file.path)} />Unselect</Button>
+                                <Button floated="right" color="red" onClick={() => this.props.removeFromSelected(file.path)}><Icon name="remove" />Unselect</Button>
                             </Message.Item>
                         })}
                     </Message.List>

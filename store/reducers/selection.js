@@ -6,9 +6,12 @@ const reducer = (state = {selected: [], show: false}, action) => {
                 selected: state.selected.concat([action.payload])
             };
         case "REMOVE_FROM_SELECTED":
+            const selected = state.selected.filter(f => f.path !== action.payload);
+            const show = selected.length > 0;
             return {
                 ...state,
-                selected: state.selected.filter(f => f.path !== action.payload)
+                selected,
+                show
             };
         case "SHOW_SELECTED":
             return {
