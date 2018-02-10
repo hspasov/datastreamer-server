@@ -43,6 +43,7 @@ class FormComponent extends React.Component {
                         onChange={event => this[`${field.label}Change`](event)}
                     />)}
                     <Button
+                        loading={this.props.loading}
                         color={this.props.submit.color}
                         fluid
                         size="large"

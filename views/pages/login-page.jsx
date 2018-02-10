@@ -12,14 +12,17 @@ class Login extends React.Component {
         super(props);
 
         this.state = {
+            loading: false,
             hasFormErrors: false,
             formErrors: []
         };
     }
 
     handleSubmit(form) {
+        this.setState({ loading: true });
         if (!(form.username && form.password)) {
             this.setState({
+                loading: false,
                 hasFormErrors: true,
                 formErrors: ["empty"]
             });
@@ -39,6 +42,7 @@ class Login extends React.Component {
             headers: { "Content-Type": "application/x-www-form-urlencoded", },
             body: formurlencoded(formData)
         }).then(response => {
+            this.setState({ loading: false });
             if (response.status === 200) {
                 return response.json();
             } else {
@@ -60,7 +64,7 @@ class Login extends React.Component {
             return <Redirect to="/home"></Redirect>;
         }
 
-        return <Segment className="loginPage" padded="very" attached="top">
+        return <Segment className="loginPage" padded="very">
             <Helmet>
                 <style>{`
             body > div,
@@ -100,6 +104,7 @@ class Login extends React.Component {
                         hasFormErrors: this.state.hasFormErrors,
                         formErrors: this.state.formErrors
                     }}
+                    loading={this.state.loading}
                     message={<Message>
                         Don't have an account? <Link to="/register">Register</Link>
                     </Message>}

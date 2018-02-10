@@ -55,7 +55,7 @@ function Socket(RTC, token, pageActionHandler) {
 
     this.socket.on("provider_connect", () => {
         pageActionHandler(function () {
-            this.props.setLoaderMessage("Provider found. Waiting for RTC request...");
+            this.props.setLoaderMessage("Provider found. Starting session...");
         });
     });
 

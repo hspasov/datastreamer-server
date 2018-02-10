@@ -12,14 +12,17 @@ class Register extends React.Component {
         super(props);
 
         this.state = {
+            loading: false,
             hasFormErrors: false,
             formErrors: []
         }
     }
 
     handleSubmit(form) {
+        this.setState({ loading: true });
         if (!(form.username && form.password)) {
             this.setState({
+                loading: false,
                 hasFormErrors: true,
                 formErrors: ["empty"]
             });
@@ -28,6 +31,7 @@ class Register extends React.Component {
 
         if (form.password != form.confirmPassword) {
             this.setState({
+                loading: false,
                 hasFormErrors: true,
                 formErrors: ["match"]
             });
@@ -44,6 +48,7 @@ class Register extends React.Component {
             headers: { "Content-Type": "application/x-www-form-urlencoded", },
             body: formurlencoded(formData)
         }).then(response => {
+            this.setState({ loading: false });
             if (response.status == 201) {
                 return response.json();
             } else {
@@ -113,6 +118,7 @@ class Register extends React.Component {
                         hasFormErrors: this.state.hasFormErrors,
                         formErrors: this.state.formErrors
                     }}
+                    loading={this.state.loading}
                     message={<Message>
                         Already have an account? <Link to="/login">Login</Link>
                     </Message>}
