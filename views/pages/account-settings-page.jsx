@@ -1,11 +1,12 @@
 import React from "react";
+import { connect } from "react-redux";
 import { Redirect } from "react-router";
 import { Helmet } from "react-helmet";
 import { Button, Grid, Segment } from "semantic-ui-react";
 import ChangePasswordComponent from "../components/change-password-component.jsx";
 import DeleteAccountComponent from "../components/delete-account-component.jsx";
 
-class AccountSettingsPage extends React.Component {
+class AccountSettings extends React.Component {
     constructor(props) {
         super(props);
 
@@ -48,5 +49,11 @@ class AccountSettingsPage extends React.Component {
         </Segment>;
     }
 }
+
+const AccountSettingsPage = connect(store => {
+    return {
+        client: store.client
+    };
+})(AccountSettings);
 
 export default AccountSettingsPage;
