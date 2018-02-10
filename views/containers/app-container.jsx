@@ -3,6 +3,7 @@ import { Breadcrumb, Divider, Grid, Header, Icon, Image, Menu, Segment, Sidebar 
 import { Link, Route, Switch, withRouter } from "react-router-dom";
 import { connect } from "react-redux";
 import disconnect from "../../modules/disconnect";
+import IndexPage from "../pages/index-page.jsx";
 import HomePage from "../pages/home-page.jsx";
 import LoginPage from "../pages/login-page.jsx";
 import RegisterPage from "../pages/register-page.jsx";
@@ -28,7 +29,7 @@ class App extends React.Component {
         const location = (this.props.location.pathname === "/login") ? "Login" :
                 (this.props.location.pathname === "/register") ? "Register" :
                 (this.props.location.pathname === "/connect") ? "Connect" :
-                (this.props.location.pathname === "/settings") ? "Settings" : "";
+                (this.props.location.pathname === "/settings") ? "Settings" : "Index";
 
         const topMenu = <Menu color="blue" inverted fluid size="massive" fixed="top">
             <LogoComponent />
@@ -39,6 +40,7 @@ class App extends React.Component {
             <SideMenuComponent />
             <Route render={({ location }) => { return location.pathname === "/home" ? <div></div> : topMenu }} />
             <Switch>
+                <Route path="/" exact component={IndexPage} />
                 <Route path="/home" component={HomePage} />
                 <Route path="/login" component={LoginPage} />
                 <Route path="/register" component={RegisterPage} />
