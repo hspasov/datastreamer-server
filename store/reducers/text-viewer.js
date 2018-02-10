@@ -1,21 +1,36 @@
-const reducer = (state = { text: "", editedText: "", show: false, editMode: false }, action) => {
+const initialState = {
+    fileName: "",
+    text: "",
+    editedText: "",
+    show: false,
+    editMode: false
+};
+
+const reducer = (state = initialState, action) => {
     switch (action.type) {
         case "SET_TEXT":
             return {
                 ...state,
                 show: true,
-                text: action.payload
+                text: action.payload.text,
+                fileName: action.payload.fileName
             };
         case "REMOVE_TEXT":
             return {
                 ...state,
                 show: false,
-                text: ""
+                text: "",
+                fileName: "",
             };
         case "EDIT_TEXT":
             return {
                 ...state,
                 editedText: action.payload
+            };
+        case "SAVE_TEXT":
+            return {
+                ...state,
+                text: state.editedText
             };
         case "OPEN_EDIT_MODE":
             return {

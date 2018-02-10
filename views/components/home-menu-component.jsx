@@ -29,14 +29,18 @@ class HomeMenu extends React.Component {
     render() {
         const menuColor = (this.props.provider.token && !this.props.dimmer.error.show) ? "green" : "red";
 
+        const textViewerButton = (this.props.textViewer.editMode) ?
+            <Menu.Item onClick={() => this.props.saveText()}>
+                <Icon name="save" /> Save
+                </Menu.Item> :
+            <Menu.Item onClick={() => this.props.openEditMode()}>
+                <Icon name="edit" /> Edit
+                </Menu.Item>;
+
         return <Menu color={menuColor} inverted fluid size="massive" fixed="top">
             <LogoComponent />
             <NavigationComponent navigateBack={index => this.props.navigateBack(index)} />
-            {this.props.textViewer.show && !this.props.textViewer.editMode &&
-                <Menu.Item onClick={() => this.props.openEditMode()}>
-                    <Icon name="edit" /> Edit
-                </Menu.Item>
-            }
+            {this.props.textViewer.show && textViewerButton}
             <Menu.Item
                 disabled={
                     !this.props.imageViewer.show &&
@@ -60,7 +64,11 @@ class HomeMenu extends React.Component {
                 </Menu.Item>
                 <Menu.Item link>
                     <label>
-                        <Input type="file" style={{ display: "none" }} onChange={this.props.handleUploadFiles} />
+                        <Input
+                            type="file"
+                            style={{ display: "none" }}
+                            onChange={event => this.props.handleUploadFiles(event.target.files)}
+                        />
                         <Icon size="large" name="plus" />Upload file
                     </label>
                 </Menu.Item>

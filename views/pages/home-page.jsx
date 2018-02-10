@@ -17,7 +17,7 @@ import fileChunkGenerator from "../../modules/file-chunk-generator";
 import chunkArrayToText from "../../modules/chunk-array-to-text";
 import { openDirectory, changePath, clearPath, navigateBack } from "../../store/actions/navigation";
 import { setImage, removeImage } from "../../store/actions/image-viewer";
-import { setText, removeText } from "../../store/actions/text-viewer";
+import { setText, saveText, removeText } from "../../store/actions/text-viewer";
 import { logoutClient } from "../../store/actions/client";
 import { disconnectClient } from "../../store/actions/provider";
 import {
@@ -141,17 +141,18 @@ class Home extends React.Component {
         received = chunkGenerator.next();
     }
 
-    handleUploadFiles(event) {
-        let file = event.target.files[0];
+    handleUploadFiles(files) {
+        let file = files[0];
         this.setState({
-            uploads: event.target.files
+            uploads: files
         });
-        console.log(file)
         this.RTC.sendMessageWritable("uploadFile", {
             name: file.name,
             size: file.size
         });
     }
+
+
 
     // Adding each file to redux is very slow: each object in redux has to be immutable,
     // therefore to add new file to the array of files, a new array has to be created, and that is a slow operation.
@@ -236,6 +237,16 @@ class Home extends React.Component {
         }
     }
 
+    saveText() {
+        const file = new File(
+            [this.props.textViewer.editedText],
+            this.props.textViewer.fileName,
+            { type: "text/plain" }
+        );
+        this.handleUploadFiles([file]);
+        this.props.saveText();
+    };
+
     finishDownload() {
         const downloaded = this.RTC.downloads.shift();
         try {
@@ -252,7 +263,7 @@ class Home extends React.Component {
                     this.props.setImage(URL.createObjectURL(received));
                     break;
                 case "text":
-                    this.props.setText(chunkArrayToText(downloaded.chunkArray));
+                    this.props.setText(downloaded.name, chunkArrayToText(downloaded.chunkArray));
                     break;
             }
             if (this.RTC.downloads.length > 0) {
@@ -320,12 +331,13 @@ class Home extends React.Component {
         return <Segment>
             <HomeMenuComponent
                 navigateBack={index => this.resolveNavigateBack(index)}
+                saveText={() => this.saveText()}
                 copyFiles={() => this.copyFiles()}
                 moveFiles={() => this.moveFiles()}
                 deleteFiles={() => this.deleteFiles()}
                 clearSelection={() => this.props.clearSelection()}
                 showSelected={() => this.props.showSelected()}
-                handleUploadFiles={event => this.handleUploadFiles(event)}
+                handleUploadFiles={files => this.handleUploadFiles(files)}
             />
             <Segment padded="very" attached="top" color="grey">
                 <DimmerComponent />
@@ -370,6 +382,7 @@ const HomePage = withRouter(connect(store => {
     unlink,
     setImage,
     setText,
+    saveText,
     setError,
     setLoaderMessage,
     disconnectClient,
