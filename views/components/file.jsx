@@ -25,13 +25,13 @@ class File extends React.Component {
                     <Item.Header size="huge" as="a" onClick={() => this.props.openDirectory()}>{this.props.fileData.name}</Item.Header> :
                     <Item.Header size="huge">{this.props.fileData.name}</Item.Header>
                 }
-                <Button floated="right" onClick={() => this.toggleMore()}><Icon size="big" name="list layout" /> Show more</Button>
-                <Button floated="right" onClick={() => this.props.selectFile()}><Icon size="big" name="checkmark" />Select</Button>
+                <Button floated="right" onClick={() => this.toggleMore()}><Icon size="large" name="list layout" /> Show more</Button>
+                <Button floated="right" onClick={() => this.props.selectFile()}><Icon size="large" name="checkmark" />Select</Button>
                 {(this.props.fileData.mime === "image/png" || this.props.fileData.mime === "image/jpeg") &&
-                    <Button floated="right" onClick={() => this.props.openImage()}><Icon size="big" name="image" /> View image</Button>
+                    <Button floated="right" onClick={() => this.props.openImage()}><Icon size="large" name="image" /> View image</Button>
                 }
                 {(/^text\//.test(this.props.fileData.mime)) &&
-                    <Button floated="right" onClick={() => this.props.openText()}><Icon size="big" name="file text" />View text file</Button>
+                    <Button floated="right" onClick={() => this.props.openText()}><Icon size="large" name="file text" />View text file</Button>
                 }
                 {this.props.fileData.type !== "directory" &&
                     <Button
@@ -39,7 +39,7 @@ class File extends React.Component {
                         disabled={this.props.fileData.downloadStatus === "initialized"}
                         loading={this.props.fileData.downloadStatus === "initialized"}
                         onClick={() => this.props.addToDownloads()}>
-                    <Icon size="big" name="download" />Download file
+                    <Icon size="large" name="download" />Download file
                     </Button>
                 }
                 {this.state.showMore &&
@@ -51,15 +51,15 @@ class File extends React.Component {
                         <Header>Permissions:
                                 <p>
                                 {this.props.fileData.access.read && <Popup
-                                    trigger={<Icon name="eye" size="big" />}
+                                    trigger={<Icon name="eye" size="large" />}
                                     content="Read access"
                                 />}
                                 {this.props.fileData.access.write && <Popup
-                                    trigger={<Icon name="write" size="big" />}
+                                    trigger={<Icon name="write" size="large" />}
                                     content="Write access"
                                 />}
                                 {this.props.fileData.access.execute && <Popup
-                                    trigger={<Icon name="external" size="big" />}
+                                    trigger={<Icon name="external" size="large" />}
                                     content="Execute access"
                                 />}
                             </p>

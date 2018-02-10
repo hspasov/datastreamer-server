@@ -14,6 +14,7 @@ class Connect extends React.Component {
         super(props);
 
         this.state = {
+            loading: false,
             hasFormErrors: false,
             formErrors: []
         }
@@ -23,8 +24,10 @@ class Connect extends React.Component {
     }
 
     handleSubmit(form) {
+        this.setState({ loading: true });
         if (!(form.username && form.password)) {
             this.setState({
+                loading: false,
                 hasFormErrors: true,
                 formErrors: ["empty"]
             });
@@ -44,6 +47,7 @@ class Connect extends React.Component {
             headers: { "Content-Type": "application/x-www-form-urlencoded", },
             body: formurlencoded(formData)
         }).then(response => {
+            this.setState({ loading: false });
             if (response.status === 200) {
                 return response.json();
             } else {

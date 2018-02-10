@@ -29,7 +29,7 @@ class Thumbnail extends React.Component {
     }
 
     render() {
-        return <Icon name={this.getIcon()} size="massive" />;
+        return <Icon name={this.getIcon()} size="huge" />;
     }
 }
 
