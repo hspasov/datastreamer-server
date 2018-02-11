@@ -13,7 +13,7 @@ const https = require("https");
 const http = require("http");
 const bluebird = require("bluebird");
 const redis = require("redis");
-const redisClient = redis.createClient({ detect_buffers: true });
+const redisClient = redis.createClient({ detect_buffers: true, host: "redis" });
 const redisSocketIoAdapter = require("socket.io-redis");
 const config = require("../config/config");
 
@@ -46,7 +46,7 @@ const options = {
 const server = config.secure ?
     https.createServer(options, app) : http.createServer(app);
 
-server.listen(port);
+server.listen(7777);
 server.on("error", onError);
 server.on("listening", () => onListening(server));
 
@@ -55,7 +55,7 @@ server.on("listening", () => onListening(server));
  */
 
 const io = require("socket.io").listen(server);
-io.adapter(redisSocketIoAdapter({ host: "localhost", port: 6379 }));
+io.adapter(redisSocketIoAdapter({ host: "redis", port: 6379 }));
 require("../sockets/server")(io);
 
 /**

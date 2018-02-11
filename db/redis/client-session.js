@@ -1,4 +1,4 @@
-const redisClient = require("redis").createClient({ detect_buffers: true });
+const redisClient = require("redis").createClient({ detect_buffers: true, host: "redis" });
 const log = require("../../modules/log");
 
 async function createClientSession(socketId, providerName) {

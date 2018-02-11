@@ -1,5 +1,5 @@
 const log = require("../../modules/log");
-const redisClient = require("redis").createClient({ detect_buffers: true });
+const redisClient = require("redis").createClient({ detect_buffers: true, host: "redis" });
 const { verifyToken } = require("../../modules/token-actions");
 const {
     createProviderSession,
