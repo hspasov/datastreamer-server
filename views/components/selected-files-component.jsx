@@ -1,6 +1,6 @@
 import React from "react";
 import { connect } from "react-redux";
-import { Button, Dimmer, Icon, Message } from "semantic-ui-react";
+import { Button, Dimmer, Grid, Icon, Message } from "semantic-ui-react";
 import { hideSelected, removeFromSelected } from "../../store/actions/selection";
 
 class SelectedFiles extends React.Component {
@@ -8,15 +8,18 @@ class SelectedFiles extends React.Component {
         return (this.props.selection.show) ?
             <Dimmer active={this.props.selection.show} page onClickOutside={() => this.props.hideSelected()}>
                 <Message compact>
-                    <Message.List>
-                        <Message.Header>Selected files</Message.Header>
+                    <Message.Header>Selected files</Message.Header>
+                    <Grid>
                         {this.props.selection.selected.map((file, index) => {
-                            return <Message.Item key={`selected:${file.path}`}>
-                                {file.path}
-                                <Button floated="right" color="red" onClick={() => this.props.removeFromSelected(file.path)}><Icon name="remove" />Unselect</Button>
-                            </Message.Item>
+                            return <Grid.Row columns={2} key={`selected:${file.path}` }>
+                                <Grid.Column>{file.path}
+                                </Grid.Column>
+                                <Grid.Column>
+                                    <Button size="mini" floated="right" color="red" onClick={() => this.props.removeFromSelected(file.path)}><Icon name="remove" />Unselect</Button>
+                                </Grid.Column>
+                            </Grid.Row>
                         })}
-                    </Message.List>
+                    </Grid>
                 </Message>
             </Dimmer> : null;
     }

@@ -120,7 +120,7 @@ class Register extends React.Component {
                     }}
                     loading={this.state.loading}
                     message={<Message>
-                        Already have an account? <Link to="/login">Login</Link>
+                        Already have an account? <Link to="/login">Log in</Link>
                     </Message>}
                 />
             </Grid>

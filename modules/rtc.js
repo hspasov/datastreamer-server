@@ -38,7 +38,6 @@ class RTC {
 
         this.peerConnection.onicecandidate = event => {
             if (event.candidate) {
-                console.log("sending ICE candidate", event.candidate);
                 this.socket.emit("ice_candidate", JSON.stringify(event.candidate));
             }
         };

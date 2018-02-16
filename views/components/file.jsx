@@ -25,16 +25,17 @@ class File extends React.Component {
                     <Item.Header size="huge" as="a" onClick={() => this.props.openDirectory()}>{this.props.fileData.name}</Item.Header> :
                     <Item.Header size="huge">{this.props.fileData.name}</Item.Header>
                 }
-                <Button floated="right" onClick={() => this.toggleMore()}><Icon size="large" name="list layout" /> Show more</Button>
-                <Button floated="right" onClick={() => this.props.selectFile()}><Icon size="large" name="checkmark" />Select</Button>
+                <Button size="mini" floated="right" onClick={() => this.toggleMore()}><Icon size="large" name="list layout" /> Show more</Button>
+                <Button size="mini" floated="right" onClick={() => this.props.selectFile()}><Icon size="large" name="checkmark" />Select</Button>
                 {(this.props.fileData.mime === "image/png" || this.props.fileData.mime === "image/jpeg") &&
-                    <Button floated="right" onClick={() => this.props.openImage()}><Icon size="large" name="image" /> View image</Button>
+                    <Button size="mini" floated="right" onClick={() => this.props.openImage()}><Icon size="large" name="image" /> View image</Button>
                 }
                 {(/^text\//.test(this.props.fileData.mime)) &&
-                    <Button floated="right" onClick={() => this.props.openText()}><Icon size="large" name="file text" />View text file</Button>
+                    <Button size="mini" floated="right" onClick={() => this.props.openText()}><Icon size="large" name="file text" />View text file</Button>
                 }
                 {this.props.fileData.type !== "directory" &&
                     <Button
+                        size="mini"
                         floated="right"
                         disabled={this.props.fileData.downloadStatus === "initialized"}
                         loading={this.props.fileData.downloadStatus === "initialized"}

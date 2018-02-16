@@ -39,7 +39,8 @@ class AccountSettings extends React.Component {
                     {(this.state.showDeleteAccount) ?
                         <DeleteAccountComponent /> : <ChangePasswordComponent />
                     }
-                    <Button onClick={() => this.setShowDeleteAccount(!this.state.showDeleteAccount)}>
+                    <br/>
+                    <Button floated="right" negative onClick={() => this.setShowDeleteAccount(!this.state.showDeleteAccount)}>
                         {this.state.showDeleteAccount ?
                             "Change account password" : "Delete account"
                         }

@@ -25,10 +25,10 @@ class Index extends React.Component {
                         />
                         <Header
                             as="h4"
-                            content="Select a directory to scan and leave your computer running."
+                            content="Log into your provider account and select a directory to scan. That's it. Your files are available for clients to access them."
                             inverted
                         />
-                        <Button primary animated="fade" size="huge">
+                        <Button primary animated="fade" size="small">
                             <Button.Content visible>Download</Button.Content>
                             <Button.Content hidden><Icon name="download" size="large" /></Button.Content>
                         </Button>
@@ -41,14 +41,14 @@ class Index extends React.Component {
                         />
                         <Header
                             as="h4"
-                            content="Use your account and connect to provider to browse your shared directories."
+                            content="Connect to provider and browse shared directories."
                             inverted
                         />
                         <Grid>
                             <Grid.Column>
                                 <Button.Group>
                                     <Button animated onClick={() => this.props.history.push("/login")}>
-                                        <Button.Content visible>Login</Button.Content>
+                                        <Button.Content visible>Log in</Button.Content>
                                         <Button.Content hidden><Icon name="right arrow" /></Button.Content>
                                     </Button>
                                     <Button.Or/>

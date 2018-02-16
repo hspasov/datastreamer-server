@@ -76,7 +76,7 @@ class Login extends React.Component {
             </Helmet>
             <Grid textAlign="center" style={{ height: "100%" }} verticalAlign="middle">
                 <FormComponent
-                    title="Login to your account"
+                    title="Log into your account"
                     fields={[
                         {
                             label: "username",
@@ -96,7 +96,7 @@ class Login extends React.Component {
                         }
                     ]}
                     submit={{
-                        label: "Login",
+                        label: "Log in",
                         color: "black",
                         onClick: form => this.handleSubmit(form)
                     }}

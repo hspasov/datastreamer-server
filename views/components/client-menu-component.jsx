@@ -28,10 +28,10 @@ class ClientMenu extends React.Component {
     render() {
         if (this.props.client.token) {
             return <div>
-                <Menu.Item><Header as="h4" color="grey">Your client</Header></Menu.Item>
+                <Menu.Item><Header as="h4" color="grey"></Header></Menu.Item>
                 <Menu.Item><Header as="h4" color="grey">{this.props.client.username}</Header></Menu.Item>
                 <Menu.Item as={Link} to="/settings">Account settings</Menu.Item>
-                <Menu.Item onClick={() => this.logout()}>Logout</Menu.Item>
+                <Menu.Item onClick={() => this.logout()}>Log out</Menu.Item>
                 <Menu.Item><Divider /></Menu.Item>
             </div>;
         } else {
