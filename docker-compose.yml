@@ -15,7 +15,8 @@ services:
      - "80:7777"
     volumes:
      - .:/usr/src/app
+     - /usr/src/app/node_modules
     depends_on:
       - postgres
       - redis
-    command: bash -c "chmod +x ./scripts/wait_for_it.sh && npm run build && ./scripts/wait_for_it.sh postgres:5432 -- npm run debug"
+    command: bash -c "chmod +x ./scripts/wait_for_it.sh && ./scripts/wait_for_it.sh postgres:5432 -- npm run debug"
