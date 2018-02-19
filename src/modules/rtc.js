@@ -23,6 +23,9 @@ class RTC {
         this.chunkSize = 32 * 1024; // 32 KB
 
         this.downloads = [];
+
+        this.resetsLimit = 10;
+        this.resets = 0;
     }
 
     initializeP2PConnection() {
@@ -38,14 +41,16 @@ class RTC {
 
         this.peerConnection.onicecandidate = event => {
             if (event.candidate) {
+                console.log("sending ice candidate", event.candidate);
                 this.socket.emit("ice_candidate", JSON.stringify(event.candidate));
             }
         };
 
         this.peerConnection.ondatachannel = event => {
+            this.resets = 0;
+            console.log("got a channel", event.channel.label);
             switch (event.channel.label) {
                 case "providerMessage":
-                    console.log("found providerMessage datachannel");
                     this.receiveMessageChannel = event.channel;
                     this.receiveMessageChannel.onmessage = event => {
                         this.handleMessage(JSON.parse(event.data));
@@ -119,7 +124,15 @@ class RTC {
         this.peerConnection && this.peerConnection.close();
         if (error) {
             console.log("There was an error", error);
-            this.socket.emit("connect_reset");
+            if (this.resets >= this.resetsLimit) {
+                this.handleError({
+                    type: "generic",
+                    message: error
+                });
+            } else {
+                this.resets++;
+                this.socket.emit("connect_reset");
+            }
         }
     }
 }
