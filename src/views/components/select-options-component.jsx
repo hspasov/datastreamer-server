@@ -8,26 +8,27 @@ class SelectOptions extends React.Component {
             <Menu.Menu position="right">
                 <Menu.Item onClick={() => this.props.showSelected()}>
                     <Icon name="file" />{this.props.selection.selected.length} selected
-                    </Menu.Item>
-                <Menu.Item onClick={() => this.props.copyFiles()}>
+                </Menu.Item>
+                {this.props.provider.writeAccess && <Menu.Item onClick={() => this.props.copyFiles()}>
                     <Icon name="copy" /> Copy here
-                    </Menu.Item>
-                <Menu.Item onClick={() => this.props.moveFiles()}>
+                </Menu.Item>}
+                {this.props.provider.writeAccess && <Menu.Item onClick={() => this.props.moveFiles()}>
                     <Icon name="move" /> Move here
-                    </Menu.Item>
-                <Menu.Item onClick={() => this.props.deleteFiles()}>
+                </Menu.Item>}
+                {this.props.provider.writeAccess && <Menu.Item onClick={() => this.props.deleteFiles()}>
                     <Icon name="trash" /> Delete all
-                    </Menu.Item>
-                <Menu.Item onClick={() => this.props.clearSelection()}>
+                </Menu.Item>}
+                <Menu.Item position="right" onClick={() => this.props.clearSelection()}>
                     <Icon name="cancel" /> Cancel
-                    </Menu.Item>
+                </Menu.Item>
             </Menu.Menu> : null;
     }
 }
 
 const SelectOptionsComponent = connect(store => {
     return {
-        selection: store.selection
+        selection: store.selection,
+        provider: store.provider
     };
 })(SelectOptions);
 

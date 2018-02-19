@@ -51,18 +51,18 @@ class HomeMenu extends React.Component {
                 <Icon size="large" name="arrow left" />
                 Go back
             </Menu.Item>
-            <SelectOptionsComponent
-                showSelected={this.props.showSelected}
-                copyFiles={this.props.copyFiles}
-                moveFiles={this.props.moveFiles}
-                deleteFiles={this.props.deleteFiles}
-                clearSelection={this.props.clearSelection}
-            />
             <Menu.Menu position="right">
+                <SelectOptionsComponent
+                    showSelected={this.props.showSelected}
+                    copyFiles={this.props.copyFiles}
+                    moveFiles={this.props.moveFiles}
+                    deleteFiles={this.props.deleteFiles}
+                    clearSelection={this.props.clearSelection}
+                />
                 <Menu.Item onClick={() => this.props.sortFilesByNameAsc()} link>
                     Sort by name
                 </Menu.Item>
-                <Menu.Item link>
+                {this.props.provider.writeAccess && <Menu.Item link>
                     <label>
                         <Input
                             type="file"
@@ -71,7 +71,7 @@ class HomeMenu extends React.Component {
                         />
                         <Icon size="large" name="plus" />Upload file
                     </label>
-                </Menu.Item>
+                </Menu.Item>}
             </Menu.Menu>
         </Menu>;
     }
