@@ -96,7 +96,6 @@ function Socket(RTC, token, pageActionHandler) {
 
     this.socket.on("description", description => {
         try {
-            console.log(description);
             this.RTC.peerConnection.setRemoteDescription(JSON.parse(description));
             pageActionHandler(function () {
                 this.props.setLoaderMessage("Peer negotiation...");

@@ -58,12 +58,11 @@ async function connect(token, username, password) {
             return { success: false, reason: "token" };
         }
         let decoded;
-        try {
-            decoded = await verifyClientToken(token);
-        } catch (error) {
-            log.info("In connect request could not verify client token.");
-            log.verbose(error);
+        const result = await verifyClientToken(token);
+        if (result.error) {
             return { success: false, reason: "token" };
+        } else {
+            decoded = result.decoded;
         }
         const response = await db.query(`SELECT Username, Readable, Writable
             FROM get_access_rules($1, $2, $3)
@@ -101,12 +100,11 @@ async function changePassword(token, oldPassword, newPassword) {
             return { success: false, reason: "token" };
         }
         let decoded;
-        try {
-            decoded = await verifyClientToken(token);
-        } catch (error) {
-            log.info("In change password request could not verify client token.");
-            log.verbose(error);
+        const result = await verifyClientToken(token);
+        if (result.error) {
             return { success: false, reason: "token" };
+        } else {
+            decoded = result.decoded;
         }
         const response = await db.query(`SELECT change_client_password($1, $2, $3);`,
             [decoded.username, oldPassword, newPassword]);
@@ -129,12 +127,11 @@ async function deleteAccount(token, password) {
             return { success: false, reason: "token" };
         }
         let decoded;
-        try {
-            decoded = await verifyClientToken(token);
-        } catch (error) {
-            log.info("In delete request could not verify client token.");
-            log.verbose(error);
+        const result = await verifyClientToken(token);
+        if (result.error) {
             return { success: false, reason: "token" };
+        } else {
+            decoded = result.decoded;
         }
         const response = await db.query(`SELECT delete_client($1, $2);`, [decoded.username, password]);
         if (!response.rows[0].delete_client) {

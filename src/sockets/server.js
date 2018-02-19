@@ -45,7 +45,9 @@ const socketServer = io => {
                     }
                 }
             }).catch(error => {
-                log.error(error);
+                if (error.name !== "JsonWebTokenError") {
+                    log.error(error);
+                }
                 io.to(socket.id).emit("connect_reject", error.name);
                 socket.disconnect(true);
             });
@@ -57,7 +59,9 @@ const socketServer = io => {
             deletePeerSession(socket.id).then(sessionInfo => {
                 log.info(`${socket.id} disconnected`);
                 log.info(`${Object.keys(io.sockets.sockets).length} sockets left.`);
-                if (sessionInfo.type === "provider") {
+                if (!sessionInfo) {
+                    return;
+                } else if (sessionInfo.type === "provider") {
                     sessionInfo.clientSocketIds.forEach(client => {
                         io.to(client).emit("connect_reject", "ProviderNotConnectedError");
                     });
@@ -151,10 +155,11 @@ const socketServer = io => {
             findProviderSocketIdByClientSocketId(socket.id).then(socketId => {
                 providerSocketId = socketId;
                 return verifyToken(token);
-            }).then(decoded => {
-                if (!decoded) {
+            }).then(result => {
+                if (result.error) {
                     io.to(socket.id).emit("connect_reject", "TokenExpiredError");
                 } else {
+                    let decoded = result.decoded;
                     io.to(providerSocketId)
                         .emit("client_connect", socket.id, token, decoded.client, {
                             readable: decoded.readable,

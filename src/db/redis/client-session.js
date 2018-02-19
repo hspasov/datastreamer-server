@@ -22,7 +22,7 @@ async function createClientSession(socketId, providerName) {
             }
         };
     } catch (error) {
-        log.error(`There was an error creating the client session for client "${socketId}": ${error}`);
+        log.error("In createClientSession:");
         throw error;
     }
 }

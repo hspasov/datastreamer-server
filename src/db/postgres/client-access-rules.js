@@ -1,14 +1,15 @@
 const log = require("../../modules/log");
 const db = require("./index");
-const { verifyProviderToken, verifyConnectionToken } = require("../../modules/token-actions");
+const { verifyProviderToken } = require("../../modules/token-actions");
 
 async function setClientRule(providerToken, clientUsername, readable, writable) {
     try {
         let decoded;
-        try {
-            decoded = await verifyProviderToken(providerToken);
-        } catch (error) {
+        const result = await verifyProviderToken(providerToken);
+        if (result.error) {
             return { success: false, reason: "providerToken" };
+        } else {
+            decoded = result.decoded;
         }
         const response = await db.query(`INSERT INTO ClientAccessRules (
             ProviderId, ClientId, Readable, Writable
@@ -35,10 +36,11 @@ async function setClientRule(providerToken, clientUsername, readable, writable) 
 async function deleteClientRule(providerToken, clientUsername) {
     try {
         let decoded;
-        try {
-            decoded = await verifyProviderToken(providerToken);
-        } catch (error) {
+        const result = await verifyProviderToken(providerToken);
+        if (result.error) {
             return { success: false };
+        } else {
+            decoded = result.decoded;
         }
         const response = await db.query(`DELETE FROM ClientAccessRules
     WHERE ProviderId = (SELECT Id FROM Providers WHERE Username = $1)
@@ -53,16 +55,18 @@ async function deleteClientRule(providerToken, clientUsername) {
 async function setProviderDefaultRule(token, readable, writable) {
     try {
         let decoded;
-        try {
-            decoded = await verifyProviderToken(token);
-        } catch (error) {
+        const result = await verifyProviderToken(token);
+        if (result.error) {
             return { success: false };
+        } else {
+            decoded = result.decoded;
         }
         const response = await db.query(`UPDATE Providers
             SET Readable = $2,
             Writable = $3
             WHERE Username = $1 RETURNING *`, [decoded.username, readable, writable]);
         if (response.rows.length <= 0) {
+            console.log(decoded);
             return { success: false };
         }
         return {

@@ -19,9 +19,12 @@ async function createPeerSession(socketId, token) {
         if (isInvalidated) {
             return null;
         }
-        const decoded = await verifyToken(token);
-        if (!decoded) {
+        let decoded;
+        const result = await verifyToken(token);
+        if (result.error) {
             return null;
+        } else {
+            decoded = result.decoded;
         }
         let sessionInfo;
         switch (decoded.sub) {
@@ -51,7 +54,9 @@ async function deletePeerSession(socketId) {
         if (!clientSession) {
             const providerName = await findProviderNameBySocketId(socketId);
             if (!providerName) {
-                throw "On deleting stream session: Not found in database!";
+                log.info("On deleting stream session: Not found in database!");
+                log.verbose(`SocketId: ${socketId}`);
+                return null;
             } else {
                 const providerSession = await deleteProviderSession(socketId);
                 return {
@@ -79,8 +84,10 @@ async function invalidateToken(token) {
     try {
         if (!token) return false;
         log.verbose("Invalidating token");
-        const decoded = await verifyToken(token);
-        if (!decoded) return false;
+        const result = await verifyToken(token);
+        if (result.error) {
+            return false;
+        }
         const redisTime = await redisClient.timeAsync();
         const time = new Date();
         time.setSeconds(redisTime[0] - 60 * 60);

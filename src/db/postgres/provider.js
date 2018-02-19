@@ -72,12 +72,11 @@ async function changeAccountPassword(token, oldPassword, newPassword) {
             return { success: false, reason: "token" };
         }
         let decoded;
-        try {
-            decoded = await verifyProviderToken(token);
-        } catch (error) {
-            log.info("In change password request could not verify provider token.");
-            log.verbose(error);
+        const result = await verifyProviderToken(token);
+        if (result.error) {
             return { success: false, reason: "token" };
+        } else {
+            decoded = result.decoded;
         }
         const response = await db.query(`SELECT change_provider_password($1, $2, $3);`,
             [decoded.username, oldPassword, newPassword]);
@@ -100,12 +99,11 @@ async function changeClientConnectPassword(token, accountPassword, newClientConn
             return { success: false, reason: "token" };
         }
         let decoded;
-        try {
-            decoded = await verifyProviderToken(token);
-        } catch (error) {
-            log.info("In change client connect password could not verify provider token");
-            log.verbose(error);
+        const result = await verifyProviderToken(token);
+        if (result.error) {
             return { success: false, reason: "token" };
+        } else {
+            decoded = result.decoded;
         }
         const response = await db.query(`SELECT change_client_connect_password($1, $2, $3);`,
             [decoded.username, accountPassword, newClientConnectPassword]);
@@ -128,12 +126,11 @@ async function deleteAccount(token, password) {
             return { success: false, reason: "token" };
         }
         let decoded;
-        try {
-            decoded = await verifyProviderToken(token);
-        } catch (error) {
-            log.info("In delete request could not verify provider token.");
-            log.verbose(error);
+        const result = await verifyProviderToken(token);
+        if (result.error) {
             return { success: false, reason: "token" };
+        } else {
+            decoded = result.decoded;
         }
         const response = await db.query(`SELECT delete_provider($1, $2);`, [decoded.username, password]);
         if (!response.rows[0].delete_provider) {

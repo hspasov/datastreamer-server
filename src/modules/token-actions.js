@@ -37,11 +37,20 @@ async function signProviderToken(username) {
 async function verifyProviderToken(token) {
     try {
         const publicKey = await getPublicKey();
-        return jwt.verifyAsync(token, publicKey, {
-            issuer,
-            subject: providerTokenSubject,
-            algorithm
-        });
+        try {
+            return {
+                error: null,
+                decoded: await jwt.verifyAsync(token, publicKey, {
+                    issuer,
+                    subject: providerTokenSubject,
+                    algorithm
+                })
+            };
+        } catch (error) {
+            return {
+                error: error.name
+            };
+        }
     } catch (error) {
         log.error("In verify provider token:");
         log.error(error);
@@ -67,11 +76,21 @@ async function signClientToken(username) {
 async function verifyClientToken(token) {
     try {
         const publicKey = await getPublicKey();
-        return jwt.verifyAsync(token, publicKey, {
-            issuer,
-            subject: clientTokenSubject,
-            algorithm
-        });
+        try {
+            return {
+                success: true,
+                decoded: await jwt.verifyAsync(token, publicKey, {
+                    issuer,
+                    subject: clientTokenSubject,
+                    algorithm
+                })
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.name
+            };
+        }
     } catch (error) {
         log.error("In verify a client token:");
         throw error;
@@ -97,11 +116,21 @@ async function signConnectionToken(client, provider, readable, writable) {
 async function verifyConnectionToken(token) {
     try {
         const publicKey = await getPublicKey();
-        return jwt.verifyAsync(token, publicKey, {
-            issuer,
-            subject: connectionTokenSubject,
-            algorithm
-        });
+        try {
+            return {
+                success: true,
+                decoded: await jwt.verifyAsync(token, publicKey, {
+                    issuer,
+                    subject: connectionTokenSubject,
+                    algorithm
+                })
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.name
+            };
+        }
     } catch (error) {
         log.error("In verify connection token:");
         log.error(error);
@@ -113,10 +142,16 @@ async function verifyToken(token) {
     try {
         const publicKey = await getPublicKey();
         try {
-            return jwt.verifyAsync(token, publicKey, { issuer, algorithm });
+            return {
+                success: true,
+                decoded: await jwt.verifyAsync(token, publicKey, { issuer, algorithm })
+            };
         } catch (error) {
             log.verbose(error);
-            return null;
+            return {
+                success: false,
+                error: error.name
+            };
         }
     } catch (error) {
         log.error("In verify token:");
