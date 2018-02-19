@@ -34,6 +34,7 @@ import {
 import {
     setError,
     removeLoaderMessage,
+    removeError,
     setLoaderMessage,
     deactivateDimmer
 } from "../../store/actions/dimmer";
@@ -64,11 +65,7 @@ class Home extends React.Component {
     }
 
     componentWillMount() {
-        this.props.clearFiles();
-        this.props.clearPath();
-        this.props.clearSelection();
-        this.props.removeImage();
-        this.props.removeText();
+        this.resetState();
         this.props.setLoaderMessage("Connecting to server...");
     }
 
@@ -78,6 +75,15 @@ class Home extends React.Component {
 
     pageActionHandler(action) {
         action.bind(this)();
+    }
+
+    resetState() {
+        this.props.clearFiles();
+        this.props.clearPath();
+        this.props.clearSelection();
+        this.props.removeImage();
+        this.props.removeText();
+        this.props.removeError();
     }
 
     navigate(directoryPath) {
@@ -297,6 +303,7 @@ class Home extends React.Component {
     }
 
     handleError(error) {
+        this.resetState();
         switch (error.type) {
             case "generic":
                 this.props.setError("Something went wrong.", error.message);
@@ -375,6 +382,7 @@ const HomePage = withRouter(connect(store => {
     removeImage,
     removeText,
     removeLoaderMessage,
+    removeError,
     navigateBack,
     openDirectory,
     addFiles,

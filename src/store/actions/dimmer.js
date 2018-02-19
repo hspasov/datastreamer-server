@@ -21,9 +21,9 @@ function setError(errorMessage, errorMessageMore) {
     return {
         type: "SET_ERROR",
         payload: {
-            message: errorMessage,
+            message: errorMessage.toString(),
             more: {
-                message: errorMessageMore
+                message: errorMessageMore.toString()
             }
         }
     };
