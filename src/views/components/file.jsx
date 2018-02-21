@@ -1,6 +1,7 @@
 import React from "react";
 import { Accordion, Button, Header, Icon, Item, Popup, Progress } from "semantic-ui-react";
 import Thumbnail from "../components/thumbnail.jsx";
+import prettifySize from "../../modules/prettify-size";
 
 class File extends React.Component {
     constructor(props) {
@@ -47,7 +48,7 @@ class File extends React.Component {
                     <div>
                         <Item.Meta>Type: {this.props.fileData.type}</Item.Meta>
                         <Item.Meta>Mime: {this.props.fileData.mime}</Item.Meta>
-                        <Item.Meta>Size: {this.props.fileData.size}</Item.Meta>
+                        <Item.Meta>Size: {prettifySize(this.props.fileData.size)}</Item.Meta>
                         <Item.Meta>Path: {this.props.fileData.path}</Item.Meta>
                         <Header>Permissions:
                                 <p>
