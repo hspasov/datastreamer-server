@@ -1,6 +1,6 @@
 {
   "name": "datastreamer-server",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Server for authentication and signalling for the purpose of establishing a P2P connection.",
   "scripts": {
     "start": "node ./bin/www",
