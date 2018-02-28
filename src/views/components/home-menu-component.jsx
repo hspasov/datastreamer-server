@@ -32,10 +32,10 @@ class HomeMenu extends React.Component {
         const textViewerButton = (this.props.textViewer.editMode) ?
             <Menu.Item onClick={() => this.props.saveText()}>
                 <Icon name="save" /> Save
-                </Menu.Item> :
+                </Menu.Item> : (this.props.provider.writeAccess) ?
             <Menu.Item onClick={() => this.props.openEditMode()}>
                 <Icon name="edit" /> Edit
-                </Menu.Item>;
+            </Menu.Item> : null;
 
         return <Menu color={menuColor} inverted fluid size="massive" fixed="top">
             <LogoComponent />
