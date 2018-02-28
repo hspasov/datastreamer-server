@@ -21,7 +21,7 @@ class ClientMenu extends React.Component {
             this.props.disconnectClient();
             this.props.logoutClient();
         }).catch(error => {
-            console.log(error);
+            // todo: Handle error
         });
     }
 

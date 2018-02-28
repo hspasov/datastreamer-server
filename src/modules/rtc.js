@@ -29,7 +29,6 @@ class RTC {
     }
 
     initializeP2PConnection() {
-        console.log("requested P2P connection");
         this.peerConnection = new RTCPeerConnection();
         this.sendMessageChannel = this.peerConnection.createDataChannel("clientMessage", this.dataConstraint);
         if (this.writeAccess) {
@@ -41,14 +40,12 @@ class RTC {
 
         this.peerConnection.onicecandidate = event => {
             if (event.candidate) {
-                console.log("sending ice candidate", event.candidate);
                 this.socket.emit("ice_candidate", JSON.stringify(event.candidate));
             }
         };
 
         this.peerConnection.ondatachannel = event => {
             this.resets = 0;
-            console.log("got a channel", event.channel.label);
             switch (event.channel.label) {
                 case "providerMessage":
                     this.receiveMessageChannel = event.channel;
@@ -67,7 +64,6 @@ class RTC {
         }
 
         this.peerConnection.createOffer().then(description => {
-            console.log("set local description", description);
             return this.peerConnection.setLocalDescription(description);
         }).then(() => {
             this.socket.emit("description", JSON.stringify(this.peerConnection.localDescription));
@@ -100,7 +96,6 @@ class RTC {
 
     sendMessageWritable(type, payload) {
         try {
-            console.log(payload);
             this.sendMessageWritableChannel.send(JSON.stringify({ type, payload }));
         } catch (error) {
             if (!this.sendMessageWritableChannel) {
@@ -123,7 +118,6 @@ class RTC {
         this.receiveFileChannel && this.receiveFileChannel.close();
         this.peerConnection && this.peerConnection.close();
         if (error) {
-            console.log("There was an error", error);
             if (this.resets >= this.resetsLimit) {
                 this.handleError({
                     type: "generic",

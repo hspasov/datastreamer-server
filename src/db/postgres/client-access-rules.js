@@ -66,7 +66,6 @@ async function setProviderDefaultRule(token, readable, writable) {
             Writable = $3
             WHERE Username = $1 RETURNING *`, [decoded.username, readable, writable]);
         if (response.rows.length <= 0) {
-            console.log(decoded);
             return { success: false };
         }
         return {

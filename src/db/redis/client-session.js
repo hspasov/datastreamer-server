@@ -30,9 +30,8 @@ async function createClientSession(socketId, providerName) {
 async function findClientSession(socketId) {
     try {
         return redisClient.sismemberAsync("clients", socketId);
-        // todo: verbose
     } catch (error) {
-        // todo: info
+        log.error("In findClientSession:");
         throw error;
     }
 }
@@ -49,7 +48,7 @@ async function deleteClientSession(socketId) {
         log.info(`Deleted client session "${socketId}" with provider "${providerName}"`);
         return { socketId, providerName };
     } catch (error) {
-        // todo: info
+        log.error("In deleteClientSession:");
         throw error;
     }
 }

@@ -75,7 +75,7 @@ async function deletePeerSession(socketId) {
             };
         }
     } catch (error) {
-        // todo: error
+        log.error("In deletePeerSession:");
         throw error;
     }
 }

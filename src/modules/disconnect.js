@@ -11,7 +11,7 @@ function disconnect() {
     }).then(response => {
         this.props.disconnectClient();
     }).catch(error => {
-        console.log(error);
+        // todo: Handle error
     });
 }
 

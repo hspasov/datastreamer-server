@@ -87,7 +87,6 @@ class Home extends React.Component {
     }
 
     navigate(directoryPath) {
-        console.log("execute navigate:", directoryPath);
         this.props.clearFiles();
         this.RTC.sendMessage("openDirectory", directoryPath);
     }
@@ -222,8 +221,7 @@ class Home extends React.Component {
         try {
             this.RTC.downloads[0].chunkArray.push(chunk);
             this.RTC.downloads[0].received += chunk.byteLength;
-            console.log(chunk.byteLength);
-            const percent = (this.RTC.downloads[0].received / this.RTC.downloads[0].size) * 100;
+            // const percent = (this.RTC.downloads[0].received / this.RTC.downloads[0].size) * 100;
             // if (percent - this.state.downloadPercent > 10) {
             //     this.setState({
             //         downloadPercent: percent
@@ -232,10 +230,10 @@ class Home extends React.Component {
             if (this.RTC.downloads[0].received >= this.RTC.downloads[0].size) {
                 this.finishDownload();
             } else {
-                console.log(percent);
+                // todo: change percentage
             }
         } catch (error) {
-            console.log(error);
+            // todo: Handle error
             this.RTC.downloads.shift();
             if (this.RTC.downloads.length > 0) {
                 this.requestDownload();
@@ -256,7 +254,6 @@ class Home extends React.Component {
     finishDownload() {
         const downloaded = this.RTC.downloads.shift();
         try {
-            console.log("end of file");
             this.setState({
                 downloadPercent: 0
             });
@@ -276,7 +273,7 @@ class Home extends React.Component {
                 this.requestDownload();
             }
         } catch (error) {
-            console.log(error);
+            // todo: Handle error
             if (this.RTC.downloads.length > 0) {
                 this.requestDownload();
             }
@@ -284,7 +281,6 @@ class Home extends React.Component {
     }
 
     addToDownloads(file, context) {
-        console.log("added to downloads");
         this.RTC.downloads.push({
             ...file,
             context,
@@ -292,7 +288,6 @@ class Home extends React.Component {
             received: 0
         });
         if (this.RTC.downloads.length === 1) {
-            console.log("requested downloada");
             this.requestDownload();
         }
     }
@@ -324,7 +319,6 @@ class Home extends React.Component {
                 this.props.history.push("/login");
                 break;
         }
-        console.log(error);
     }
 
     render() {

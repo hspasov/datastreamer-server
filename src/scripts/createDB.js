@@ -226,30 +226,6 @@ pool.query("DROP DATABASE IF EXISTS datastreamer;").then(() => {
         END;$$ LANGUAGE plpgsql;`);
 }).then(() => {
     console.log("create function delete_provider success");
-//     return pool.query(`CREATE OR REPLACE FUNCTION login_provider(provider_username VARCHAR,
-//         provider_password VARCHAR)
-//         RETURNS json AS $$
-//         DECLARE
-//             provider RECORD;
-//         BEGIN
-//             SELECT INTO provider
-//             Id, Username, Readable, Writable FROM Providers
-//             WHERE Username = provider_username
-//             AND Password = crypt(provider_password, Password);
-//             IF FOUND THEN
-//                 RETURN json_build_object('provider', provider, 'client_access_rules', (SELECT
-//                 Clients.Username AS Username,
-//                 ClientAccessRules.Readable AS Readable,
-//                 ClientAccessRules.Writable AS Writable
-//                 FROM ClientAccessRules INNER JOIN Clients
-//                 ON ClientAccessRules.ClientId = Clients.Id
-//                 WHERE ClientAccessRules.ProviderId = provider.Id));
-//             ELSE
-//                 RETURN NULL;
-//             END IF;
-//         END;$$ LANGUAGE plpgsql;`);
-// }).then(() => {
-//     console.log("create function login_provider success");
     pool.end();
 }).catch(error => {
     console.log(error);
