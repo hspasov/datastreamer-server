@@ -46,7 +46,7 @@ const options = {
 const server = config.secure ?
     https.createServer(options, app) : http.createServer(app);
 
-server.listen(7777);
+server.listen(80);
 server.on("error", onError);
 server.on("listening", () => onListening(server));
 

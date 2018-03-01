@@ -12,7 +12,7 @@ services:
   web:
     build: .
     ports:
-     - "80:7777"
+     - "80:80"
     volumes:
      - .:/usr/src/app
      - /usr/src/app/node_modules
