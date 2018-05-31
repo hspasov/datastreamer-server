@@ -19,6 +19,15 @@ const config = require("../config/config");
 
 log.verbose("Warning: Verbose logging should never be used in production!");
 
+bluebird.promisifyAll(redis.RedisClient.prototype);
+bluebird.promisifyAll(redis.Multi.prototype);
+bluebird.promisifyAll(jwt);
+
+const options = {
+    key: fs.readFileSync(path.join(__dirname, "../config/server.key")),
+    cert: fs.readFileSync(path.join(__dirname, "../config/server.crt"))
+};
+
 /**
  * Get port from environment and store in Express.
  */
@@ -31,32 +40,30 @@ redisClient.on("error", error => {
 });
 
 /*
- * Connect to redis
+ * Flush previous sessions
  */
 
-bluebird.promisifyAll(redis.RedisClient.prototype);
-bluebird.promisifyAll(redis.Multi.prototype);
-bluebird.promisifyAll(jwt);
+redisClient.flushall((error, response) => {
+    if (error) {
+        log.error(`Could not flush previous sessions: ${error}`)
+    } else {
+        log.info(`Flushed previous sessions: ${response}`);
+        const server = config.secure ?
+            https.createServer(options, app) : http.createServer(app);
 
-const options = {
-    key: fs.readFileSync(path.join(__dirname, "../config/server.key")),
-    cert: fs.readFileSync(path.join(__dirname, "../config/server.crt"))
-};
+        server.listen(80);
+        server.on("error", onError);
+        server.on("listening", () => onListening(server));
 
-const server = config.secure ?
-    https.createServer(options, app) : http.createServer(app);
+        /**
+         * Socket.io
+         */
 
-server.listen(80);
-server.on("error", onError);
-server.on("listening", () => onListening(server));
-
-/**
- * Socket.io
- */
-
-const io = require("socket.io").listen(server);
-io.adapter(redisSocketIoAdapter({ host: "redis", port: 6379 }));
-require("../sockets/server")(io);
+        const io = require("socket.io").listen(server);
+        io.adapter(redisSocketIoAdapter({ host: "redis", port: 6379 }));
+        require("../sockets/server")(io);
+    }
+});
 
 /**
  * Normalize a port into a number, string, or false.

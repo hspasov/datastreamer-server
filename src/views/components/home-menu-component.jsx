@@ -54,6 +54,7 @@ class HomeMenu extends React.Component {
             <Menu.Menu position="right">
                 <SelectOptionsComponent
                     showSelected={this.props.showSelected}
+                    downloadFiles={this.props.downloadFiles}
                     copyFiles={this.props.copyFiles}
                     moveFiles={this.props.moveFiles}
                     deleteFiles={this.props.deleteFiles}

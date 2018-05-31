@@ -20,6 +20,10 @@ router.route(["/login", "/register", "/home", "/connect", "/settings", "/",]).ge
     res.sendFile(path.join(__dirname, "../views/index.html"));
 });
 
+router.get("/download", (req, res) => {
+    res.download(path.join(__dirname, "../public/downloads/datastreamer-provider-linux-x64.tar.xz"));
+});
+
 router.post("/login", [
     body("username").exists().trim().isLength({ min: 5, max: 60 }),
     body("password").exists().custom(passwordCheck)

@@ -103,6 +103,13 @@ class Home extends React.Component {
         this.navigate(directoryPath);
     }
 
+    downloadFiles() {
+        this.props.selection.selected.forEach(file => {
+            this.addToDownloads(file, "file");
+        });
+        this.props.clearSelection();
+    }
+
     copyFiles() {
         this.props.selection.selected.forEach(file => {
             this.RTC.sendMessageWritable("copyFile", file.path);
@@ -298,7 +305,6 @@ class Home extends React.Component {
     }
 
     handleError(error) {
-        this.resetState();
         switch (error.type) {
             case "generic":
                 this.props.setError("Something went wrong.", error.message);
@@ -333,6 +339,7 @@ class Home extends React.Component {
             <HomeMenuComponent
                 navigateBack={index => this.resolveNavigateBack(index)}
                 saveText={() => this.saveText()}
+                downloadFiles={() => this.downloadFiles()}
                 copyFiles={() => this.copyFiles()}
                 moveFiles={() => this.moveFiles()}
                 deleteFiles={() => this.deleteFiles()}

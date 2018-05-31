@@ -9,6 +9,9 @@ class SelectOptions extends React.Component {
                 <Menu.Item onClick={() => this.props.showSelected()}>
                     <Icon name="file" />{this.props.selection.selected.length} selected
                 </Menu.Item>
+                <Menu.Item onClick={() => this.props.downloadFiles()}>
+                    <Icon size="large" name="download" /> Download all
+                </Menu.Item>
                 {this.props.provider.writeAccess && <Menu.Item onClick={() => this.props.copyFiles()}>
                     <Icon name="copy" /> Copy here
                 </Menu.Item>}

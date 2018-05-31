@@ -28,10 +28,12 @@ class Index extends React.Component {
                             content="Log into your provider account and select a directory to scan. That's it. Your files are available for clients to access them."
                             inverted
                         />
-                        <Button primary animated="fade" size="small">
-                            <Button.Content visible>Download</Button.Content>
-                            <Button.Content hidden><Icon name="download" size="large" /></Button.Content>
-                        </Button>
+                        <a href="/download">
+                            <Button primary animated="fade" size="small">
+                                <Button.Content visible>Download</Button.Content>
+                                <Button.Content hidden><Icon name="download" size="large" /></Button.Content>
+                            </Button>
+                        </a>
                     </Grid.Column>
                     <Grid.Column textAlign="center">
                         <Header

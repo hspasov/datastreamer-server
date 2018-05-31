@@ -14,10 +14,11 @@ function Socket(RTC, token, pageActionHandler) {
     });
 
     this.socket.on("connect_error", error => {
-        this.RTC.handleError({
-            type: "connection",
-            message: "Connection to server failed."
-        });
+        // disabled for demo
+        // this.RTC.handleError({
+        //     type: "connection",
+        //     message: "Connection to server failed."
+        // });
     });
 
     this.socket.on("connect_timeout", timeout => {
