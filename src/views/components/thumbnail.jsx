@@ -10,7 +10,7 @@ class Thumbnail extends React.Component {
         } else if (/^video\//.test(this.props.mime)) {
             return "file video outline";
         } else if (/^text\//.test(this.props.mime)) {
-            return "file text outline";
+            return "file alternate outline";
         } else if (/^inode\/directory/.test(this.props.mime)) {
             return "folder outline";
         } else if (/^application\/pdf/.test(this.props.mime)) {
